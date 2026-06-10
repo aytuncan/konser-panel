@@ -357,23 +357,21 @@ select option{background:var(--surface2)}
     </div>
 
     <nav class="nav">
-      <div class="nav-section">Hesap</div>
+      <div class="nav-section">İşler</div>
       <button class="nav-item active" id="tabNew" onclick="showTab('new')">
-        <span class="icon">✦</span> Organizasyon Girişi
+        <span class="icon">✦</span> Yeni İş
       </button>
       <button class="nav-item" id="tabSaved" onclick="showTab('saved')">
-        <span class="icon">◈</span> Kayıtlı İşler
+        <span class="icon">◈</span> İşler
       </button>
-
-      <div class="nav-section">Finans</div>
       <button class="nav-item" id="tabOdeme" onclick="showTab('odeme')">
         <span class="icon">◎</span> Muhasebe
       </button>
+
+      <div class="nav-section">Belge & Rehber</div>
       <button class="nav-item" id="tabDoc" onclick="showTab('doc')">
         <span class="icon">◻</span> Teklif & Sözleşme
       </button>
-
-      <div class="nav-section">Rehber</div>
       <button class="nav-item" id="tabFirms" onclick="showTab('firms')">
         <span class="icon">⊡</span> Firmalar
       </button>
@@ -415,7 +413,7 @@ select option{background:var(--surface2)}
     <header class="topbar">
       <button class="hamburger" onclick="openSidebar()">☰</button>
       <div>
-        <div class="topbar-title" id="pageTitle">Organizasyon Girişi</div>
+        <div class="topbar-title" id="pageTitle">Yeni İş</div>
       </div>
     </header>
 
@@ -557,6 +555,11 @@ select option{background:var(--surface2)}
 
       <!-- ══ KAYITLI İŞLER ══ -->
       <div id="view-saved" style="display:none">
+        <div class="seg" style="margin-bottom:16px;max-width:420px">
+          <button id="segAcik" class="on" onclick="setSavedFilter('acik')">Açık</button>
+          <button id="segTamam" onclick="setSavedFilter('tamam')">Tamamlanmış</button>
+          <button id="segTumu" onclick="setSavedFilter('tumu')">Tümü</button>
+        </div>
         <div class="actions" style="margin-bottom:16px">
           <button class="btn primary" onclick="exportAll()">Tümünü Excel'e aktar</button>
         </div>
@@ -1134,7 +1137,7 @@ function applyXlsx() {
 
 // ── Sidebar & mobile ──────────────────────────────────────
 const PAGE_TITLES={
-  new:'Organizasyon Girişi',saved:'Kayıtlı İşler',odeme:'Muhasebe',
+  new:'Yeni İş',saved:'İşler',odeme:'Muhasebe',
   doc:'Teklif & Sözleşme',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
   users:'Kullanıcılar'
 };
@@ -1185,7 +1188,7 @@ function showTab(t){
   });
   document.getElementById('pageTitle').textContent=PAGE_TITLES[t]||'';
   closeSidebar();
-  if(t==='saved')renderSaved();
+  if(t==='saved')setSavedFilter(savedFilter);
   if(t==='odeme'){refreshAccFirmPicker();renderOdeme();}
   if(t==='doc'){refreshDocPicker();refreshFirmPicker();}
   if(t==='firms')renderFirms();
@@ -1482,24 +1485,67 @@ async function saveEvent(){
   toast('Kaydedildi');
   showTab('saved');
 }
+let savedFilter='acik';
+function setSavedFilter(f){
+  savedFilter=f;
+  ['acik','tamam','tumu'].forEach(x=>{
+    const b=document.getElementById('seg'+x.charAt(0).toUpperCase()+x.slice(1));
+    if(b)b.classList.toggle('on',x===f);
+  });
+  renderSaved();
+}
+// İş tarihe göre açık mı tamamlanmış mı? (bugün dahil ileri = açık)
+function isGecmis(ev){
+  if(!ev.tarih)return null; // tarihsiz
+  const bugun=new Date();bugun.setHours(0,0,0,0);
+  const d=new Date(ev.tarih+'T00:00:00');
+  return d<bugun;
+}
 function renderSaved(){
   const wrap=document.getElementById('savedList');
-  if(!events.length){wrap.innerHTML='<div class="empty"><div class="big">♪</div>Henüz kayıt yok. Yeni hesap oluşturup kaydet.</div>';return;}
+  if(!events.length){wrap.innerHTML='<div class="empty"><div class="big">♪</div>Henüz kayıt yok. Yeni iş oluşturup kaydet.</div>';return;}
+
+  // filtrele
+  let liste=events.filter(ev=>{
+    const gecmis=isGecmis(ev);
+    if(savedFilter==='tumu')return true;
+    if(savedFilter==='acik')return gecmis===false||gecmis===null; // gelecek + tarihsiz
+    if(savedFilter==='tamam')return gecmis===true;                // geçmiş
+    return true;
+  });
+  // sıralama: açıkta en yakın tarih önce, tamamlanmışta en yeni geçmiş önce
+  liste=liste.slice().sort((a,b)=>{
+    const ta=a.tarih||'',tb=b.tarih||'';
+    if(savedFilter==='tamam')return tb.localeCompare(ta);
+    return (ta||'9999').localeCompare(tb||'9999');
+  });
+
+  if(!liste.length){
+    const mesaj=savedFilter==='acik'?'Açık (yaklaşan) iş yok.':savedFilter==='tamam'?'Tamamlanmış iş yok.':'Kayıt yok.';
+    wrap.innerHTML='<div class="empty"><div class="big">♪</div>'+mesaj+'</div>';return;
+  }
+
   wrap.innerHTML='';
-  events.forEach(ev=>{
+  liste.forEach(ev=>{
     const c=computeFor(ev);
     const t=tahsilatFor(ev);
     let payTxt='',payCls='';
     if(t.durum==='tamam'){payTxt='✓ tahsil';payCls='pos';}
     else if(t.durum==='kismi'){payTxt='kısmi %'+t.oran;payCls='';}
     else if(t.durum==='bekliyor'){payTxt='ödeme bekliyor';payCls='neg';}
+    // vade uyarısı rozeti
+    let vadeBadge='';
+    if(t.geciken&&t.geciken.length)vadeBadge=' · <span class="neg">⚠ '+t.geciken.length+' geciken vade</span>';
+    else if(t.yaklasan&&t.yaklasan.length)vadeBadge=' · <span class="warn">⏳ '+t.yaklasan.length+' yaklaşan vade</span>';
+    const gecmis=isGecmis(ev);
+    const durumBadge=gecmis===true?'<span class="badge" style="background:var(--surface2);color:var(--muted)">GEÇMİŞ</span>':gecmis===false?'<span class="badge" style="background:#16301f;color:var(--green)">AÇIK</span>':'';
     const d=document.createElement('div');
     d.className='saved-item';
     d.onclick=(e)=>{if(e.target.classList.contains('del'))return;restore(ev);};
     d.innerHTML=`
       <div class="info">
-        <div class="ttl">${ev.sehir||''} ${ev.mekan?'· '+ev.mekan:''}<span class="badge">${ev.tip==='KAPI'?'KAPI':'ORG'}</span></div>
-        <div class="sub">${ev.tarih||'tarih yok'}${payTxt?' · <span class="'+payCls+'">'+payTxt+'</span>':''}</div>
+        <div class="ttl">${ev.sehir||''} ${ev.mekan?'· '+ev.mekan:''}<span class="badge">${ev.tip==='KAPI'?'KAPI':'ORG'}</span>${durumBadge}</div>
+        <div class="sub">${ev.tarih||'tarih yok'}${payTxt?' · <span class="'+payCls+'">'+payTxt+'</span>':''}${vadeBadge}</div>
       </div>
       <div class="pnl">
         <div class="a ${c.kar>=0?'pos':'neg'}">${fmt(c.kar)}</div>
