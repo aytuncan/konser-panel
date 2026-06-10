@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0052)file:///C:/Users/aytun/Downloads/konser-hesap_6.html -->
+<html lang="tr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Konser Panel</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="./Konser Panel_files/xlsx.full.min.js.indir"></script>
+<script src="./Konser Panel_files/jspdf.umd.min.js.indir"></script>
 <style>
 /* ── TOKENS ────────────────────────────────────────────── */
 :root{
@@ -326,8 +326,8 @@ select option{background:var(--surface2)}
     <div class="card" style="margin:0">
       <div class="card-title">Giriş Yap</div>
       <div style="display:flex;flex-direction:column;gap:12px">
-        <div><label>E-posta</label><input id="liEmail" type="email" placeholder="admin@sirket.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
-        <div><label>Şifre</label><input id="liPass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div><label>E-posta</label><input id="liEmail" type="email" placeholder="admin@sirket.com" onkeydown="if(event.key===&#39;Enter&#39;)doLogin()"></div>
+        <div><label>Şifre</label><input id="liPass" type="password" placeholder="••••••••" onkeydown="if(event.key===&#39;Enter&#39;)doLogin()"></div>
         <button class="btn primary" id="liBtn" onclick="doLogin()" style="margin-top:4px">Giriş Yap</button>
       </div>
       <div id="liErr" style="color:var(--red);font-size:12px;margin-top:8px;display:none"></div>
@@ -352,32 +352,37 @@ select option{background:var(--surface2)}
 
     <nav class="nav">
       <div class="nav-section">Hesap</div>
-      <button class="nav-item active" id="tabNew" onclick="showTab('new')">
+      <button class="nav-item active" id="tabNew" onclick="showTab(&#39;new&#39;)">
         <span class="icon">✦</span> Organizasyon Girişi
       </button>
-      <button class="nav-item" id="tabSaved" onclick="showTab('saved')">
+      <button class="nav-item" id="tabSaved" onclick="showTab(&#39;saved&#39;)">
         <span class="icon">◈</span> Kayıtlı İşler
       </button>
 
       <div class="nav-section">Finans</div>
-      <button class="nav-item" id="tabOdeme" onclick="showTab('odeme')">
+      <button class="nav-item" id="tabOdeme" onclick="showTab(&#39;odeme&#39;)">
         <span class="icon">◎</span> Muhasebe
       </button>
-      <button class="nav-item" id="tabDoc" onclick="showTab('doc')">
-        <span class="icon">◻</span> Teklif & Sözleşme
+      <button class="nav-item" id="tabDoc" onclick="showTab(&#39;doc&#39;)">
+        <span class="icon">◻</span> Teklif &amp; Sözleşme
       </button>
 
       <div class="nav-section">Rehber</div>
-      <button class="nav-item" id="tabFirms" onclick="showTab('firms')">
+      <button class="nav-item" id="tabFirms" onclick="showTab(&#39;firms&#39;)">
         <span class="icon">⊡</span> Firmalar
       </button>
-      <button class="nav-item" id="tabVenues" onclick="showTab('venues')">
+      <button class="nav-item" id="tabVenues" onclick="showTab(&#39;venues&#39;)">
         <span class="icon">⊟</span> Mekanlar
       </button>
 
       <div class="nav-section">Raporlar</div>
-      <button class="nav-item" id="tabAnaliz" onclick="showTab('analiz')">
+      <button class="nav-item" id="tabAnaliz" onclick="showTab(&#39;analiz&#39;)">
         <span class="icon">◉</span> Analiz
+      </button>
+
+      <div class="nav-section" id="navSecYonetim" style="display:none">Yönetim</div>
+      <button class="nav-item" id="tabUsers" onclick="showTab(&#39;users&#39;)" style="display:none">
+        <span class="icon">⚇</span> Kullanıcılar
       </button>
     </nav>
 
@@ -386,8 +391,12 @@ select option{background:var(--surface2)}
         <div class="user-avatar" id="userAvatar">CO</div>
         <div class="user-info">
           <div class="name" id="userName">Kullanıcı</div>
-          <div class="role">Yönetici</div>
+          <div class="role" id="userRole">Yönetici</div>
         </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button class="btn ghost" style="flex:1;padding:8px;font-size:12px" onclick="openChangePass()">Şifre değiştir</button>
+        <button class="btn ghost" style="flex:1;padding:8px;font-size:12px" onclick="doLogout()">Çıkış</button>
       </div>
     </div>
   </aside>
@@ -422,7 +431,7 @@ select option{background:var(--surface2)}
             <div id="xlsxPreviewContent" style="font-size:13px;line-height:1.9"></div>
             <div class="actions" style="margin-top:10px">
               <button class="btn primary" onclick="applyXlsx()">Formu Doldur</button>
-              <button class="btn ghost" onclick="document.getElementById('xlsxPreview').style.display='none'">İptal</button>
+              <button class="btn ghost" onclick="document.getElementById(&#39;xlsxPreview&#39;).style.display=&#39;none&#39;">İptal</button>
             </div>
           </div>
           <div class="hint" style="margin-top:8px">Mevcut hesap formatındaki Excel dosyalarını okur: şehir, mekan, tarih, kapasite, komisyon, KDV, kaşe listesi, konser giderleri ve kâr paylaşımı otomatik dolar.</div>
@@ -443,8 +452,8 @@ select option{background:var(--surface2)}
             <div>
               <label>İş Tipi</label>
               <div class="seg">
-                <button id="tipKapi" class="on" onclick="setTip('KAPI')">KAPI (bilet)</button>
-                <button id="tipOrg" onclick="setTip('ORGANIZATOR')">ORGANİZATÖR</button>
+                <button id="tipKapi" class="on" onclick="setTip(&#39;KAPI&#39;)">KAPI (bilet)</button>
+                <button id="tipOrg" onclick="setTip(&#39;ORGANIZATOR&#39;)">ORGANİZATÖR</button>
               </div>
             </div>
           </div>
@@ -452,7 +461,7 @@ select option{background:var(--surface2)}
         </div>
 
         <div class="card">
-          <div class="card-title">Salon & Katılım</div>
+          <div class="card-title">Salon &amp; Katılım</div>
           <div class="grid">
             <div><label>Salon kapasitesi (kişi)</label><input id="kapasite" type="number" min="0" oninput="calc()" placeholder="800"></div>
             <div><label>Satılan bilet / katılım</label><input id="satilan" type="number" min="0" oninput="calc()" placeholder="400"></div>
@@ -484,14 +493,14 @@ select option{background:var(--surface2)}
           <div class="card-title">Kaşe Giderleri</div>
           <div class="row-head kase"><span>İsim</span><span>Tutar ₺</span><span>KDV?</span><span></span></div>
           <div class="rows" id="kaseRows"></div>
-          <button class="addbtn" onclick="addRow('kase')">+ Kaşe ekle</button>
+          <button class="addbtn" onclick="addRow(&#39;kase&#39;)">+ Kaşe ekle</button>
         </div>
 
         <div class="card">
           <div class="card-title">Konser Giderleri</div>
           <div class="row-head"><span>Açıklama</span><span>Tutar ₺</span><span>KDV?</span><span></span></div>
           <div class="rows" id="giderRows"></div>
-          <button class="addbtn" onclick="addRow('gider')">+ Gider ekle</button>
+          <button class="addbtn" onclick="addRow(&#39;gider&#39;)">+ Gider ekle</button>
         </div>
 
         <div class="card">
@@ -557,8 +566,8 @@ select option{background:var(--surface2)}
             <div>
               <label>Yön</label>
               <div class="seg">
-                <button id="accYonGelir" class="on" onclick="setAccYon('gelir')">GELİR</button>
-                <button id="accYonGider" onclick="setAccYon('gider')">GİDER</button>
+                <button id="accYonGelir" class="on" onclick="setAccYon(&#39;gelir&#39;)">GELİR</button>
+                <button id="accYonGider" onclick="setAccYon(&#39;gider&#39;)">GİDER</button>
               </div>
             </div>
             <div><label>Açıklama</label><input id="accDesc" placeholder="Ofis kirası / fatura no vb."></div>
@@ -658,15 +667,16 @@ select option{background:var(--surface2)}
           </div>
           <div style="margin-top:14px">
             <label>Teknik / ek şartlar (her satır ayrı madde)</label>
-            <textarea id="dTech" rows="4" placeholder="Ses ve ışık sistemi mekana aittir.&#10;Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
+            <textarea id="dTech" rows="4" placeholder="Ses ve ışık sistemi mekana aittir.
+Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
           </div>
         </div>
 
         <div class="actions">
-          <button class="btn primary" onclick="makePDF('teklif')">Teklif PDF indir</button>
-          <button class="btn primary" onclick="makePDF('sozlesme')">Sözleşme PDF indir</button>
-          <button class="btn ghost" onclick="previewDoc('teklif')">Teklifi önizle</button>
-          <button class="btn ghost" onclick="previewDoc('sozlesme')">Sözleşmeyi önizle</button>
+          <button class="btn primary" onclick="makePDF(&#39;teklif&#39;)">Teklif PDF indir</button>
+          <button class="btn primary" onclick="makePDF(&#39;sozlesme&#39;)">Sözleşme PDF indir</button>
+          <button class="btn ghost" onclick="previewDoc(&#39;teklif&#39;)">Teklifi önizle</button>
+          <button class="btn ghost" onclick="previewDoc(&#39;sozlesme&#39;)">Sözleşmeyi önizle</button>
         </div>
         <div class="hint" style="margin-top:10px">Not: Sözleşme taslağı genel bir başlangıç metnidir, hukuki danışmanlık değildir.</div>
 
@@ -750,7 +760,7 @@ select option{background:var(--surface2)}
           <div id="anSehir"></div>
         </div>
         <div class="card">
-          <div class="card-title">Bilet & Doluluk</div>
+          <div class="card-title">Bilet &amp; Doluluk</div>
           <div id="anDoluluk"></div>
         </div>
         <div class="card">
@@ -763,18 +773,59 @@ select option{background:var(--surface2)}
         </div>
       </div>
 
+      <!-- ══ KULLANICILAR (admin) ══ -->
+      <div id="view-users" style="display:none">
+        <div class="card">
+          <div class="card-title">Yeni Kullanıcı</div>
+          <div class="grid">
+            <div><label>Ad Soyad *</label><input id="uName" placeholder="Ad Soyad"></div>
+            <div><label>E-posta *</label><input id="uEmail" type="email" placeholder="kisi@sirket.com"></div>
+            <div><label>Geçici şifre *</label><input id="uPass" placeholder="En az 8 karakter"></div>
+            <div>
+              <label>Rol</label>
+              <select id="uRole"><option value="user">Kullanıcı</option><option value="admin">Yönetici</option></select>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn primary" onclick="addUser()" id="uSaveBtn">Kullanıcı ekle</button>
+            <button class="btn ghost" onclick="resetUserForm()">Temizle</button>
+          </div>
+          <div class="hint">Kullanıcı bu geçici şifreyle giriş yapar, sonra kendi şifresini değiştirebilir.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Kayıtlı Kullanıcılar</div>
+          <div class="saved-list" id="userList"></div>
+        </div>
+      </div>
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
 
-<div class="toast" id="toast"></div>
-
 </div><!-- /appScreen -->
-<div class="toast" id="toast"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script><script>
 
-const API_URL='https://konser-backend-production.up.railway.app'
+<!-- Şifre değiştirme modalı -->
+<div id="changePassModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center;padding:16px">
+  <div class="card" style="max-width:380px;width:100%;margin:0">
+    <div class="card-title">Şifre Değiştir</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div><label>Mevcut şifre</label><input id="cpOld" type="password" placeholder="••••••••"></div>
+      <div><label>Yeni şifre (en az 8 karakter)</label><input id="cpNew" type="password" placeholder="••••••••"></div>
+      <div><label>Yeni şifre (tekrar)</label><input id="cpNew2" type="password" placeholder="••••••••"></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" onclick="submitChangePass()" id="cpBtn">Değiştir</button>
+      <button class="btn ghost" onclick="closeChangePass()">Vazgeç</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="./Konser Panel_files/xlsx.full.min.js.indir"></script>
+<script src="./Konser Panel_files/jspdf.umd.min.js.indir"></script><script>
+
+const API_URL='https://konser-backend-production.up.railway.app';
 let _token=localStorage.getItem('konser_token')||'';
 let _user=JSON.parse(localStorage.getItem('konser_user')||'null');
 
@@ -1065,7 +1116,8 @@ function applyXlsx() {
 // ── Sidebar & mobile ──────────────────────────────────────
 const PAGE_TITLES={
   new:'Organizasyon Girişi',saved:'Kayıtlı İşler',odeme:'Muhasebe',
-  doc:'Teklif & Sözleşme',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz'
+  doc:'Teklif & Sözleşme',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
+  users:'Kullanıcılar'
 };
 function openSidebar(){
   document.getElementById('sidebar').classList.add('open');
@@ -1106,7 +1158,7 @@ function fmt(n){
 }
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900);}
 function showTab(t){
-  ['new','saved','odeme','doc','firms','venues','analiz'].forEach(id=>{
+  ['new','saved','odeme','doc','firms','venues','analiz','users'].forEach(id=>{
     const v=document.getElementById('view-'+id);
     const b=document.getElementById('tab'+id.charAt(0).toUpperCase()+id.slice(1));
     if(v) v.style.display=t===id?'block':'none';
@@ -1120,6 +1172,7 @@ function showTab(t){
   if(t==='firms')renderFirms();
   if(t==='venues')renderVenues();
   if(t==='analiz')renderAnaliz();
+  if(t==='users')renderUsers();
 }
 function setTip(t){
   tip=t;
@@ -2064,6 +2117,7 @@ function renderAnaliz(){
 
 // ---------- init ----------
 async function initApp(){
+  applyUserUI();
   addRow('kase');addRow('gider');
   setTip('KAPI');
   await loadEvents();
@@ -2075,7 +2129,131 @@ async function initApp(){
   setAccYon('gelir');
   calc();
 }
+
+// Rol bilgisini arayüze yansıt (footer rol etiketi + admin menüsü)
+function applyUserUI(){
+  if(!_user)return;
+  const isAdmin=_user.role==='admin';
+  const roleEl=document.getElementById('userRole');
+  if(roleEl)roleEl.textContent=isAdmin?'Yönetici':'Kullanıcı';
+  document.getElementById('navSecYonetim').style.display=isAdmin?'block':'none';
+  document.getElementById('tabUsers').style.display=isAdmin?'flex':'none';
+}
+
+// ---------- şifre değiştir (kendi şifresi) ----------
+function openChangePass(){
+  document.getElementById('cpOld').value='';
+  document.getElementById('cpNew').value='';
+  document.getElementById('cpNew2').value='';
+  document.getElementById('changePassModal').style.display='flex';
+}
+function closeChangePass(){document.getElementById('changePassModal').style.display='none';}
+async function submitChangePass(){
+  const oldP=document.getElementById('cpOld').value;
+  const newP=document.getElementById('cpNew').value;
+  const new2=document.getElementById('cpNew2').value;
+  if(!oldP||!newP){toast('Tüm alanları doldur');return;}
+  if(newP.length<8){toast('Yeni şifre en az 8 karakter');return;}
+  if(newP!==new2){toast('Yeni şifreler eşleşmiyor');return;}
+  const btn=document.getElementById('cpBtn');btn.textContent='Değiştiriliyor...';
+  try{
+    const res=await apiFetch('/api/auth/change-password',{method:'POST',body:JSON.stringify({oldPassword:oldP,newPassword:newP})});
+    btn.textContent='Değiştir';
+    if(!res)return;
+    const data=await res.json();
+    if(!res.ok){toast(data.error||'Değiştirilemedi');return;}
+    closeChangePass();
+    toast('Şifre değiştirildi');
+  }catch(e){btn.textContent='Değiştir';toast('Bağlantı hatası');}
+}
+
+// ---------- kullanıcı yönetimi (admin) ----------
+let users=[];
+async function loadUsers(){
+  try{
+    const res=await apiFetch('/api/auth/users');
+    if(!res){users=[];return;}
+    users=await res.json();
+  }catch(e){users=[];}
+}
+async function renderUsers(){
+  await loadUsers();
+  const wrap=document.getElementById('userList');
+  if(!users.length){wrap.innerHTML='<div class="empty">Kullanıcı yok.</div>';return;}
+  wrap.innerHTML='';
+  users.forEach(u=>{
+    const d=document.createElement('div');
+    d.className='saved-item';
+    const self=_user&&u.id===_user.id;
+    d.innerHTML=`
+      <div class="info">
+        <div class="ttl">${esc(u.name)}${u.role==='admin'?'<span class="badge">YÖNETİCİ</span>':''}${!u.active?'<span class="badge" style="background:#3a1a1a;color:#f07a7a">PASİF</span>':''}</div>
+        <div class="sub">${esc(u.email)}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+        <button class="btn ghost" style="padding:7px 12px;font-size:12px" onclick="resetUserPass('${u.id}','${esc(u.name).replace(/'/g,"\\'")}')">Şifre sıfırla</button>
+        ${self?'':`<button class="btn ghost" style="padding:7px 12px;font-size:12px" onclick="toggleUserRole('${u.id}','${u.role}')">${u.role==='admin'?'Yetkiyi al':'Yönetici yap'}</button>`}
+        ${self?'':`<button class="btn ghost" style="padding:7px 12px;font-size:12px" onclick="toggleUserActive('${u.id}',${u.active})">${u.active?'Pasifleştir':'Aktifleştir'}</button>`}
+      </div>`;
+    wrap.appendChild(d);
+  });
+}
+function resetUserForm(){
+  ['uName','uEmail','uPass'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('uRole').value='user';
+}
+async function addUser(){
+  const name=document.getElementById('uName').value.trim();
+  const email=document.getElementById('uEmail').value.trim();
+  const password=document.getElementById('uPass').value;
+  const role=document.getElementById('uRole').value;
+  if(!name||!email||!password){toast('Ad, e-posta ve şifre gerekli');return;}
+  if(password.length<8){toast('Şifre en az 8 karakter olmalı');return;}
+  const btn=document.getElementById('uSaveBtn');btn.textContent='Ekleniyor...';
+  try{
+    const res=await apiFetch('/api/auth/users',{method:'POST',body:JSON.stringify({name,email,password,role})});
+    btn.textContent='Kullanıcı ekle';
+    if(!res)return;
+    const data=await res.json();
+    if(!res.ok){toast(data.error||'Eklenemedi');return;}
+    resetUserForm();
+    renderUsers();
+    toast('Kullanıcı eklendi');
+  }catch(e){btn.textContent='Kullanıcı ekle';toast('Bağlantı hatası');}
+}
+async function resetUserPass(id,name){
+  if(!confirm(name+' kullanıcısının şifresi sıfırlansın mı? Yeni geçici şifre üretilecek.'))return;
+  try{
+    const res=await apiFetch('/api/auth/users/'+id+'/reset-password',{method:'POST',body:JSON.stringify({})});
+    if(!res)return;
+    const data=await res.json();
+    if(!res.ok){toast(data.error||'Sıfırlanamadı');return;}
+    if(data.tempPassword){
+      prompt(name+' için yeni geçici şifre (kopyalayıp kullanıcıya iletin):',data.tempPassword);
+    }
+    toast('Şifre sıfırlandı');
+  }catch(e){toast('Bağlantı hatası');}
+}
+async function toggleUserRole(id,curRole){
+  const newRole=curRole==='admin'?'user':'admin';
+  try{
+    const res=await apiFetch('/api/auth/users/'+id,{method:'PATCH',body:JSON.stringify({role:newRole})});
+    if(!res)return;
+    if(!res.ok){const d=await res.json();toast(d.error||'Güncellenemedi');return;}
+    renderUsers();toast('Rol güncellendi');
+  }catch(e){toast('Bağlantı hatası');}
+}
+async function toggleUserActive(id,cur){
+  try{
+    const res=await apiFetch('/api/auth/users/'+id,{method:'PATCH',body:JSON.stringify({active:!cur})});
+    if(!res)return;
+    if(!res.ok){const d=await res.json();toast(d.error||'Güncellenemedi');return;}
+    renderUsers();toast('Güncellendi');
+  }catch(e){toast('Bağlantı hatası');}
+}
+
 // Başlangıç: token varsa direkt app aç
 if(_token&&_user){document.getElementById("userName").textContent=_user.name;document.getElementById("userAvatar").textContent=_user.name.split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase();showApp();initApp();}else{showLogin();}
 </script>
+
 </body></html>
