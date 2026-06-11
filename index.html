@@ -385,6 +385,9 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabOdeme" onclick="showTab('odeme')">
         <span class="icon">◎</span> Muhasebe
       </button>
+      <button class="nav-item" id="tabEkipOdeme" onclick="showTab('ekipodeme')">
+        <span class="icon">◐</span> Ekip Ödemeleri
+      </button>
 
       <div class="nav-section">Belge & Rehber</div>
       <button class="nav-item" id="tabDoc" onclick="showTab('doc')">
@@ -680,6 +683,30 @@ select option{background:var(--surface)}
           <div class="card-title">Tüm İşlemler</div>
           <input id="accSearch" placeholder="Ara: açıklama, firma, şehir..." autocomplete="off" oninput="renderAcc()" style="margin-bottom:20px">
           <div class="saved-list" id="accList"></div>
+        </div>
+      </div>
+
+      <div id="view-ekipodeme" style="display:none">
+        <div class="card">
+          <div class="card-title">Ekip Ödemeleri Özeti</div>
+          <div class="hint" style="margin-bottom:20px">Tüm işlerdeki kaşe giderleri kişi bazında toplanır. Aşağıdan kime ne kadar ödenecek, ne kadarı ödendi görebilir; tek tıkla "ödendi" işaretleyebilirsin.</div>
+          <div class="stat-grid" id="eoOzet"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Kişi Bazında Toplam</div>
+          <div class="hint" style="margin-bottom:16px">Her kişiye tüm işlerden toplam ne kadar ödenecek ve ne kadarı ödendi.</div>
+          <div id="eoKisi"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">İş Bazında Kaşeler</div>
+          <div class="hint" style="margin-bottom:16px">Açık (ödenmemiş) kaşeler önce gösterilir. "Ödendi" düğmesine basınca işin içine kaydedilir, herkes görür.</div>
+          <div class="seg" style="margin-bottom:20px;max-width:340px">
+            <button id="eoSegAcik" class="on" onclick="setEoFilter('acik')">Ödenmemiş</button>
+            <button id="eoSegTumu" onclick="setEoFilter('tumu')">Tümü</button>
+          </div>
+          <div id="eoListe"></div>
         </div>
       </div>
 
@@ -1187,7 +1214,7 @@ function applyXlsx() {
 }
 
 const PAGE_TITLES={
-  new:'Yeni İş',saved:'İşler',odeme:'Muhasebe',
+  new:'Yeni İş',saved:'İşler',odeme:'Muhasebe',ekipodeme:'Ekip Ödemeleri',
   doc:'Teklif & Sözleşme',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
   users:'Kullanıcılar'
 };
@@ -1228,9 +1255,10 @@ function fmt(n){
 }
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900);}
 function showTab(t){
-  ['new','saved','odeme','doc','firms','venues','ekip','analiz','users'].forEach(id=>{
+  ['new','saved','odeme','ekipodeme','doc','firms','venues','ekip','analiz','users'].forEach(id=>{
     const v=document.getElementById('view-'+id);
-    const b=document.getElementById('tab'+id.charAt(0).toUpperCase()+id.slice(1));
+    const tabId = id==='ekipodeme' ? 'tabEkipOdeme' : 'tab'+id.charAt(0).toUpperCase()+id.slice(1);
+    const b=document.getElementById(tabId);
     if(v) v.style.display=t===id?'block':'none';
     if(b) b.classList.toggle('active',t===id);
   });
@@ -1239,6 +1267,7 @@ function showTab(t){
   if(t==='new')refreshEkipGiderPickers();
   if(t==='saved')setSavedFilter(savedFilter);
   if(t==='odeme'){refreshAccFirmPicker();renderOdeme();}
+  if(t==='ekipodeme')renderEkipOdeme();
   if(t==='doc'){refreshDocPicker();refreshFirmPicker();}
   if(t==='firms')renderFirms();
   if(t==='venues')renderVenues();
@@ -1261,10 +1290,11 @@ function syncPay(which){
   calc();
 }
 
-function addRow(kind,name='',amount='',kdv=false){
+function addRow(kind,name='',amount='',kdv=false,odendi=false){
   const wrap=document.getElementById(kind==='kase'?'kaseRows':'giderRows');
   const div=document.createElement('div');
   div.className='row kase';
+  if(kind==='kase')div.dataset.odendi=odendi?'1':'0';
   div.innerHTML=`
     <input placeholder="${kind==='kase'?'İsim':'Açıklama'}" value="${name.replace(/"/g,'&quot;')}" autocomplete="off" oninput="calc()">
     <input type="number" min="0" placeholder="0" value="${amount}" oninput="calc()">
@@ -1277,7 +1307,9 @@ function readRows(kind){
   const wrap=document.getElementById(kind==='kase'?'kaseRows':'giderRows');
   return [...wrap.children].map(r=>{
     const i=r.querySelectorAll('input'),s=r.querySelector('select');
-    return {name:i[0].value,amount:+i[1].value||0,kdv:s.value==='1'};
+    const o={name:i[0].value,amount:+i[1].value||0,kdv:s.value==='1'};
+    if(kind==='kase')o.odendi=r.dataset.odendi==='1';
+    return o;
   }).filter(x=>x.name||x.amount);
 }
 
@@ -1497,7 +1529,7 @@ function restore(ev){
   document.getElementById('p1ad').value=ev.p1ad||'';document.getElementById('p1pay').value=ev.p1pay;
   document.getElementById('p2ad').value=ev.p2ad||'';document.getElementById('p2pay').value=ev.p2pay;
   document.getElementById('kaseRows').innerHTML='';document.getElementById('giderRows').innerHTML='';
-  (ev.kase||[]).forEach(k=>addRow('kase',k.name,k.amount,k.kdv));
+  (ev.kase||[]).forEach(k=>addRow('kase',k.name,k.amount,k.kdv,k.odendi));
   (ev.gider||[]).forEach(g=>addRow('gider',g.name,g.amount,g.kdv));
   if(!(ev.kase||[]).length)addRow('kase');
   if(!(ev.gider||[]).length)addRow('gider');
@@ -2557,6 +2589,111 @@ function bar(name,numLabel,ratio,neg){
   return `<div class="bar-row"><div class="bl"><span class="name">${esc(name)}</span><span class="num">${numLabel}</span></div>
     <div class="bar-track"><div class="bar-fill${neg?' neg':''}" style="width:${w}%"></div></div></div>`;
 }
+
+// ── EKİP ÖDEMELERİ ───────────────────────────────────────
+let eoFilter='acik';
+function setEoFilter(f){
+  eoFilter=f;
+  document.getElementById('eoSegAcik').classList.toggle('on',f==='acik');
+  document.getElementById('eoSegTumu').classList.toggle('on',f==='tumu');
+  renderEkipOdemeListe();
+}
+
+// Tüm işlerdeki kaşeleri düz liste yap: her satır {ev, idx, name, amount, odendi}
+function tumKaseler(){
+  const arr=[];
+  events.forEach(ev=>{
+    (ev.kase||[]).forEach((k,idx)=>{
+      if(!k.name && !k.amount) return;
+      arr.push({ev, idx, name:k.name||'(isimsiz)', amount:k.amount||0, odendi:!!k.odendi});
+    });
+  });
+  return arr;
+}
+
+function renderEkipOdeme(){
+  const all=tumKaseler();
+  // özet
+  const toplam=all.reduce((a,k)=>a+k.amount,0);
+  const odenen=all.filter(k=>k.odendi).reduce((a,k)=>a+k.amount,0);
+  const kalan=toplam-odenen;
+  const acikSayi=all.filter(k=>!k.odendi).length;
+  document.getElementById('eoOzet').innerHTML=`
+    <div class="stat"><div class="n">Toplam Ödenecek</div><div class="v">${fmt(toplam)}</div></div>
+    <div class="stat"><div class="n">Ödenen</div><div class="v pos">${fmt(odenen)}</div></div>
+    <div class="stat"><div class="n">Kalan</div><div class="v ${kalan>0.5?'neg':'pos'}">${fmt(kalan)}</div></div>
+    <div class="stat"><div class="n">Açık Kaşe</div><div class="v">${acikSayi}</div></div>`;
+
+  // kişi bazında
+  const byKisi={};
+  all.forEach(k=>{
+    const ad=(k.name||'(isimsiz)').trim();
+    if(!byKisi[ad])byKisi[ad]={toplam:0,odenen:0,kalan:0,adet:0};
+    byKisi[ad].toplam+=k.amount;
+    byKisi[ad].adet++;
+    if(k.odendi)byKisi[ad].odenen+=k.amount; else byKisi[ad].kalan+=k.amount;
+  });
+  const kisiArr=Object.entries(byKisi).map(([ad,v])=>({ad,...v})).sort((a,b)=>b.kalan-a.kalan||b.toplam-a.toplam);
+  const kisiWrap=document.getElementById('eoKisi');
+  if(!kisiArr.length){
+    kisiWrap.innerHTML='<div class="anEmpty">Henüz kaşe girilmiş iş yok.</div>';
+  }else{
+    let h='<table class="atable"><thead><tr><th>Kişi</th><th>İş</th><th>Toplam</th><th>Ödenen</th><th>Kalan</th></tr></thead><tbody>';
+    kisiArr.forEach(k=>{
+      h+=`<tr><td>${esc(k.ad)}</td><td>${k.adet}</td><td>${fmt(k.toplam)}</td><td class="pos">${fmt(k.odenen)}</td><td class="${k.kalan>0.5?'neg':'pos'}">${fmt(k.kalan)}</td></tr>`;
+    });
+    h+='</tbody></table>';
+    kisiWrap.innerHTML=h;
+  }
+
+  renderEkipOdemeListe();
+}
+
+function renderEkipOdemeListe(){
+  const all=tumKaseler();
+  let liste=all;
+  if(eoFilter==='acik')liste=all.filter(k=>!k.odendi);
+  // sırala: önce ödenmemiş, sonra işe göre tarih
+  liste=liste.slice().sort((a,b)=>{
+    if(a.odendi!==b.odendi)return a.odendi?1:-1;
+    return (a.ev.tarih||'9999').localeCompare(b.ev.tarih||'9999');
+  });
+  const wrap=document.getElementById('eoListe');
+  if(!liste.length){
+    wrap.innerHTML='<div class="anEmpty">'+(eoFilter==='acik'?'Ödenmemiş kaşe yok. Hepsi ödendi 🎉':'Kaşe yok.')+'</div>';
+    return;
+  }
+  wrap.innerHTML='';
+  liste.forEach(k=>{
+    const isim=(k.ev.sehir||'')+(k.ev.mekan?' · '+k.ev.mekan:'');
+    const tarih=k.ev.tarih?trDate(k.ev.tarih):'tarih yok';
+    const d=document.createElement('div');
+    d.className='saved-item';
+    d.style.cursor='default';
+    d.innerHTML=`
+      <div class="info">
+        <div class="ttl">${esc(k.name)} <span class="vbadge ${k.odendi?'pos':'bekliyor'}">${k.odendi?'Ödendi':'Bekliyor'}</span></div>
+        <div class="sub">${esc(isim)} · ${tarih}</div>
+      </div>
+      <div class="pnl"><div class="a">${fmt(k.amount)}</div></div>
+      <button class="btn ${k.odendi?'ghost':'primary'}" style="flex:none;min-width:auto;padding:8px 14px;font-size:13px"
+        onclick="toggleKaseOdendi('${k.ev.id}',${k.idx})">${k.odendi?'Geri al':'Ödendi ✓'}</button>`;
+    wrap.appendChild(d);
+  });
+}
+
+async function toggleKaseOdendi(eventId, kaseIdx){
+  const ev=events.find(e=>e.id===eventId);
+  if(!ev||!ev.kase||!ev.kase[kaseIdx])return;
+  ev.kase[kaseIdx].odendi=!ev.kase[kaseIdx].odendi;
+  const yeniDurum=ev.kase[kaseIdx].odendi;
+  // backend'e kaydet
+  await persist(ev);
+  await loadEvents();
+  renderEkipOdeme();
+  toast(yeniDurum?'Ödendi olarak işaretlendi':'Ödeme geri alındı');
+}
+
 function renderAnaliz(){
   const evs=events.map(ev=>({ev,c:computeFor(ev)}));
   const oz=document.getElementById('anOzet');
