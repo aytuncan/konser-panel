@@ -280,7 +280,7 @@ select option{background:var(--surface)}
 .empty .big{font-size:32px;margin-bottom:12px;opacity:.3}
 
 /* ── STAT GRID ─────────────────────────────────────────── */
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 @media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
 .stat{
   background:var(--bg);border:1px solid var(--border);
@@ -2103,7 +2103,8 @@ function eventAsAcc(ev){
 function accAggregate(){
   let hesaplananKdv=0, indirilecekKdv=0;       
   let toplamGelir=0, toplamGider=0;            
-  let alacak=0, borc=0;                        
+  let alacak=0, borc=0;
+  let toplamArtist=0, toplamManager=0;                        
   const aylik={};                               
   const cari={};                                
   const ensureCari=(id,nm)=>{const k=id||('__'+nm);if(!cari[k])cari[k]={name:nm||firmName(id)||'(firmasız)',alacak:0,borc:0};return cari[k];};
@@ -2115,7 +2116,8 @@ function accAggregate(){
     indirilecekKdv+=a.indirKdv;
     toplamGelir+=a.c.ciroNet;
     toplamGider+=a.c.giderNet;
-    addAy(ev.tarih,a.gelirKdv,a.indirKdv);
+    toplamArtist+=a.c.p1amt;
+    toplamManager+=a.c.p2amt;
     const fid=ev.venueId? ('v:'+ev.venueId):'';   
     const nm=ev.mekan||ev.sehir||'(konser)';
     if(a.tah.kalan>0.5){alacak+=a.tah.kalan;ensureCari('', nm).alacak+=a.tah.kalan;}
@@ -2138,9 +2140,9 @@ function accAggregate(){
 
   return {hesaplananKdv,indirilecekKdv,netKdv:hesaplananKdv-indirilecekKdv,
           toplamGelir,toplamGider,netKar:toplamGelir-toplamGider,
+          toplamArtist, toplamManager,
           alacak,borc,aylik,cari:Object.values(cari)};
 }
-
 function renderVadeler(){
   const satirlar=[]; 
   events.forEach(ev=>{
@@ -2197,11 +2199,17 @@ function renderOdeme(){
 
   renderVadeler();
 
-  document.getElementById('accOzet').innerHTML=`
+document.getElementById('accOzet').innerHTML=`
     <div class="stat"><div class="n">Toplam Gelir (net)</div><div class="v">${fmt(agg.toplamGelir)}</div></div>
     <div class="stat"><div class="n">Toplam Gider (net)</div><div class="v">${fmt(agg.toplamGider)}</div></div>
     <div class="stat"><div class="n">Net (gelir−gider)</div><div class="v ${agg.netKar>=0?'pos':'neg'}">${fmt(agg.netKar)}</div></div>
-    <div class="stat"><div class="n">Net KDV</div><div class="v ${agg.netKdv>=0?'neg':'pos'}">${fmt(agg.netKdv)}</div></div>`;
+    <div class="stat"><div class="n">Net KDV</div><div class="v ${agg.netKdv>=0?'neg':'pos'}">${fmt(agg.netKdv)}</div></div>
+    <div class="stat" style="border-color:var(--accent); background:rgba(99,102,241,0.05)">
+      <div class="n">Sanatçı Toplam Payı</div><div class="v">${fmt(agg.toplamArtist)}</div>
+    </div>
+    <div class="stat" style="border-color:var(--accent); background:rgba(99,102,241,0.05)">
+      <div class="n">Menajer (Bana Kalan)</div><div class="v pos">${fmt(agg.toplamManager)}</div>
+    </div>`;
 
   document.getElementById('kdvOzet').innerHTML=`
     <div class="stat"><div class="n">Hesaplanan KDV</div><div class="v">${fmt(agg.hesaplananKdv)}</div></div>
