@@ -9,11 +9,11 @@
 <style>
 /* ── TOKENS ────────────────────────────────────────────── */
 :root{
-  --bg:       #09090f;
-  --surface:  #111118;
-  --surface2: #18181f;
-  --border:   #1f1f2e;
-  --border2:  #2a2a3d;
+  --bg:       #0b0a12;
+  --surface:  #14131c;
+  --surface2: #1c1b26;
+  --border:   #262536;
+  --border2:  #322f44;
   --ink:      #e8e6f0;
   --muted:    #7b7994;
   --faint:    #3a384f;
@@ -138,7 +138,7 @@ button{cursor:pointer;font-family:inherit}
 /* ── CARDS ─────────────────────────────────────────────── */
 .card{
   background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius-lg);padding:18px;margin-bottom:14px;
+  border-radius:14px;padding:20px;margin-bottom:16px;
 }
 /* Yeni İş: geniş ekranda kartları 2 sütuna böl (masonry) */
 @media(min-width:900px){
@@ -431,6 +431,20 @@ select option{background:var(--surface2)}
 
       <!-- ══ YENİ HESAP ══ -->
       <div id="view-new" class="cols2">
+        <div class="full" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px">
+          <div class="card" style="margin:0;text-align:center;padding:18px 14px">
+            <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700">Ciro (KDV dahil)</div>
+            <div style="font-size:28px;font-weight:800;margin-top:8px;color:var(--accent);font-variant-numeric:tabular-nums" id="sumCiro">0 ₺</div>
+          </div>
+          <div class="card" style="margin:0;text-align:center;padding:18px 14px">
+            <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700">Kâr / Zarar</div>
+            <div style="font-size:28px;font-weight:800;margin-top:8px;font-variant-numeric:tabular-nums" id="sumKar">0 ₺</div>
+          </div>
+          <div class="card" style="margin:0;text-align:center;padding:18px 14px">
+            <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700">Kalan Tahsilat</div>
+            <div style="font-size:28px;font-weight:800;margin-top:8px;font-variant-numeric:tabular-nums" id="sumKalan">0 ₺</div>
+          </div>
+        </div>
         <div class="card full" style="border-color:var(--accent);background:var(--accent-bg)">
           <div class="card-title" style="color:var(--accent)">Excel'den Aktar</div>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -1498,6 +1512,16 @@ function calc(){
   document.getElementById('rP2n').textContent=document.getElementById('p2ad').value||'2. Taraf';
   document.getElementById('rP1').textContent=fmt(c.p1amt);
   document.getElementById('rP2').textContent=fmt(c.p2amt);
+  // üst özet kartları
+  const sc=document.getElementById('sumCiro');if(sc)sc.textContent=fmt(c.ciroGross);
+  const sk=document.getElementById('sumKar');if(sk){sk.textContent=fmt(c.kar);sk.style.color=c.kar>=0?'var(--green)':'var(--red)';}
+  const skl=document.getElementById('sumKalan');
+  if(skl){
+    const al=readOdemeler().reduce((a,b)=>a+b.amount,0);
+    const kalan=c.ciroGross-al;
+    skl.textContent=fmt(kalan);
+    skl.style.color=kalan<=0.5?'var(--green)':'var(--ink)';
+  }
   calcTahsilat();
 }
 
