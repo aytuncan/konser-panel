@@ -1259,7 +1259,13 @@ function showTab(t){
     const v=document.getElementById('view-'+id);
     const tabId = id==='ekipodeme' ? 'tabEkipOdeme' : 'tab'+id.charAt(0).toUpperCase()+id.slice(1);
     const b=document.getElementById(tabId);
-    if(v) v.style.display=t===id?'block':'none';
+    if(v) {
+  if (t === id) {
+    v.style.display = ''; 
+  } else {
+    v.style.display = 'none';
+  }
+}
     if(b) b.classList.toggle('active',t===id);
   });
   document.getElementById('pageTitle').textContent=PAGE_TITLES[t]||'';
