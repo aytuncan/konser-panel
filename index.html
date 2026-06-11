@@ -127,7 +127,7 @@ button{cursor:pointer;font-family:inherit}
   display:none;background:none;border:none;color:var(--ink);
   font-size:20px;padding:4px;margin-right:4px;
 }
-.content{flex:1;padding:28px;max-width:960px}
+.content{flex:1;padding:24px 28px;max-width:1180px;margin:0 auto;width:100%}
 
 /* overlay (mobile) */
 .overlay{
@@ -138,7 +138,14 @@ button{cursor:pointer;font-family:inherit}
 /* ── CARDS ─────────────────────────────────────────────── */
 .card{
   background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;
+  border-radius:var(--radius-lg);padding:18px;margin-bottom:14px;
+}
+/* Yeni İş: geniş ekranda kartları 2 sütuna böl (masonry) */
+@media(min-width:900px){
+  .cols2{column-count:2;column-gap:14px}
+  .cols2>.card{break-inside:avoid;margin-bottom:14px;display:inline-block;width:100%}
+  .cols2>.card.full{column-span:all}
+  .cols2>.actions{column-span:all;break-inside:avoid}
 }
 .card-title{
   font-size:11px;letter-spacing:.12em;text-transform:uppercase;
@@ -423,8 +430,8 @@ select option{background:var(--surface2)}
     <div class="content">
 
       <!-- ══ YENİ HESAP ══ -->
-      <div id="view-new">
-        <div class="card" style="border-color:var(--accent);background:var(--accent-bg)">
+      <div id="view-new" class="cols2">
+        <div class="card full" style="border-color:var(--accent);background:var(--accent-bg)">
           <div class="card-title" style="color:var(--accent)">Excel'den Aktar</div>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
             <label for="xlsxUpload" class="btn primary" style="flex:none;cursor:pointer;padding:10px 18px;font-size:13.5px;font-weight:600;border-radius:var(--radius);background:var(--accent);color:#fff;display:inline-block">
@@ -496,7 +503,7 @@ select option{background:var(--surface2)}
           <div class="hint">Komisyon yok. Bedel KDV dahil kabul edilir, içinden KDV ayrıştırılır.</div>
         </div>
 
-        <div class="card" style="border-color:var(--accent)">
+        <div class="card full" style="border-color:var(--accent)">
           <div class="card-title" style="color:var(--accent)">Hızlı Ekle (Ekip Rehberi'nden)</div>
           <div class="grid">
             <div>
@@ -555,7 +562,7 @@ select option{background:var(--surface2)}
           <div class="lines" id="tahsilatOzet" style="margin-top:14px"></div>
         </div>
 
-        <div class="card result">
+        <div class="card result full">
           <div class="card-title">Sonuç</div>
           <div class="kpi">
             <div class="lbl">Kâr / Zarar (KDV hariç)</div>
