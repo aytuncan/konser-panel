@@ -1250,7 +1250,7 @@ function fmt(n){
 }
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900);}
 function showTab(t){
-  ['new','saved','odeme','doc','firms','venues','analiz','users'].forEach(id=>{
+  ['new','saved','odeme','doc','firms','venues','ekip','analiz','users'].forEach(id=>{
     const v=document.getElementById('view-'+id);
     const b=document.getElementById('tab'+id.charAt(0).toUpperCase()+id.slice(1));
     if(v) v.style.display=t===id?'block':'none';
@@ -1769,6 +1769,10 @@ let editingFirmId=null;
 const FIRM_FIELDS={fName:'name',fType:'type',fAuth:'auth',fPhone:'phone',fMail:'mail',
   fCity:'city',fCapacity:'capacity',fAddr:'addr',fTaxOffice:'taxOffice',fTaxNo:'taxNo',fIban:'iban',fNote:'note'};
 
+async function loadFirms(){
+  try{const res=await apiFetch('/api/firms');if(!res){firms=[];return;}firms=await res.json();}catch(e){firms=[];}
+}
+
 function gatherFirm(){
   const o={id:editingFirmId||('f'+Date.now())};
   for(const [el,key] of Object.entries(FIRM_FIELDS))o[key]=document.getElementById(el).value;
@@ -1841,6 +1845,10 @@ function fillClientFromFirm(){
 let venues=[];
 let editingVenueId=null;
 const VEN_FIELDS={vName:'name',vCity:'city',vCap:'cap',vPhone:'phone',vAddr:'addr',vStage:'stage',vNote:'note'};
+
+async function loadVenues(){
+  try{const res=await apiFetch('/api/venues');if(!res){venues=[];return;}venues=await res.json();}catch(e){venues=[];}
+}
 
 async function saveVenue(){
   const v={id:editingVenueId||('v'+Date.now())};
@@ -2329,32 +2337,20 @@ let editingEkipId=null;
 let editingGiderId=null;
 
 async function loadKases(){
-  try{
-    const r=await window.storage.list('kase:');
-    const arr=[];
-    if(r&&r.keys){for(const k of r.keys){try{const g=await window.storage.get(k);if(g&&g.value)arr.push(JSON.parse(g.value));}catch(e){}}}
-    arr.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
-    kases=arr;
-  }catch(e){kases=[];}
+  try{kases=JSON.parse(localStorage.getItem('konser_kases')||'[]');}catch(e){kases=[];}
+  kases.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
 }
+function saveKasesLocal(){localStorage.setItem('konser_kases',JSON.stringify(kases));}
 async function loadEkipler(){
-  try{
-    const r=await window.storage.list('ekip:');
-    const arr=[];
-    if(r&&r.keys){for(const k of r.keys){try{const g=await window.storage.get(k);if(g&&g.value)arr.push(JSON.parse(g.value));}catch(e){}}}
-    arr.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
-    ekipler=arr;
-  }catch(e){ekipler=[];}
+  try{ekipler=JSON.parse(localStorage.getItem('konser_ekipler')||'[]');}catch(e){ekipler=[];}
+  ekipler.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
 }
+function saveEkiplerLocal(){localStorage.setItem('konser_ekipler',JSON.stringify(ekipler));}
 async function loadGiderler(){
-  try{
-    const r=await window.storage.list('gider:');
-    const arr=[];
-    if(r&&r.keys){for(const k of r.keys){try{const g=await window.storage.get(k);if(g&&g.value)arr.push(JSON.parse(g.value));}catch(e){}}}
-    arr.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
-    giderler=arr;
-  }catch(e){giderler=[];}
+  try{giderler=JSON.parse(localStorage.getItem('konser_giderler')||'[]');}catch(e){giderler=[];}
+  giderler.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
 }
+function saveGiderlerLocal(){localStorage.setItem('konser_giderler',JSON.stringify(giderler));}
 
 function gatherKase(){
   return {id:editingKaseId||('kas'+Date.now()),name:document.getElementById('kaseName').value,amount:+document.getElementById('kaseAmount').value||0};
@@ -2362,7 +2358,9 @@ function gatherKase(){
 async function saveKase(){
   const k=gatherKase();
   if(!k.name||!k.amount){toast('Kaşe adı ve tutar gerekli');return;}
-  try{await window.storage.set('kase:'+k.id,JSON.stringify(k));}catch(e){toast('Kaydedilemedi');return;}
+  const ex=kases.findIndex(x=>x.id===k.id);
+  if(ex>=0)kases[ex]=k;else kases.push(k);
+  saveKasesLocal();
   await loadKases();
   resetKaseForm();
   renderKases();
@@ -2387,7 +2385,7 @@ function editKase(id){
 }
 async function delKase(id){
   if(!confirm('Bu kaşeyi silmek istiyor musun?'))return;
-  try{await window.storage.delete('kase:'+id);}catch(e){}
+  kases=kases.filter(x=>x.id!==id);saveKasesLocal();
   await loadKases();
   renderKases();
   renderEkipFormCheckboxes();
@@ -2442,7 +2440,9 @@ function gatherEkip(){
 async function saveEkip(){
   const e=gatherEkip();
   if(!e.name||!e.kaseIds.length){toast('Ekip adı ve en az bir kaşe gerekli');return;}
-  try{await window.storage.set('ekip:'+e.id,JSON.stringify(e));}catch(e){toast('Kaydedilemedi');return;}
+  const ex=ekipler.findIndex(x=>x.id===e.id);
+  if(ex>=0)ekipler[ex]=e;else ekipler.push(e);
+  saveEkiplerLocal();
   await loadEkipler();
   resetEkipForm();
   renderEkipler();
@@ -2468,7 +2468,7 @@ function editEkip(id){
 }
 async function delEkip(id){
   if(!confirm('Bu ekibi silmek istiyor musun?'))return;
-  try{await window.storage.delete('ekip:'+id);}catch(e){}
+  ekipler=ekipler.filter(x=>x.id!==id);saveEkiplerLocal();
   await loadEkipler();
   renderEkipler();
   toast('Silindi');
@@ -2499,7 +2499,9 @@ function gatherGider(){
 async function saveGider(){
   const g=gatherGider();
   if(!g.name||!g.amount){toast('Gider adı ve tutar gerekli');return;}
-  try{await window.storage.set('gider:'+g.id,JSON.stringify(g));}catch(e){toast('Kaydedilemedi');return;}
+  const ex=giderler.findIndex(x=>x.id===g.id);
+  if(ex>=0)giderler[ex]=g;else giderler.push(g);
+  saveGiderlerLocal();
   await loadGiderler();
   resetGiderForm();
   renderGiderler();
@@ -2523,7 +2525,7 @@ function editGider(id){
 }
 async function delGider(id){
   if(!confirm('Bu gideri silmek istiyor musun?'))return;
-  try{await window.storage.delete('gider:'+id);}catch(e){}
+  giderler=giderler.filter(x=>x.id!==id);saveGiderlerLocal();
   await loadGiderler();
   renderGiderler();
   toast('Silindi');
