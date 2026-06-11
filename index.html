@@ -378,6 +378,9 @@ select option{background:var(--surface2)}
       <button class="nav-item" id="tabVenues" onclick="showTab('venues')">
         <span class="icon">⊟</span> Mekanlar
       </button>
+      <button class="nav-item" id="tabEkip" onclick="showTab('ekip')">
+        <span class="icon">⋈</span> Ekip Rehberi
+      </button>
 
       <div class="nav-section">Raporlar</div>
       <button class="nav-item" id="tabAnaliz" onclick="showTab('analiz')">
@@ -767,6 +770,73 @@ select option{background:var(--surface2)}
           <div class="card-title">Kayıtlı Mekanlar</div>
           <input id="venSearch" placeholder="Ara: ad, şehir..." oninput="renderVenues()" style="margin-bottom:14px">
           <div class="saved-list" id="venList"></div>
+        </div>
+      </div>
+
+      <!-- ══ EKİP REHBERİ ══ -->
+      <div id="view-ekip" style="display:none">
+        <!-- SABIT KAŞELER -->
+        <div class="card">
+          <div class="card-title" id="kaseFormTitle">Yeni Kaşe</div>
+          <div class="grid">
+            <div><label>Kaşe adı *</label><input id="kaseName" placeholder="Bass Gitar"></div>
+            <div><label>Sabit tutar (₺) *</label><input id="kaseAmount" type="number" min="0" placeholder="17000"></div>
+          </div>
+          <div class="actions">
+            <button class="btn primary" onclick="saveKase()" id="kaseSaveBtn">Kaşe kaydet</button>
+            <button class="btn ghost" onclick="resetKaseForm()">Temizle</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Kayıtlı Kaşeler</div>
+          <input id="kaseSearch" placeholder="Ara: adı, tutar..." oninput="renderKases()" style="margin-bottom:14px">
+          <div class="saved-list" id="kaseList"></div>
+        </div>
+
+        <!-- EKİPLER -->
+        <div class="card">
+          <div class="card-title" id="ekipFormTitle">Yeni Ekip</div>
+          <div class="grid">
+            <div><label>Ekip adı *</label><input id="ekipName" placeholder="Full Band"></div>
+          </div>
+          <div style="margin-top:14px">
+            <label>Kaşeleri seç</label>
+            <div id="kaseCheckboxes" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:8px;max-height:200px;overflow-y:auto"></div>
+          </div>
+          <div style="margin-top:14px;padding:12px;background:var(--faint);border-radius:var(--radius);font-size:13px">
+            <div style="color:var(--muted);margin-bottom:4px">Ekip Toplamı</div>
+            <div style="font-size:18px;font-weight:800" id="ekipTotal">0 ₺</div>
+          </div>
+          <div class="actions" style="margin-top:12px">
+            <button class="btn primary" onclick="saveEkip()" id="ekipSaveBtn">Ekip kaydet</button>
+            <button class="btn ghost" onclick="resetEkipForm()">Temizle</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Kayıtlı Ekipler</div>
+          <input id="ekipSearch" placeholder="Ara: adı..." oninput="renderEkipler()" style="margin-bottom:14px">
+          <div class="saved-list" id="ekipList"></div>
+        </div>
+
+        <!-- SABİT GİDERLER -->
+        <div class="card">
+          <div class="card-title" id="giderFormTitle">Yeni Sabit Gider</div>
+          <div class="grid">
+            <div><label>Gider adı *</label><input id="giderName" placeholder="Sahne kurulumu"></div>
+            <div><label>Sabit tutar (₺) *</label><input id="giderAmount" type="number" min="0" placeholder="5000"></div>
+          </div>
+          <div class="actions">
+            <button class="btn primary" onclick="saveGider()" id="giderSaveBtn">Gider kaydet</button>
+            <button class="btn ghost" onclick="resetGiderForm()">Temizle</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Kayıtlı Giderler</div>
+          <input id="giderSearch" placeholder="Ara: adı, tutar..." oninput="renderGiderler()" style="margin-bottom:14px">
+          <div class="saved-list" id="giderList"></div>
         </div>
       </div>
 
@@ -1193,6 +1263,7 @@ function showTab(t){
   if(t==='doc'){refreshDocPicker();refreshFirmPicker();}
   if(t==='firms')renderFirms();
   if(t==='venues')renderVenues();
+  if(t==='ekip')renderEkip();
   if(t==='analiz')renderAnaliz();
   if(t==='users')renderUsers();
 }
@@ -2249,6 +2320,240 @@ function renderAcc(){
   });
 }
 
+// ---------- ekip rehberi (kaşe, ekip, gider) ----------
+let kases=[];
+let ekipler=[];
+let giderler=[];
+let editingKaseId=null;
+let editingEkipId=null;
+let editingGiderId=null;
+
+async function loadKases(){
+  try{
+    const r=await window.storage.list('kase:');
+    const arr=[];
+    if(r&&r.keys){for(const k of r.keys){try{const g=await window.storage.get(k);if(g&&g.value)arr.push(JSON.parse(g.value));}catch(e){}}}
+    arr.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
+    kases=arr;
+  }catch(e){kases=[];}
+}
+async function loadEkipler(){
+  try{
+    const r=await window.storage.list('ekip:');
+    const arr=[];
+    if(r&&r.keys){for(const k of r.keys){try{const g=await window.storage.get(k);if(g&&g.value)arr.push(JSON.parse(g.value));}catch(e){}}}
+    arr.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
+    ekipler=arr;
+  }catch(e){ekipler=[];}
+}
+async function loadGiderler(){
+  try{
+    const r=await window.storage.list('gider:');
+    const arr=[];
+    if(r&&r.keys){for(const k of r.keys){try{const g=await window.storage.get(k);if(g&&g.value)arr.push(JSON.parse(g.value));}catch(e){}}}
+    arr.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
+    giderler=arr;
+  }catch(e){giderler=[];}
+}
+
+function gatherKase(){
+  return {id:editingKaseId||('kas'+Date.now()),name:document.getElementById('kaseName').value,amount:+document.getElementById('kaseAmount').value||0};
+}
+async function saveKase(){
+  const k=gatherKase();
+  if(!k.name||!k.amount){toast('Kaşe adı ve tutar gerekli');return;}
+  try{await window.storage.set('kase:'+k.id,JSON.stringify(k));}catch(e){toast('Kaydedilemedi');return;}
+  await loadKases();
+  resetKaseForm();
+  renderKases();
+  renderEkipFormCheckboxes();
+  toast('Kaşe kaydedildi');
+}
+function resetKaseForm(){
+  editingKaseId=null;
+  document.getElementById('kaseName').value='';
+  document.getElementById('kaseAmount').value='';
+  document.getElementById('kaseFormTitle').textContent='Yeni Kaşe';
+  document.getElementById('kaseSaveBtn').textContent='Kaşe kaydet';
+}
+function editKase(id){
+  const k=kases.find(x=>x.id===id);if(!k)return;
+  editingKaseId=k.id;
+  document.getElementById('kaseName').value=k.name||'';
+  document.getElementById('kaseAmount').value=k.amount||'';
+  document.getElementById('kaseFormTitle').textContent='Kaşe Düzenle';
+  document.getElementById('kaseSaveBtn').textContent='Değişiklikleri kaydet';
+  document.getElementById('view-ekip').scrollIntoView({behavior:'smooth'});
+}
+async function delKase(id){
+  if(!confirm('Bu kaşeyi silmek istiyor musun?'))return;
+  try{await window.storage.delete('kase:'+id);}catch(e){}
+  await loadKases();
+  renderKases();
+  renderEkipFormCheckboxes();
+  toast('Silindi');
+}
+function renderKases(){
+  const wrap=document.getElementById('kaseList');
+  const q=(document.getElementById('kaseSearch').value||'').toLocaleLowerCase('tr');
+  const list=kases.filter(k=>!q||[k.name].some(v=>(v||'').toLocaleLowerCase('tr').includes(q)));
+  if(!list.length){wrap.innerHTML='<div class="empty"><div class="big">♭</div>'+(kases.length?'Eşleşen kaşe yok.':'Henüz kaşe yok.')+'</div>';return;}
+  wrap.innerHTML='';
+  list.forEach(k=>{
+    const d=document.createElement('div');d.className='saved-item';
+    d.onclick=(e)=>{if(e.target.classList.contains('del'))return;editKase(k.id);};
+    d.innerHTML=`
+      <div class="info">
+        <div class="ttl">${esc(k.name)}</div>
+        <div class="sub">${fmt(k.amount)}</div>
+      </div>
+      <button class="del" title="Sil" onclick="delKase('${k.id}')">🗑</button>`;
+    wrap.appendChild(d);
+  });
+}
+
+function renderEkipFormCheckboxes(){
+  const wrap=document.getElementById('kaseCheckboxes');
+  if(!kases.length){wrap.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px">Önce kaşe ekle.</div>';return;}
+  wrap.innerHTML='';
+  kases.forEach(k=>{
+    const chk=document.createElement('label');
+    chk.style.display='flex';chk.style.alignItems='center';chk.style.gap='8px';chk.style.padding='6px 0';chk.style.cursor='pointer';
+    const inp=document.createElement('input');inp.type='checkbox';inp.value=k.id;inp.onchange=updateEkipTotal;
+    chk.appendChild(inp);
+    chk.appendChild(document.createTextNode(k.name+' — '+fmt(k.amount)));
+    wrap.appendChild(chk);
+  });
+}
+function updateEkipTotal(){
+  const chks=[...document.getElementById('kaseCheckboxes').querySelectorAll('input[type=checkbox]:checked')];
+  const total=chks.reduce((a,ch)=>{const k=kases.find(x=>x.id===ch.value);return a+(k?.amount||0);},0);
+  document.getElementById('ekipTotal').textContent=fmt(total);
+}
+
+function gatherEkip(){
+  const chks=[...document.getElementById('kaseCheckboxes').querySelectorAll('input[type=checkbox]:checked')];
+  return {
+    id:editingEkipId||('ekp'+Date.now()),
+    name:document.getElementById('ekipName').value,
+    kaseIds:chks.map(ch=>ch.value)
+  };
+}
+async function saveEkip(){
+  const e=gatherEkip();
+  if(!e.name||!e.kaseIds.length){toast('Ekip adı ve en az bir kaşe gerekli');return;}
+  try{await window.storage.set('ekip:'+e.id,JSON.stringify(e));}catch(e){toast('Kaydedilemedi');return;}
+  await loadEkipler();
+  resetEkipForm();
+  renderEkipler();
+  toast('Ekip kaydedildi');
+}
+function resetEkipForm(){
+  editingEkipId=null;
+  document.getElementById('ekipName').value='';
+  [...document.getElementById('kaseCheckboxes').querySelectorAll('input[type=checkbox]')].forEach(ch=>ch.checked=false);
+  updateEkipTotal();
+  document.getElementById('ekipFormTitle').textContent='Yeni Ekip';
+  document.getElementById('ekipSaveBtn').textContent='Ekip kaydet';
+}
+function editEkip(id){
+  const e=ekipler.find(x=>x.id===id);if(!e)return;
+  editingEkipId=e.id;
+  document.getElementById('ekipName').value=e.name||'';
+  [...document.getElementById('kaseCheckboxes').querySelectorAll('input[type=checkbox]')].forEach(ch=>ch.checked=e.kaseIds.includes(ch.value));
+  updateEkipTotal();
+  document.getElementById('ekipFormTitle').textContent='Ekip Düzenle';
+  document.getElementById('ekipSaveBtn').textContent='Değişiklikleri kaydet';
+  document.getElementById('view-ekip').scrollIntoView({behavior:'smooth'});
+}
+async function delEkip(id){
+  if(!confirm('Bu ekibi silmek istiyor musun?'))return;
+  try{await window.storage.delete('ekip:'+id);}catch(e){}
+  await loadEkipler();
+  renderEkipler();
+  toast('Silindi');
+}
+function renderEkipler(){
+  const wrap=document.getElementById('ekipList');
+  const q=(document.getElementById('ekipSearch').value||'').toLocaleLowerCase('tr');
+  const list=ekipler.filter(e=>!q||(e.name||'').toLocaleLowerCase('tr').includes(q));
+  if(!list.length){wrap.innerHTML='<div class="empty"><div class="big">⋈</div>'+(ekipler.length?'Eşleşen ekip yok.':'Henüz ekip yok.')+'</div>';return;}
+  wrap.innerHTML='';
+  list.forEach(e=>{
+    const kaseTxt=(e.kaseIds||[]).map(id=>kases.find(k=>k.id===id)?.name).filter(Boolean).join(', ');
+    const d=document.createElement('div');d.className='saved-item';
+    d.onclick=(e)=>{if(e.target.classList.contains('del'))return;editEkip(e.id);};
+    d.innerHTML=`
+      <div class="info">
+        <div class="ttl">${esc(e.name)}</div>
+        <div class="sub">${kaseTxt||'kaşe yok'}</div>
+      </div>
+      <button class="del" title="Sil" onclick="delEkip('${e.id}')">🗑</button>`;
+    wrap.appendChild(d);
+  });
+}
+
+function gatherGider(){
+  return {id:editingGiderId||('gdr'+Date.now()),name:document.getElementById('giderName').value,amount:+document.getElementById('giderAmount').value||0};
+}
+async function saveGider(){
+  const g=gatherGider();
+  if(!g.name||!g.amount){toast('Gider adı ve tutar gerekli');return;}
+  try{await window.storage.set('gider:'+g.id,JSON.stringify(g));}catch(e){toast('Kaydedilemedi');return;}
+  await loadGiderler();
+  resetGiderForm();
+  renderGiderler();
+  toast('Gider kaydedildi');
+}
+function resetGiderForm(){
+  editingGiderId=null;
+  document.getElementById('giderName').value='';
+  document.getElementById('giderAmount').value='';
+  document.getElementById('giderFormTitle').textContent='Yeni Sabit Gider';
+  document.getElementById('giderSaveBtn').textContent='Gider kaydet';
+}
+function editGider(id){
+  const g=giderler.find(x=>x.id===id);if(!g)return;
+  editingGiderId=g.id;
+  document.getElementById('giderName').value=g.name||'';
+  document.getElementById('giderAmount').value=g.amount||'';
+  document.getElementById('giderFormTitle').textContent='Gider Düzenle';
+  document.getElementById('giderSaveBtn').textContent='Değişiklikleri kaydet';
+  document.getElementById('view-ekip').scrollIntoView({behavior:'smooth'});
+}
+async function delGider(id){
+  if(!confirm('Bu gideri silmek istiyor musun?'))return;
+  try{await window.storage.delete('gider:'+id);}catch(e){}
+  await loadGiderler();
+  renderGiderler();
+  toast('Silindi');
+}
+function renderGiderler(){
+  const wrap=document.getElementById('giderList');
+  const q=(document.getElementById('giderSearch').value||'').toLocaleLowerCase('tr');
+  const list=giderler.filter(g=>!q||[g.name].some(v=>(v||'').toLocaleLowerCase('tr').includes(q)));
+  if(!list.length){wrap.innerHTML='<div class="empty"><div class="big">⊞</div>'+(giderler.length?'Eşleşen gider yok.':'Henüz gider yok.')+'</div>';return;}
+  wrap.innerHTML='';
+  list.forEach(g=>{
+    const d=document.createElement('div');d.className='saved-item';
+    d.onclick=(e)=>{if(e.target.classList.contains('del'))return;editGider(g.id);};
+    d.innerHTML=`
+      <div class="info">
+        <div class="ttl">${esc(g.name)}</div>
+        <div class="sub">${fmt(g.amount)}</div>
+      </div>
+      <button class="del" title="Sil" onclick="delGider('${g.id}')">🗑</button>`;
+    wrap.appendChild(d);
+  });
+}
+
+function renderEkip(){
+  renderEkipFormCheckboxes();
+  renderKases();
+  renderEkipler();
+  renderGiderler();
+}
+
 // ---------- analiz ----------
 function bar(name,numLabel,ratio,neg){
   const w=Math.max(0,Math.min(100,ratio*100));
@@ -2329,6 +2634,9 @@ async function initApp(){
   await loadCompany();
   await loadFirms();
   await loadVenues();
+  await loadKases();
+  await loadEkipler();
+  await loadGiderler();
   await loadAcc();
   refreshVenuePicker();
   setAccYon('gelir');
