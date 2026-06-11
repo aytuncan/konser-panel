@@ -496,6 +496,25 @@ select option{background:var(--surface2)}
           <div class="hint">Komisyon yok. Bedel KDV dahil kabul edilir, içinden KDV ayrıştırılır.</div>
         </div>
 
+        <div class="card" style="border-color:var(--accent)">
+          <div class="card-title" style="color:var(--accent)">Hızlı Ekle (Ekip Rehberi'nden)</div>
+          <div class="grid">
+            <div>
+              <label>Hazır ekip seç → kaşeleri ekle</label>
+              <select id="ekipPick" onchange="addEkipToForm()">
+                <option value="">— ekip seç —</option>
+              </select>
+            </div>
+            <div>
+              <label>Sabit gider seç → ekle</label>
+              <select id="giderPick" onchange="addGiderToForm()">
+                <option value="">— sabit gider seç —</option>
+              </select>
+            </div>
+          </div>
+          <div class="hint">Ekip seçince ekibin tüm kaşeleri aşağıdaki Kaşe Giderleri'ne, sabit gider seçince Konser Giderleri'ne eklenir. Tutarları sonra düzenleyebilirsin. Liste boşsa "Ekip Rehberi" sekmesinden ekle.</div>
+        </div>
+
         <div class="card">
           <div class="card-title">Kaşe Giderleri</div>
           <div class="row-head kase"><span>İsim</span><span>Tutar ₺</span><span>KDV?</span><span></span></div>
@@ -1258,6 +1277,7 @@ function showTab(t){
   });
   document.getElementById('pageTitle').textContent=PAGE_TITLES[t]||'';
   closeSidebar();
+  if(t==='new')refreshEkipGiderPickers();
   if(t==='saved')setSavedFilter(savedFilter);
   if(t==='odeme'){refreshAccFirmPicker();renderOdeme();}
   if(t==='doc'){refreshDocPicker();refreshFirmPicker();}
@@ -2556,6 +2576,57 @@ function renderEkip(){
   renderGiderler();
 }
 
+// Yeni İş formundaki ekip/gider seçici dropdown'larını doldur
+function refreshEkipGiderPickers(){
+  const es=document.getElementById('ekipPick');
+  if(es){
+    const cur=es.value;
+    es.innerHTML='<option value="">— ekip seç —</option>';
+    ekipler.forEach(e=>{
+      const toplam=(e.kaseIds||[]).reduce((a,id)=>{const k=kases.find(x=>x.id===id);return a+(k?.amount||0);},0);
+      const o=document.createElement('option');o.value=e.id;
+      o.textContent=e.name+' ('+fmt(toplam)+')';
+      es.appendChild(o);
+    });
+    es.value=cur;
+  }
+  const gs=document.getElementById('giderPick');
+  if(gs){
+    const cur=gs.value;
+    gs.innerHTML='<option value="">— sabit gider seç —</option>';
+    giderler.forEach(g=>{
+      const o=document.createElement('option');o.value=g.id;
+      o.textContent=g.name+' — '+fmt(g.amount);
+      gs.appendChild(o);
+    });
+    gs.value=cur;
+  }
+}
+// Seçilen ekibin tüm kaşelerini forma ekle
+function addEkipToForm(){
+  const id=document.getElementById('ekipPick').value;
+  if(!id)return;
+  const e=ekipler.find(x=>x.id===id);
+  if(!e){document.getElementById('ekipPick').value='';return;}
+  let eklenen=0;
+  (e.kaseIds||[]).forEach(kid=>{
+    const k=kases.find(x=>x.id===kid);
+    if(k){addRow('kase',k.name,k.amount,false);eklenen++;}
+  });
+  document.getElementById('ekipPick').value='';
+  if(eklenen)toast(e.name+' eklendi ('+eklenen+' kaşe)');
+}
+// Seçilen sabit gideri forma ekle
+function addGiderToForm(){
+  const id=document.getElementById('giderPick').value;
+  if(!id)return;
+  const g=giderler.find(x=>x.id===id);
+  if(!g){document.getElementById('giderPick').value='';return;}
+  addRow('gider',g.name,g.amount,false);
+  document.getElementById('giderPick').value='';
+  toast(g.name+' eklendi');
+}
+
 // ---------- analiz ----------
 function bar(name,numLabel,ratio,neg){
   const w=Math.max(0,Math.min(100,ratio*100));
@@ -2640,6 +2711,7 @@ async function initApp(){
   await loadGiderler();
   await loadAcc();
   refreshVenuePicker();
+  refreshEkipGiderPickers();
   setAccYon('gelir');
   calc();
 }
