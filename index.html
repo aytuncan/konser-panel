@@ -375,8 +375,12 @@ select option{background:var(--surface)}
     </div>
 
     <nav class="nav">
+      <div class="nav-section">Genel</div>
+      <button class="nav-item" id="tabDashboard" onclick="showTab('dashboard')">
+        <span class="icon">⬚</span> Dashboard
+      </button>
       <div class="nav-section">İşler</div>
-      <button class="nav-item active" id="tabNew" onclick="showTab('new')">
+      <button class="nav-item" id="tabNew" onclick="showTab('new')">
         <span class="icon">✦</span> Yeni İş
       </button>
       <button class="nav-item" id="tabSaved" onclick="showTab('saved')">
@@ -440,6 +444,32 @@ select option{background:var(--surface)}
     </header>
 
     <div class="content">
+
+      <div id="view-dashboard" style="display:none">
+        <div class="card">
+          <div class="card-title">Genel Bakış</div>
+          <div class="stat-grid" id="dashOzet"></div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-title">Yaklaşan Etkinlikler</div>
+            <div class="hint" style="margin-bottom:16px">Bugün ve sonrası, en yakın tarihli üstte.</div>
+            <div id="dashEtkinlik"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Yaklaşan / Geciken Ödemeler</div>
+            <div class="hint" style="margin-bottom:16px">Vade planına göre açık tahsilatlar.</div>
+            <div id="dashVade"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Ödenmemiş Kaşeler</div>
+          <div class="hint" style="margin-bottom:16px">Ekibe yapılacak açık ödemeler. Detay için "Ekip Ödemeleri" sekmesine git.</div>
+          <div id="dashKase"></div>
+        </div>
+      </div>
 
       <div id="view-new" class="cols2">
         <div class="full" style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-bottom:24px">
@@ -1214,7 +1244,7 @@ function applyXlsx() {
 }
 
 const PAGE_TITLES={
-  new:'Yeni İş',saved:'İşler',odeme:'Muhasebe',ekipodeme:'Ekip Ödemeleri',
+  dashboard:'Dashboard',new:'Yeni İş',saved:'İşler',odeme:'Muhasebe',ekipodeme:'Ekip Ödemeleri',
   doc:'Teklif & Sözleşme',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
   users:'Kullanıcılar'
 };
@@ -1255,7 +1285,7 @@ function fmt(n){
 }
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900);}
 function showTab(t){
-  ['new','saved','odeme','ekipodeme','doc','firms','venues','ekip','analiz','users'].forEach(id=>{
+  ['dashboard','new','saved','odeme','ekipodeme','doc','firms','venues','ekip','analiz','users'].forEach(id=>{
     const v=document.getElementById('view-'+id);
     const tabId = id==='ekipodeme' ? 'tabEkipOdeme' : 'tab'+id.charAt(0).toUpperCase()+id.slice(1);
     const b=document.getElementById(tabId);
@@ -1270,6 +1300,7 @@ function showTab(t){
   });
   document.getElementById('pageTitle').textContent=PAGE_TITLES[t]||'';
   closeSidebar();
+  if(t==='dashboard')renderDashboard();
   if(t==='new')refreshEkipGiderPickers();
   if(t==='saved')setSavedFilter(savedFilter);
   if(t==='odeme'){refreshAccFirmPicker();renderOdeme();}
@@ -2590,6 +2621,110 @@ function addGiderToForm(){
   toast(g.name+' eklendi');
 }
 
+// ── DASHBOARD ────────────────────────────────────────────
+function renderDashboard(){
+  const bugun=new Date();bugun.setHours(0,0,0,0);
+  const ay=new Date().toISOString().slice(0,7); // YYYY-MM
+
+  // özet kartları
+  let buAyKar=0, acikAlacak=0;
+  events.forEach(ev=>{
+    const c=computeFor(ev);
+    const t=tahsilatFor(ev);
+    if((ev.tarih||'').slice(0,7)===ay) buAyKar+=c.kar;
+    if(t.kalan>0.5) acikAlacak+=t.kalan;
+  });
+  const acikKaseler=tumKaseler().filter(k=>!k.odendi);
+  const acikKaseTutar=acikKaseler.reduce((a,k)=>a+k.amount,0);
+  const yaklasanEtkinlik=events.filter(ev=>{
+    if(!ev.tarih)return false;
+    const d=new Date(ev.tarih+'T00:00:00');
+    return d>=bugun;
+  });
+
+  document.getElementById('dashOzet').innerHTML=`
+    <div class="stat"><div class="n">Toplam İş</div><div class="v">${events.length}</div></div>
+    <div class="stat"><div class="n">Bu Ayki Kâr</div><div class="v ${buAyKar>=0?'pos':'neg'}">${fmt(buAyKar)}</div></div>
+    <div class="stat"><div class="n">Açık Alacak</div><div class="v ${acikAlacak>0.5?'neg':'pos'}">${fmt(acikAlacak)}</div></div>
+    <div class="stat"><div class="n">Ödenmemiş Kaşe</div><div class="v ${acikKaseTutar>0.5?'neg':'pos'}">${fmt(acikKaseTutar)}</div></div>`;
+
+  // yaklaşan etkinlikler
+  const etkWrap=document.getElementById('dashEtkinlik');
+  const etkSirali=yaklasanEtkinlik.slice().sort((a,b)=>(a.tarih||'9999').localeCompare(b.tarih||'9999')).slice(0,8);
+  if(!etkSirali.length){
+    etkWrap.innerHTML='<div class="anEmpty">Yaklaşan etkinlik yok.</div>';
+  }else{
+    etkWrap.innerHTML='';
+    etkSirali.forEach(ev=>{
+      const c=computeFor(ev);
+      const gf=gunFarki(ev.tarih);
+      const gfTxt=gf===0?'bugün':gf===1?'yarın':gf+' gün sonra';
+      const d=document.createElement('div');
+      d.className='saved-item';
+      d.onclick=()=>restore(ev);
+      d.innerHTML=`
+        <div class="info">
+          <div class="ttl">${esc(ev.sehir||'')} ${ev.mekan?'· '+esc(ev.mekan):''}<span class="badge">${ev.tip==='KAPI'?'KAPI':'ORG'}</span></div>
+          <div class="sub">${trDate(ev.tarih)} · <span class="warn">${gfTxt}</span></div>
+        </div>
+        <div class="pnl"><div class="a ${c.kar>=0?'pos':'neg'}">${fmt(c.kar)}</div></div>`;
+      etkWrap.appendChild(d);
+    });
+  }
+
+  // yaklaşan/geciken ödemeler
+  const vadeWrap=document.getElementById('dashVade');
+  const vadeSatir=[];
+  events.forEach(ev=>{
+    const t=tahsilatFor(ev);
+    (t.vadeler||[]).forEach(v=>{
+      if(v.durum==='ödendi')return;
+      if(v.durum==='gecikmiş'||v.durum==='yaklaşıyor'){
+        vadeSatir.push({ev,v,isim:(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')});
+      }
+    });
+  });
+  vadeSatir.sort((a,b)=>{
+    const o={'gecikmiş':0,'yaklaşıyor':1};
+    return (o[a.v.durum]-o[b.v.durum])||((a.v.date||'9999').localeCompare(b.v.date||'9999'));
+  });
+  if(!vadeSatir.length){
+    vadeWrap.innerHTML='<div class="anEmpty">Yaklaşan/geciken ödeme yok.</div>';
+  }else{
+    vadeWrap.innerHTML='';
+    vadeSatir.slice(0,8).forEach(({ev,v,isim})=>{
+      const etiket=v.durum==='gecikmiş'?'Gecikmiş':'Yaklaşıyor';
+      const tarihTxt=v.date?trDate(v.date):'tarihsiz';
+      const gfTxt=(v.durum==='gecikmiş'&&v.gf!=null)?` (${-v.gf}g geçti)`:(v.durum==='yaklaşıyor'&&v.gf!=null)?` (${v.gf}g kaldı)`:'';
+      const d=document.createElement('div');
+      d.className='saved-item';
+      d.onclick=()=>restore(ev);
+      d.innerHTML=`
+        <div class="info">
+          <div class="ttl">${esc(isim)} <span class="vbadge ${v.renk}">${etiket}</span></div>
+          <div class="sub">${esc(v.name||'Taksit')} · ${tarihTxt}${gfTxt}</div>
+        </div>
+        <div class="pnl"><div class="a ${v.renk}">${fmt(v.acik)}</div></div>`;
+      vadeWrap.appendChild(d);
+    });
+  }
+
+  // ödenmemiş kaşeler
+  const kaseWrap=document.getElementById('dashKase');
+  const kaseSirali=acikKaseler.slice().sort((a,b)=>(a.ev.tarih||'9999').localeCompare(b.ev.tarih||'9999')).slice(0,10);
+  if(!kaseSirali.length){
+    kaseWrap.innerHTML='<div class="anEmpty">Ödenmemiş kaşe yok 🎉</div>';
+  }else{
+    let h='<table class="atable"><thead><tr><th>Kişi</th><th>İş</th><th>Tarih</th><th>Tutar</th></tr></thead><tbody>';
+    kaseSirali.forEach(k=>{
+      const isim=(k.ev.sehir||'')+(k.ev.mekan?' · '+k.ev.mekan:'');
+      h+=`<tr><td>${esc(k.name)}</td><td>${esc(isim)}</td><td>${k.ev.tarih?trDate(k.ev.tarih):'—'}</td><td class="neg">${fmt(k.amount)}</td></tr>`;
+    });
+    h+='</tbody></table>';
+    kaseWrap.innerHTML=h;
+  }
+}
+
 function bar(name,numLabel,ratio,neg){
   const w=Math.max(0,Math.min(100,ratio*100));
   return `<div class="bar-row"><div class="bl"><span class="name">${esc(name)}</span><span class="num">${numLabel}</span></div>
@@ -2775,6 +2910,7 @@ async function initApp(){
   refreshEkipGiderPickers();
   setAccYon('gelir');
   calc();
+  showTab('dashboard');
 }
 
 function applyUserUI(){
