@@ -525,8 +525,14 @@ select option{background:var(--surface)}
                 <button id="tipOrg" onclick="setTip('ORGANIZATOR')">ORGANİZATÖR</button>
               </div>
             </div>
+            <div>
+              <label>Organizatör / Karşı taraf firma</label>
+              <select id="evFirmPick">
+                <option value="">— firma yok / seç —</option>
+              </select>
+            </div>
           </div>
-          <div class="hint">Mekanı listeden seçersen şehir ve kapasite otomatik gelir ve kilitlenir.</div>
+          <div class="hint">Mekanı listeden seçersen şehir ve kapasite otomatik gelir ve kilitlenir. Organizatör firmayı seçersen alacak/verecek Muhasebe'de o firmanın cari hesabında toplanır.</div>
         </div>
 
         <div class="card">
@@ -1301,7 +1307,7 @@ function showTab(t){
   document.getElementById('pageTitle').textContent=PAGE_TITLES[t]||'';
   closeSidebar();
   if(t==='dashboard')renderDashboard();
-  if(t==='new')refreshEkipGiderPickers();
+  if(t==='new'){refreshEkipGiderPickers();refreshEvFirmPicker();}
   if(t==='saved')setSavedFilter(savedFilter);
   if(t==='odeme'){refreshAccFirmPicker();renderOdeme();}
   if(t==='ekipodeme')renderEkipOdeme();
@@ -1531,6 +1537,7 @@ function gather(){
     tarih:document.getElementById('tarih').value,
     tip,
     venueId:document.getElementById('mekanPick').value||'',
+    firmId:document.getElementById('evFirmPick').value||'',
     kapasite:+document.getElementById('kapasite').value||0,
     satilan:+document.getElementById('satilan').value||0,
     biletAdet:+document.getElementById('biletAdet').value||0,
@@ -1555,6 +1562,8 @@ function restore(ev){
   document.getElementById('satilan').value=ev.satilan||'';
   refreshVenuePicker();
   document.getElementById('mekanPick').value=ev.venueId||'';
+  refreshEvFirmPicker();
+  document.getElementById('evFirmPick').value=ev.firmId||'';
   if(ev.venueId){['mekan','sehir','kapasite'].forEach(id=>{const e=document.getElementById(id);e.readOnly=true;e.style.opacity='.7';});}
   else{['mekan','sehir','kapasite'].forEach(id=>{const e=document.getElementById(id);e.readOnly=false;e.style.opacity='1';});}
   document.getElementById('biletAdet').value=ev.biletAdet||'';
@@ -1581,6 +1590,7 @@ function resetForm(){
   editingId=null;
   ['sehir','mekan','tarih','biletAdet','biletFiyat','orgBedel','kapasite','satilan'].forEach(id=>document.getElementById(id).value='');
   const mp=document.getElementById('mekanPick');if(mp)mp.value='';
+  const efp=document.getElementById('evFirmPick');if(efp)efp.value='';
   ['mekan','sehir','kapasite'].forEach(id=>{const e=document.getElementById(id);e.readOnly=false;e.style.opacity='1';});
   document.getElementById('komOran').value=15.75;
   document.getElementById('kdvOran').value=20;document.getElementById('kdvOranOrg').value=20;
@@ -1862,6 +1872,13 @@ function refreshFirmPicker(){
   const cur=sel.value;
   sel.innerHTML='<option value="">— rehberden seç / elle gir —</option>';
   firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.city?' · '+f.city:'')+(f.capacity?' · '+f.capacity+' kişi':'')+(f.type?' ('+f.type+')':'');sel.appendChild(o);});
+  sel.value=cur;
+}
+function refreshEvFirmPicker(){
+  const sel=document.getElementById('evFirmPick');if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— firma yok / seç —</option>';
+  firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.city?' · '+f.city:'')+(f.type?' ('+f.type+')':'');sel.appendChild(o);});
   sel.value=cur;
 }
 function fillClientFromFirm(){
@@ -2187,9 +2204,17 @@ function accAggregate(){
     toplamGider+=a.c.giderNet;
     toplamArtist+=a.c.p1amt;
     toplamManager+=a.c.p2amt;
-    const fid=ev.venueId? ('v:'+ev.venueId):'';   
-    const nm=ev.mekan||ev.sehir||'(konser)';
-    if(a.tah.kalan>0.5){alacak+=a.tah.kalan;ensureCari('', nm).alacak+=a.tah.kalan;}
+    // cari: iş bir organizatör/firma'ya bağlıysa o firmanın altında topla,
+    // değilse mekan/şehir adıyla göster
+    if(a.tah.kalan>0.5){
+      alacak+=a.tah.kalan;
+      if(ev.firmId){
+        ensureCari(ev.firmId, firmName(ev.firmId)).alacak+=a.tah.kalan;
+      }else{
+        const nm=ev.mekan||ev.sehir||'(konser)';
+        ensureCari('', nm).alacak+=a.tah.kalan;
+      }
+    }
   });
 
   accEntries.forEach(e=>{
@@ -2908,6 +2933,7 @@ async function initApp(){
   await loadAcc();
   refreshVenuePicker();
   refreshEkipGiderPickers();
+  refreshEvFirmPicker();
   setAccYon('gelir');
   calc();
   showTab('dashboard');
