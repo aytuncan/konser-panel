@@ -1687,7 +1687,7 @@ function restore(ev){
   document.getElementById('biletAdet').value=ev.biletAdet||'';
   document.getElementById('biletFiyat').value=ev.biletFiyat||'';
   document.getElementById('komOran').value=ev.komOran!=null?ev.komOran:15.75;
-  document.getElementById('kdvOran').value=ev.kdvOran!=null?ev.kdvOran:20;
+  document.getElementById('kdvOran').value=ev.kdvOran!=null?ev.kdvOran:0;
   document.getElementById('orgBedel').value=ev.orgBedel||'';
   document.getElementById('kdvOranOrg').value=ev.kdvOranOrg!=null?ev.kdvOranOrg:20;
   document.getElementById('p1ad').value=ev.p1ad||'';document.getElementById('p1pay').value=ev.p1pay;
@@ -2295,7 +2295,7 @@ function editSabit(id){
   editingSabitId=e.id;
   document.getElementById('sabitDesc').value=e.desc||'';
   document.getElementById('sabitAmount').value=e.amount||'';
-  document.getElementById('sabitKdv').value=e.kdv!=null?e.kdv:20;
+  document.getElementById('sabitKdv').value=e.kdv!=null?e.kdv:0;
   document.getElementById('sabitGun').value=e.gunu||1;
   refreshSabitFirmPicker();
   document.getElementById('sabitFirm').value=e.firmId||'';
@@ -2431,7 +2431,7 @@ function editAcc(id){
   document.getElementById('accDate').value=e.date||'';
   document.getElementById('accDesc').value=e.desc||'';
   document.getElementById('accAmount').value=e.amount||'';
-  document.getElementById('accKdv').value=e.kdv!=null?e.kdv:20;
+  document.getElementById('accKdv').value=e.kdv!=null?e.kdv:0;
   refreshAccFirmPicker();
   document.getElementById('accFirm').value=e.firmId||'';
   document.getElementById('accStatus').value=e.status||'bekliyor';
