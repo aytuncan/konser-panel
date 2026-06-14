@@ -935,15 +935,15 @@ select option{background:var(--surface)}
           <div class="card-title">Firma Bilgilerim</div>
           <div class="hint" style="margin-bottom:20px">Bir kere doldur, kaydet — her teklif/sözleşmede otomatik gelir. Bu, belgelerde "ORGANİZATÖR" (senin firman) olarak görünür.</div>
           <div class="grid">
-            <div><label>Firma / organizasyon adı</label><input id="coName" placeholder="ÖRNEK ORGANİZASYON LTD. ŞTİ." autocomplete="off" oninput="saveCompany()"></div>
-            <div><label>Yetkili kişi</label><input id="coAuth" placeholder="Ad Soyad" autocomplete="off" oninput="saveCompany()"></div>
-            <div><label>Telefon</label><input id="coPhone" placeholder="+90 ..." autocomplete="off" oninput="saveCompany()"></div>
-            <div><label>E-posta</label><input id="coMail" placeholder="info@..." autocomplete="off" oninput="saveCompany()"></div>
-            <div><label>Adres</label><input id="coAddr" placeholder="Açık adres" autocomplete="off" oninput="saveCompany()"></div>
-            <div><label>Vergi dairesi</label><input id="coTaxOffice" placeholder="Örn. Kadıköy V.D." autocomplete="off" oninput="saveCompany()"></div>
-            <div><label>Vergi numarası</label><input id="coTaxNo" placeholder="1234567890" autocomplete="off" oninput="saveCompany()"></div>
-            <div><label>IBAN</label><input id="coIban" placeholder="TR.." autocomplete="off" oninput="saveCompany()"></div>
-            <div><label>Belge no ön eki</label><input id="coPrefix" value="TKF" autocomplete="off" oninput="saveCompany()"></div>
+            <div><label>Firma / organizasyon adı</label><input id="coName" placeholder="ÖRNEK ORGANİZASYON LTD. ŞTİ." autocomplete="off"></div>
+            <div><label>Yetkili kişi</label><input id="coAuth" placeholder="Ad Soyad" autocomplete="off"></div>
+            <div><label>Telefon</label><input id="coPhone" placeholder="+90 ..." autocomplete="off"></div>
+            <div><label>E-posta</label><input id="coMail" placeholder="info@..." autocomplete="off"></div>
+            <div><label>Adres</label><input id="coAddr" placeholder="Açık adres" autocomplete="off"></div>
+            <div><label>Vergi dairesi</label><input id="coTaxOffice" placeholder="Örn. Kadıköy V.D." autocomplete="off"></div>
+            <div><label>Vergi numarası</label><input id="coTaxNo" placeholder="1234567890" autocomplete="off"></div>
+            <div><label>IBAN</label><input id="coIban" placeholder="TR.." autocomplete="off"></div>
+            <div><label>Belge no ön eki</label><input id="coPrefix" value="TKF" autocomplete="off"></div>
           </div>
           <div class="actions" style="margin-top:24px">
             <button class="btn primary" onclick="saveCompanyManual()">Firma bilgilerimi kaydet</button>
@@ -2178,23 +2178,25 @@ function exportAll(){
 const CO_FIELDS=['coName','coAuth','coPhone','coMail','coAddr','coTaxOffice','coTaxNo','coIban','coPrefix'];
 
 // Kendi firma bilgisi — tarayıcıda saklanır, her belgede otomatik gelir
-function saveCompany(){
+async function saveCompany(){
   try{
-    const o={};
+    const o={id:'cfg_company',type:'cfg',cfg:'company'};
     CO_FIELDS.forEach(f=>{const e=document.getElementById(f);if(e)o[f]=e.value;});
-    localStorage.setItem('konser_company',JSON.stringify(o));
+    const ex=accEntries.find(x=>x.id==='cfg_company');
+    await apiFetch('/api/acc'+(ex?'/cfg_company':''),{method:ex?'PUT':'POST',body:JSON.stringify(o)});
+    // belleği güncelle
+    if(ex)Object.assign(ex,o); else accEntries.push(o);
   }catch(e){}
 }
 function loadCompany(){
   try{
-    const raw=localStorage.getItem('konser_company');
-    if(!raw)return;
-    const o=JSON.parse(raw);
+    const o=accEntries.find(x=>x.id==='cfg_company');
+    if(!o)return;
     CO_FIELDS.forEach(f=>{const e=document.getElementById(f);if(e&&o[f]!=null)e.value=o[f];});
   }catch(e){}
 }
-function saveCompanyManual(){
-  saveCompany();
+async function saveCompanyManual(){
+  await saveCompany();
   toast('Firma bilgilerin kaydedildi');
 }
 
@@ -2218,7 +2220,8 @@ async function resetAllData(){
     await loadAcc();
     for(const a of accEntries.slice()){try{await apiFetch('/api/acc/'+a.id,{method:'DELETE'});}catch(e){}}
     // tarayıcı: ekip rehberi, firma bilgim, şablon
-    ['konser_kases','konser_ekipler','konser_giderler','konser_company','konser_sozlesme_sablonu'].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
+    // ayar/rehber kayıtları artık backend'de (acc içinde cfg_*), yukarıda silindi
+    // tarayıcıda sadece oturum kalır, ona dokunmuyoruz
     // belleği temizle
     events=[];firms=[];venues=[];accEntries=[];kases=[];ekipler=[];giderler=[];
     toast('Tüm veriler silindi. Sıfır program hazır.');
@@ -2528,14 +2531,21 @@ Madde 6. Uyuşmazlık: İşbu sözleşmeden doğacak uyuşmazlıklarda {sehir} M
 Madde 7. İşbu sözleşme taraflarca okunarak imza altına alınmıştır. Tarih: {tarih}`;
 
 function sozlesmeSablonGetir(){
-  try{const s=localStorage.getItem('konser_sozlesme_sablonu');return s||STD_SOZLESME_SABLONU;}catch(e){return STD_SOZLESME_SABLONU;}
+  const o=accEntries.find(x=>x.id==='cfg_sablon');
+  return (o&&o.metin)?o.metin:STD_SOZLESME_SABLONU;
 }
 function loadSablon(){
   const el=document.getElementById('sablonText');
   if(el)el.value=sozlesmeSablonGetir();
 }
-function saveSablon(){
-  try{localStorage.setItem('konser_sozlesme_sablonu',document.getElementById('sablonText').value);toast('Şablon kaydedildi');}catch(e){toast('Kaydedilemedi');}
+async function saveSablon(){
+  try{
+    const o={id:'cfg_sablon',type:'cfg',cfg:'sablon',metin:document.getElementById('sablonText').value};
+    const ex=accEntries.find(x=>x.id==='cfg_sablon');
+    await apiFetch('/api/acc'+(ex?'/cfg_sablon':''),{method:ex?'PUT':'POST',body:JSON.stringify(o)});
+    if(ex)Object.assign(ex,o); else accEntries.push(o);
+    toast('Şablon kaydedildi');
+  }catch(e){toast('Kaydedilemedi');}
 }
 function sablonStandartYukle(){
   const el=document.getElementById('sablonText');
@@ -2941,6 +2951,7 @@ function accAggregate(ayFilter){
     if(e.recurring)return; // sabit ödeme tanımları ayrı yönetilir
     if(e.artistPay)return; // sanatçı hesabı hareketleri ayrı yönetilir
     if(e.docClient)return; // karşı taraf rehberi ayrı
+    if(e.type==='cfg')return; // ayar/rehber kayıtları (firma bilgim, şablon, ekip rehberi)
     if(!ayUyar(e.date))return;
     const div=1+(e.kdv||0)/100;
     const net=e.kdv>0?e.amount/div:e.amount;
@@ -3089,6 +3100,7 @@ function renderAcc(){
     if(e.recurring)return; // sabit ödemeler kendi kartında
     if(e.artistPay)return; // sanatçı hesabı kendi ekranında
     if(e.docClient)return; // karşı taraf rehberi kendi kartında
+    if(e.type==='cfg')return; // ayar/rehber kayıtları
     items.push({kind:'M',id:e.id,date:e.date||'',title:e.desc,
       sub:[e.firmId?firmName(e.firmId):'',e.kdv?'KDV %'+e.kdv:'KDV yok'].filter(Boolean).join(' · '),
       amount:e.amount,yon:e.yon,status:e.status||'bekliyor',fisLink:e.fisLink||'',faturaLink:e.faturaLink||''});
@@ -3146,20 +3158,35 @@ let editingEkipId=null;
 let editingGiderId=null;
 
 async function loadKases(){
-  try{kases=JSON.parse(localStorage.getItem('konser_kases')||'[]');}catch(e){kases=[];}
+  const o=accEntries.find(x=>x.id==='cfg_kases');
+  kases=(o&&Array.isArray(o.liste))?o.liste:[];
   kases.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
 }
-function saveKasesLocal(){localStorage.setItem('konser_kases',JSON.stringify(kases));}
+async function saveKasesLocal(){
+  const o={id:'cfg_kases',type:'cfg',cfg:'kases',liste:kases};
+  const ex=accEntries.find(x=>x.id==='cfg_kases');
+  try{await apiFetch('/api/acc'+(ex?'/cfg_kases':''),{method:ex?'PUT':'POST',body:JSON.stringify(o)});if(ex)Object.assign(ex,o);else accEntries.push(o);}catch(e){}
+}
 async function loadEkipler(){
-  try{ekipler=JSON.parse(localStorage.getItem('konser_ekipler')||'[]');}catch(e){ekipler=[];}
+  const o=accEntries.find(x=>x.id==='cfg_ekipler');
+  ekipler=(o&&Array.isArray(o.liste))?o.liste:[];
   ekipler.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
 }
-function saveEkiplerLocal(){localStorage.setItem('konser_ekipler',JSON.stringify(ekipler));}
+async function saveEkiplerLocal(){
+  const o={id:'cfg_ekipler',type:'cfg',cfg:'ekipler',liste:ekipler};
+  const ex=accEntries.find(x=>x.id==='cfg_ekipler');
+  try{await apiFetch('/api/acc'+(ex?'/cfg_ekipler':''),{method:ex?'PUT':'POST',body:JSON.stringify(o)});if(ex)Object.assign(ex,o);else accEntries.push(o);}catch(e){}
+}
 async function loadGiderler(){
-  try{giderler=JSON.parse(localStorage.getItem('konser_giderler')||'[]');}catch(e){giderler=[];}
+  const o=accEntries.find(x=>x.id==='cfg_giderler');
+  giderler=(o&&Array.isArray(o.liste))?o.liste:[];
   giderler.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
 }
-function saveGiderlerLocal(){localStorage.setItem('konser_giderler',JSON.stringify(giderler));}
+async function saveGiderlerLocal(){
+  const o={id:'cfg_giderler',type:'cfg',cfg:'giderler',liste:giderler};
+  const ex=accEntries.find(x=>x.id==='cfg_giderler');
+  try{await apiFetch('/api/acc'+(ex?'/cfg_giderler':''),{method:ex?'PUT':'POST',body:JSON.stringify(o)});if(ex)Object.assign(ex,o);else accEntries.push(o);}catch(e){}
+}
 
 function gatherKase(){
   return {id:editingKaseId||('kas'+Date.now()),name:document.getElementById('kaseName').value,amount:+document.getElementById('kaseAmount').value||0};
@@ -3169,7 +3196,7 @@ async function saveKase(){
   if(!k.name||!k.amount){toast('Kaşe adı ve tutar gerekli');return;}
   const ex=kases.findIndex(x=>x.id===k.id);
   if(ex>=0)kases[ex]=k;else kases.push(k);
-  saveKasesLocal();
+  await saveKasesLocal();
   await loadKases();
   resetKaseForm();
   renderKases();
@@ -3194,7 +3221,7 @@ function editKase(id){
 }
 async function delKase(id){
   if(!confirm('Bu kaşeyi silmek istiyor musun?'))return;
-  kases=kases.filter(x=>x.id!==id);saveKasesLocal();
+  kases=kases.filter(x=>x.id!==id);await saveKasesLocal();
   await loadKases();
   renderKases();
   renderEkipFormCheckboxes();
@@ -3251,7 +3278,7 @@ async function saveEkip(){
   if(!e.name||!e.kaseIds.length){toast('Ekip adı ve en az bir kaşe gerekli');return;}
   const ex=ekipler.findIndex(x=>x.id===e.id);
   if(ex>=0)ekipler[ex]=e;else ekipler.push(e);
-  saveEkiplerLocal();
+  await saveEkiplerLocal();
   await loadEkipler();
   resetEkipForm();
   renderEkipler();
@@ -3277,7 +3304,7 @@ function editEkip(id){
 }
 async function delEkip(id){
   if(!confirm('Bu ekibi silmek istiyor musun?'))return;
-  ekipler=ekipler.filter(x=>x.id!==id);saveEkiplerLocal();
+  ekipler=ekipler.filter(x=>x.id!==id);await saveEkiplerLocal();
   await loadEkipler();
   renderEkipler();
   toast('Silindi');
@@ -3310,7 +3337,7 @@ async function saveGider(){
   if(!g.name||!g.amount){toast('Gider adı ve tutar gerekli');return;}
   const ex=giderler.findIndex(x=>x.id===g.id);
   if(ex>=0)giderler[ex]=g;else giderler.push(g);
-  saveGiderlerLocal();
+  await saveGiderlerLocal();
   await loadGiderler();
   resetGiderForm();
   renderGiderler();
@@ -3334,7 +3361,7 @@ function editGider(id){
 }
 async function delGider(id){
   if(!confirm('Bu gideri silmek istiyor musun?'))return;
-  giderler=giderler.filter(x=>x.id!==id);saveGiderlerLocal();
+  giderler=giderler.filter(x=>x.id!==id);await saveGiderlerLocal();
   await loadGiderler();
   renderGiderler();
   toast('Silindi');
@@ -3986,10 +4013,10 @@ async function initApp(){
   await loadEvents();
   await loadFirms();
   await loadVenues();
+  await loadAcc();
   await loadKases();
   await loadEkipler();
   await loadGiderler();
-  await loadAcc();
   refreshVenuePicker();
   refreshEkipGiderPickers();
   refreshEvFirmPicker();
