@@ -796,6 +796,14 @@ select option{background:var(--surface)}
 
         <div class="card">
           <div class="card-title">Tüm İşlemler</div>
+          <div class="seg" style="margin-bottom:16px">
+            <button id="accFltAll" class="on" onclick="setAccFilter('all')">Tümü</button>
+            <button id="accFltKonser" onclick="setAccFilter('konser')">Konserler</button>
+            <button id="accFltSirket" onclick="setAccFilter('sirket')">Şirket Gelir/Gider</button>
+            <button id="accFltGelir" onclick="setAccFilter('gelir')">Gelir</button>
+            <button id="accFltGider" onclick="setAccFilter('gider')">Gider</button>
+          </div>
+          <div class="stat-grid" id="accListOzet" style="margin-bottom:16px"></div>
           <input id="accSearch" placeholder="Ara: açıklama, firma, şehir..." autocomplete="off" oninput="renderAcc()" style="margin-bottom:20px">
           <div class="saved-list" id="accList"></div>
         </div>
@@ -2980,6 +2988,15 @@ document.getElementById('accOzet').innerHTML=`
 
   renderAcc();
 }
+let accListFilter='all';
+function setAccFilter(f){
+  accListFilter=f;
+  ['all','konser','sirket','gelir','gider'].forEach(x=>{
+    const b=document.getElementById('accFlt'+x.charAt(0).toUpperCase()+x.slice(1));
+    if(b)b.classList.toggle('on',x===f);
+  });
+  renderAcc();
+}
 function renderAcc(){
   const wrap=document.getElementById('accList');
   const q=(document.getElementById('accSearch')?.value||'').toLocaleLowerCase('tr');
@@ -2998,8 +3015,24 @@ function renderAcc(){
       sub:[e.firmId?firmName(e.firmId):'',e.kdv?'KDV %'+e.kdv:'KDV yok'].filter(Boolean).join(' · '),
       amount:e.amount,yon:e.yon,status:e.status||'bekliyor'});
   });
-  const filt=items.filter(it=>!q||[it.title,it.sub].some(v=>(v||'').toLocaleLowerCase('tr').includes(q)));
+  // filtre uygula
+  let filt=items.filter(it=>{
+    if(accListFilter==='konser')return it.kind==='K';
+    if(accListFilter==='sirket')return it.kind==='M';
+    if(accListFilter==='gelir')return it.yon==='gelir';
+    if(accListFilter==='gider')return it.yon==='gider';
+    return true;
+  });
+  filt=filt.filter(it=>!q||[it.title,it.sub].some(v=>(v||'').toLocaleLowerCase('tr').includes(q)));
   filt.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  // özet (filtrelenmiş)
+  const tGelir=filt.filter(it=>it.yon==='gelir').reduce((a,it)=>a+it.amount,0);
+  const tGider=filt.filter(it=>it.yon==='gider').reduce((a,it)=>a+it.amount,0);
+  const ozet=document.getElementById('accListOzet');
+  if(ozet)ozet.innerHTML=`
+    <div class="stat"><div class="n">Gelir (${filt.filter(it=>it.yon==='gelir').length})</div><div class="v pos">${fmt(tGelir)}</div></div>
+    <div class="stat"><div class="n">Gider (${filt.filter(it=>it.yon==='gider').length})</div><div class="v neg">${fmt(tGider)}</div></div>
+    <div class="stat"><div class="n">Fark</div><div class="v ${(tGelir-tGider)>=0?'pos':'neg'}">${fmt(tGelir-tGider)}</div></div>`;
   if(!filt.length){wrap.innerHTML='<div class="empty"><div class="big">₺</div>'+(items.length?'Eşleşen işlem yok.':'Henüz işlem yok.')+'</div>';return;}
   wrap.innerHTML='';
   filt.forEach(it=>{
