@@ -402,10 +402,18 @@ select option{background:var(--surface)}
         <span class="icon">★</span> Sanatçı Hesabı
       </button>
 
-      <div class="nav-section">Belge &amp; Rehber</div>
-      <button class="nav-item" id="tabDoc" onclick="showTab(&#39;doc&#39;)">
-        <span class="icon">◻</span> Teklif &amp; Sözleşme
+      <div class="nav-section">Sözleşmeler</div>
+      <button class="nav-item" id="tabSzhazirla" onclick="showTab('szhazirla')">
+        <span class="icon">◻</span> Sözleşme Hazırla
       </button>
+      <button class="nav-item" id="tabSzrehber" onclick="showTab('szrehber')">
+        <span class="icon">☰</span> Sözleşme Rehberi
+      </button>
+      <button class="nav-item" id="tabSzfirmam" onclick="showTab('szfirmam')">
+        <span class="icon">★</span> Firma Bilgilerim
+      </button>
+
+      <div class="nav-section">Belge &amp; Rehber</div>
       <button class="nav-item" id="tabFirms" onclick="showTab(&#39;firms&#39;)">
         <span class="icon">⊡</span> Firmalar
       </button>
@@ -880,9 +888,9 @@ select option{background:var(--surface)}
         </div>
       </div>
 
-      <div id="view-doc" style="display:none">
+      <div id="view-szfirmam" style="display:none">
         <div class="card">
-          <div class="card-title">Kendi Firma Bilgilerin</div>
+          <div class="card-title">Firma Bilgilerim</div>
           <div class="hint" style="margin-bottom:20px">Bir kere doldur, kaydet — her teklif/sözleşmede otomatik gelir. Bu, belgelerde "ORGANİZATÖR" (senin firman) olarak görünür.</div>
           <div class="grid">
             <div><label>Firma / organizasyon adı</label><input id="coName" placeholder="ÖRNEK ORGANİZASYON LTD. ŞTİ." autocomplete="off" oninput="saveCompany()"></div>
@@ -890,7 +898,8 @@ select option{background:var(--surface)}
             <div><label>Telefon</label><input id="coPhone" placeholder="+90 ..." autocomplete="off" oninput="saveCompany()"></div>
             <div><label>E-posta</label><input id="coMail" placeholder="info@..." autocomplete="off" oninput="saveCompany()"></div>
             <div><label>Adres</label><input id="coAddr" placeholder="Açık adres" autocomplete="off" oninput="saveCompany()"></div>
-            <div><label>Vergi dairesi / no</label><input id="coTax" placeholder="Vergi D. - No" autocomplete="off" oninput="saveCompany()"></div>
+            <div><label>Vergi dairesi</label><input id="coTaxOffice" placeholder="Örn. Kadıköy V.D." autocomplete="off" oninput="saveCompany()"></div>
+            <div><label>Vergi numarası</label><input id="coTaxNo" placeholder="1234567890" autocomplete="off" oninput="saveCompany()"></div>
             <div><label>IBAN</label><input id="coIban" placeholder="TR.." autocomplete="off" oninput="saveCompany()"></div>
             <div><label>Belge no ön eki</label><input id="coPrefix" value="TKF" autocomplete="off" oninput="saveCompany()"></div>
           </div>
@@ -898,7 +907,36 @@ select option{background:var(--surface)}
             <button class="btn primary" onclick="saveCompanyManual()">Firma bilgilerimi kaydet</button>
           </div>
         </div>
+      </div>
 
+      <div id="view-szrehber" style="display:none">
+        <div class="card">
+          <div class="card-title" id="dcFormTitle">Yeni Karşı Taraf Ekle</div>
+          <div class="hint" style="margin-bottom:20px">Teklif/sözleşme yaptığın firmalar (mekan, organizatör vb.). Ana "Firmalar" sekmesinden bağımsızdır. Bir kere ekle, "Sözleşme Hazırla"da seçerek hızlı doldur.</div>
+          <div class="grid">
+            <div><label>Firma adı *</label><input id="dcName" placeholder="HOLLY STONE ORGANİZASYON" autocomplete="off"></div>
+            <div><label>Yetkili kişi</label><input id="dcAuth" placeholder="Ad Soyad" autocomplete="off"></div>
+            <div><label>Telefon</label><input id="dcPhone" placeholder="+90 ..." autocomplete="off"></div>
+            <div><label>E-posta</label><input id="dcMail" placeholder="info@..." autocomplete="off"></div>
+            <div><label>Adres</label><input id="dcAddr" placeholder="Açık adres" autocomplete="off"></div>
+            <div><label>Vergi dairesi</label><input id="dcTaxOffice" placeholder="Örn. Beşiktaş V.D." autocomplete="off"></div>
+            <div><label>Vergi numarası</label><input id="dcTaxNo" placeholder="1234567890" autocomplete="off"></div>
+            <div><label>IBAN</label><input id="dcIban" placeholder="TR.." autocomplete="off"></div>
+          </div>
+          <div class="actions" style="margin-top:24px">
+            <button class="btn primary" onclick="saveDc()" id="dcSaveBtn">Karşı taraf kaydet</button>
+            <button class="btn ghost" onclick="resetDcForm()">Temizle</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Kayıtlı Karşı Taraflar</div>
+          <input id="dcSearch" placeholder="Ara: ad, yetkili..." autocomplete="off" oninput="renderDcList()" style="margin-bottom:14px">
+          <div class="saved-list" id="dcList"></div>
+        </div>
+      </div>
+
+      <div id="view-szhazirla" style="display:none">
         <div class="card">
           <div class="card-title">Belge için iş seç</div>
           <label>Kayıtlı iş</label>
@@ -907,33 +945,12 @@ select option{background:var(--surface)}
         </div>
 
         <div class="card">
-          <div class="card-title">Karşı Taraf Rehberi</div>
-          <div class="hint" style="margin-bottom:20px">Teklif/sözleşme yaptığın firmalar (mekan, organizatör vb.). Ana "Firmalar" sekmesinden bağımsızdır. Bir kere ekle, belgelerde seçerek hızlı doldur.</div>
-
-          <label>Kayıtlı karşı taraf seç</label>
+          <div class="card-title">Karşı taraf seç</div>
+          <label>Sözleşme rehberinden seç</label>
           <select id="dcPick" onchange="fillClientFromDc()">
-            <option value="">— seç / yeni ekle —</option>
+            <option value="">— seç / "Sözleşme Rehberi"nden ekle —</option>
           </select>
-
-          <div class="card-title" id="dcFormTitle" style="margin-top:28px;font-size:13px">Yeni Karşı Taraf Ekle</div>
-          <div class="grid">
-            <div><label>Firma adı *</label><input id="dcName" placeholder="HOLLY STONE ORGANİZASYON" autocomplete="off"></div>
-            <div><label>Yetkili kişi</label><input id="dcAuth" placeholder="Ad Soyad" autocomplete="off"></div>
-            <div><label>Telefon</label><input id="dcPhone" placeholder="+90 ..." autocomplete="off"></div>
-            <div><label>E-posta</label><input id="dcMail" placeholder="info@..." autocomplete="off"></div>
-            <div><label>Adres</label><input id="dcAddr" placeholder="Açık adres" autocomplete="off"></div>
-            <div><label>Vergi dairesi</label><input id="dcTaxOffice" placeholder="Vergi dairesi" autocomplete="off"></div>
-            <div><label>Vergi / TC no</label><input id="dcTaxNo" placeholder="Vergi no" autocomplete="off"></div>
-            <div><label>IBAN</label><input id="dcIban" placeholder="TR.." autocomplete="off"></div>
-          </div>
-          <div class="actions" style="margin-top:24px">
-            <button class="btn primary" onclick="saveDc()" id="dcSaveBtn">Karşı taraf kaydet</button>
-            <button class="btn ghost" onclick="resetDcForm()">Temizle</button>
-          </div>
-
-          <div class="card-title" style="margin-top:28px;font-size:13px">Kayıtlı Karşı Taraflar</div>
-          <input id="dcSearch" placeholder="Ara: ad, yetkili..." autocomplete="off" oninput="renderDcList()" style="margin-bottom:14px">
-          <div class="saved-list" id="dcList"></div>
+          <div class="hint" style="margin-top:6px">Karşı taraf rehberde yoksa "Sözleşme Rehberi" sekmesinden ekle, sonra burada seç. Seçince aşağıdaki karşı taraf alanları otomatik dolar.</div>
         </div>
 
         <div class="card">
@@ -962,7 +979,7 @@ select option{background:var(--surface)}
           <div style="margin-top:20px">
             <label>Karşı taraf adı</label>
             <input id="dClient" placeholder="Mekan / organizatör adı" autocomplete="off">
-            <div class="hint" style="margin-top:6px">Yukarıdaki "Karşı Taraf Rehberi"nden seçersen bu alanlar otomatik dolar; ya da elle yazabilirsin.</div>
+            <div class="hint" style="margin-top:6px">Yukarıdan rehberden seçersen bu alanlar otomatik dolar; ya da elle yazabilirsin.</div>
           </div>
           <div class="grid" style="margin-top:20px">
             <div><label>Karşı taraf yetkilisi</label><input id="dClientAuth" placeholder="Ad Soyad" autocomplete="off"></div>
@@ -976,10 +993,10 @@ Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
         </div>
 
         <div class="actions">
-          <button class="btn primary" onclick="makePDF(&#39;teklif&#39;)">Teklif PDF indir</button>
-          <button class="btn primary" onclick="makePDF(&#39;sozlesme&#39;)">Sözleşme PDF indir</button>
-          <button class="btn ghost" onclick="previewDoc(&#39;teklif&#39;)">Teklifi önizle</button>
-          <button class="btn ghost" onclick="previewDoc(&#39;sozlesme&#39;)">Sözleşmeyi önizle</button>
+          <button class="btn primary" onclick="makePDF('teklif')">Teklif PDF indir</button>
+          <button class="btn primary" onclick="makePDF('sozlesme')">Sözleşme PDF indir</button>
+          <button class="btn ghost" onclick="previewDoc('teklif')">Teklifi önizle</button>
+          <button class="btn ghost" onclick="previewDoc('sozlesme')">Sözleşmeyi önizle</button>
         </div>
         <div class="hint" style="margin-top:12px">Not: Sözleşme taslağı genel bir başlangıç metnidir, hukuki danışmanlık değildir.</div>
 
@@ -1515,7 +1532,7 @@ function applyXlsx() {
 
 const PAGE_TITLES={
   dashboard:'Dashboard',new:'Yeni İş',saved:'İşler',odeme:'Muhasebe',ekipodeme:'Ekip Ödemeleri',sanatci:'Sanatçı Hesabı',
-  doc:'Teklif & Sözleşme',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
+  szhazirla:'Sözleşme Hazırla',szrehber:'Sözleşme Rehberi',szfirmam:'Firma Bilgilerim',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
   users:'Kullanıcılar'
 };
 function openSidebar(){
@@ -1555,7 +1572,7 @@ function fmt(n){
 }
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900);}
 function showTab(t){
-  ['dashboard','new','saved','odeme','ekipodeme','sanatci','doc','firms','venues','ekip','analiz','users'].forEach(id=>{
+  ['dashboard','new','saved','odeme','ekipodeme','sanatci','szhazirla','szrehber','szfirmam','firms','venues','ekip','analiz','users'].forEach(id=>{
     const v=document.getElementById('view-'+id);
     const tabId = id==='ekipodeme' ? 'tabEkipOdeme' : 'tab'+id.charAt(0).toUpperCase()+id.slice(1);
     const b=document.getElementById(tabId);
@@ -1576,7 +1593,8 @@ function showTab(t){
   if(t==='odeme'){refreshAccFirmPicker();renderOdeme();}
   if(t==='ekipodeme')renderEkipOdeme();
   if(t==='sanatci'){refreshSaPicker();renderSanatci();}
-  if(t==='doc'){refreshDocPicker();refreshDcPicker();renderDcList();}
+  if(t==='szhazirla'){refreshDocPicker();refreshDcPicker();}
+  if(t==='szrehber'){renderDcList();}
   if(t==='firms')renderFirms();
   if(t==='venues')renderVenues();
   if(t==='ekip')renderEkip();
@@ -2073,7 +2091,7 @@ function exportAll(){
   toast('Tümü aktarıldı');
 }
 
-const CO_FIELDS=['coName','coAuth','coPhone','coMail','coAddr','coTax','coIban','coPrefix'];
+const CO_FIELDS=['coName','coAuth','coPhone','coMail','coAddr','coTaxOffice','coTaxNo','coIban','coPrefix'];
 
 // Kendi firma bilgisi — tarayıcıda saklanır, her belgede otomatik gelir
 function saveCompany(){
@@ -2428,7 +2446,7 @@ function docHTML(type){
 
   const art=(n,body)=>`<p style="margin:9px 0;font-size:11.5px"><b>Madde ${n}.</b> ${body}</p>`;
   return head+title+
-    `<p style="font-size:11.5px">İşbu sözleşme; bir tarafta <b>${esc(d.co.coName)||'..........'}</b> (bundan sonra "ORGANİZATÖR" olarak anılacaktır) ile diğer tarafta <b>${esc(d.client)||'..........'}</b>${d.firm&&(d.firm.taxOffice||d.firm.taxNo)?' ('+esc([d.firm.taxOffice,d.firm.taxNo].filter(Boolean).join(' / '))+')':''} (bundan sonra "MEKAN/İŞVEREN" olarak anılacaktır) arasında aşağıdaki şartlarla akdedilmiştir.</p>`+
+    `<p style="font-size:11.5px">İşbu sözleşme; bir tarafta <b>${esc(d.co.coName)||'..........'}</b>${(d.co.coTaxOffice||d.co.coTaxNo)?' ('+esc([d.co.coTaxOffice,d.co.coTaxNo].filter(Boolean).join(' / '))+')':''} (bundan sonra "ORGANİZATÖR" olarak anılacaktır) ile diğer tarafta <b>${esc(d.client)||'..........'}</b>${d.firm&&(d.firm.taxOffice||d.firm.taxNo)?' ('+esc([d.firm.taxOffice,d.firm.taxNo].filter(Boolean).join(' / '))+')':''} (bundan sonra "MEKAN/İŞVEREN" olarak anılacaktır) arasında aşağıdaki şartlarla akdedilmiştir.</p>`+
     infoTable+
     art(1,`<u>Konu:</u> Yukarıda belirtilen sanatçı/grubun, belirtilen tarih, mekan ve saatte sahne performansı sunmasıdır.`)+
     art(2,`<u>Ücret ve Ödeme:</u> Hizmet bedeli ${trMoney(d.fee)}${d.kdvRate>0?' + KDV (%'+d.kdvRate+') = '+trMoney(d.total)+' (KDV dahil)':''}'dir. ${d.advance>0?'Sözleşme imzasında '+trMoney(d.advance)+' avans ödenmiş olup kalan '+trMoney(d.balance)+' ':' Bedel '} ${esc(d.payTerm)||'etkinlik günü ödenecektir'}.`)+
@@ -2458,7 +2476,7 @@ function previewDoc(type){
 }
 async function makePDF(type){
   const d=docData();
-  if(!d.co.coName){toast('Önce kendi firma adını gir (Firma Bilgileri kartı)');showTab('doc');return;}
+  if(!d.co.coName){toast('Önce kendi firma adını gir (Firma Bilgilerim sekmesi)');showTab('szfirmam');return;}
   const baslik=type==='teklif'?'Teklif':'Sözleşme';
   const win=window.open('','_blank');
   if(!win){toast('Açılır pencere engellendi, izin ver');return;}
