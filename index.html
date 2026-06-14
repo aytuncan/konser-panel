@@ -907,6 +907,36 @@ select option{background:var(--surface)}
         </div>
 
         <div class="card">
+          <div class="card-title">Karşı Taraf Rehberi</div>
+          <div class="hint" style="margin-bottom:20px">Teklif/sözleşme yaptığın firmalar (mekan, organizatör vb.). Ana "Firmalar" sekmesinden bağımsızdır. Bir kere ekle, belgelerde seçerek hızlı doldur.</div>
+
+          <label>Kayıtlı karşı taraf seç</label>
+          <select id="dcPick" onchange="fillClientFromDc()">
+            <option value="">— seç / yeni ekle —</option>
+          </select>
+
+          <div class="card-title" id="dcFormTitle" style="margin-top:28px;font-size:13px">Yeni Karşı Taraf Ekle</div>
+          <div class="grid">
+            <div><label>Firma adı *</label><input id="dcName" placeholder="HOLLY STONE ORGANİZASYON" autocomplete="off"></div>
+            <div><label>Yetkili kişi</label><input id="dcAuth" placeholder="Ad Soyad" autocomplete="off"></div>
+            <div><label>Telefon</label><input id="dcPhone" placeholder="+90 ..." autocomplete="off"></div>
+            <div><label>E-posta</label><input id="dcMail" placeholder="info@..." autocomplete="off"></div>
+            <div><label>Adres</label><input id="dcAddr" placeholder="Açık adres" autocomplete="off"></div>
+            <div><label>Vergi dairesi</label><input id="dcTaxOffice" placeholder="Vergi dairesi" autocomplete="off"></div>
+            <div><label>Vergi / TC no</label><input id="dcTaxNo" placeholder="Vergi no" autocomplete="off"></div>
+            <div><label>IBAN</label><input id="dcIban" placeholder="TR.." autocomplete="off"></div>
+          </div>
+          <div class="actions" style="margin-top:24px">
+            <button class="btn primary" onclick="saveDc()" id="dcSaveBtn">Karşı taraf kaydet</button>
+            <button class="btn ghost" onclick="resetDcForm()">Temizle</button>
+          </div>
+
+          <div class="card-title" style="margin-top:28px;font-size:13px">Kayıtlı Karşı Taraflar</div>
+          <input id="dcSearch" placeholder="Ara: ad, yetkili..." autocomplete="off" oninput="renderDcList()" style="margin-bottom:14px">
+          <div class="saved-list" id="dcList"></div>
+        </div>
+
+        <div class="card">
           <div class="card-title">Belge Detayı</div>
           <div class="grid">
             <div><label>Sanatçı / grup</label><input id="dArtist" placeholder="CAN OZAN" autocomplete="off"></div>
@@ -930,15 +960,9 @@ select option{background:var(--surface)}
             <div><label>Ödeme şekli</label><input id="dPayTerm" value="Bakiye etkinlik günü nakit/havale" autocomplete="off"></div>
           </div>
           <div style="margin-top:20px">
-            <label>Karşı taraf firma (rehberden seç)</label>
-            <select id="dFirmPick" onchange="fillClientFromFirm()">
-              <option value="">— rehberden seç / elle gir —</option>
-            </select>
-            <div class="hint" style="margin-top:6px">Firma rehberde yoksa "Firmalar" sekmesinden bir kere ekle, sonra burada listede çıkar. Seçince aşağıdaki alanlar otomatik dolar.</div>
-          </div>
-          <div style="margin-top:20px">
             <label>Karşı taraf adı</label>
             <input id="dClient" placeholder="Mekan / organizatör adı" autocomplete="off">
+            <div class="hint" style="margin-top:6px">Yukarıdaki "Karşı Taraf Rehberi"nden seçersen bu alanlar otomatik dolar; ya da elle yazabilirsin.</div>
           </div>
           <div class="grid" style="margin-top:20px">
             <div><label>Karşı taraf yetkilisi</label><input id="dClientAuth" placeholder="Ad Soyad" autocomplete="off"></div>
@@ -1552,7 +1576,7 @@ function showTab(t){
   if(t==='odeme'){refreshAccFirmPicker();renderOdeme();}
   if(t==='ekipodeme')renderEkipOdeme();
   if(t==='sanatci'){refreshSaPicker();renderSanatci();}
-  if(t==='doc'){refreshDocPicker();refreshFirmPicker();}
+  if(t==='doc'){refreshDocPicker();refreshDcPicker();renderDcList();}
   if(t==='firms')renderFirms();
   if(t==='venues')renderVenues();
   if(t==='ekip')renderEkip();
@@ -2072,6 +2096,82 @@ function saveCompanyManual(){
   toast('Firma bilgilerin kaydedildi');
 }
 
+// ── KARŞI TARAF REHBERİ (belgeler için, acc içinde docClient:true) ──
+const DC_FIELDS={dcName:'name',dcAuth:'auth',dcPhone:'phone',dcMail:'mail',dcAddr:'addr',dcTaxOffice:'taxOffice',dcTaxNo:'taxNo',dcIban:'iban'};
+let editingDcId=null;
+function dcList(){ return accEntries.filter(e=>e.docClient); }
+function gatherDc(){
+  const o={id:editingDcId||('dc'+Date.now()),docClient:true};
+  for(const [el,key] of Object.entries(DC_FIELDS)){const e=document.getElementById(el);o[key]=e?e.value:'';}
+  return o;
+}
+async function saveDc(){
+  const dc=gatherDc();
+  if(!dc.name){toast('Firma adı gerekli');return;}
+  try{const ex=accEntries.find(x=>x.id===dc.id);const res=await apiFetch('/api/acc'+(ex?'/'+dc.id:''),{method:ex?'PUT':'POST',body:JSON.stringify(dc)});if(!res||!res.ok){toast('Kaydedilemedi');return;}}catch(err){toast('Kaydedilemedi');return;}
+  await loadAcc();
+  resetDcForm();
+  renderDcList();
+  refreshDcPicker();
+  toast('Karşı taraf kaydedildi');
+}
+function resetDcForm(){
+  editingDcId=null;
+  Object.keys(DC_FIELDS).forEach(el=>{const e=document.getElementById(el);if(e)e.value='';});
+  const t=document.getElementById('dcFormTitle');if(t)t.textContent='Yeni Karşı Taraf Ekle';
+  const b=document.getElementById('dcSaveBtn');if(b)b.textContent='Karşı taraf kaydet';
+}
+function editDc(id){
+  const dc=accEntries.find(x=>x.id===id);if(!dc)return;
+  editingDcId=dc.id;
+  for(const [el,key] of Object.entries(DC_FIELDS)){const e=document.getElementById(el);if(e)e.value=dc[key]||'';}
+  const t=document.getElementById('dcFormTitle');if(t)t.textContent='Karşı Taraf Düzenle';
+  const b=document.getElementById('dcSaveBtn');if(b)b.textContent='Değişiklikleri kaydet';
+}
+async function delDc(id){
+  if(!confirm('Bu karşı tarafı silmek istiyor musun?'))return;
+  try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
+  await loadAcc();renderDcList();refreshDcPicker();toast('Silindi');
+}
+function renderDcList(){
+  const wrap=document.getElementById('dcList');if(!wrap)return;
+  const q=(document.getElementById('dcSearch')?document.getElementById('dcSearch').value:'').toLocaleLowerCase('tr');
+  const list=dcList().filter(f=>!q||[f.name,f.auth].some(v=>(v||'').toLocaleLowerCase('tr').includes(q)));
+  if(!list.length){wrap.innerHTML='<div class="empty"><div class="big">⌂</div>'+(dcList().length?'Eşleşen yok.':'Henüz karşı taraf yok. Yukarıdan ekle.')+'</div>';return;}
+  wrap.innerHTML='';
+  list.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr')).forEach(f=>{
+    const d=document.createElement('div');
+    d.className='saved-item';
+    d.onclick=(e)=>{if(e.target.classList.contains('del'))return;editDc(f.id);};
+    d.innerHTML=`
+      <div class="info">
+        <div class="ttl">${esc(f.name)}</div>
+        <div class="sub">${[f.auth,f.phone].filter(Boolean).map(esc).join(' · ')||'detay yok'}</div>
+      </div>
+      <button class="del" title="Sil" onclick="delDc('${f.id}')">🗑</button>`;
+    wrap.appendChild(d);
+  });
+}
+function refreshDcPicker(){
+  const sel=document.getElementById('dcPick');if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— seç / yeni ekle —</option>';
+  dcList().sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr')).forEach(f=>{
+    const o=document.createElement('option');o.value=f.id;
+    o.textContent=f.name+(f.auth?' · '+f.auth:'');
+    sel.appendChild(o);
+  });
+  sel.value=cur;
+}
+function fillClientFromDc(){
+  const id=document.getElementById('dcPick').value;if(!id)return;
+  const f=accEntries.find(x=>x.id===id);if(!f)return;
+  const set=(el,v)=>{const e=document.getElementById(el);if(e)e.value=v||'';};
+  set('dClient',f.name);
+  set('dClientAuth',f.auth);
+  set('dClientPhone',f.phone);
+}
+
 let firms=[];
 let editingFirmId=null;
 const FIRM_FIELDS={fName:'name',fType:'type',fAuth:'auth',fPhone:'phone',fMail:'mail',
@@ -2268,8 +2368,8 @@ function docData(){
   const kdv=fee*kdvRate/100;
   const total=fee+kdv;
   const advance=+g('dAdvance')||0;
-  const firmId=g('dFirmPick');
-  const firm=firms.find(x=>x.id===firmId)||null;
+  const dcId=g('dcPick');
+  const firm=accEntries.find(x=>x.id===dcId && x.docClient)||null;
   return {co,artist:g('dArtist'),date:g('dDate'),venue:g('dVenue'),city:g('dCity'),
     time:g('dTime'),dur:g('dDur'),fee,kdvRate,kdv,total,advance,balance:total-advance,
     payTerm:g('dPayTerm'),client:g('dClient'),clientAuth:g('dClientAuth'),clientPhone:g('dClientPhone'),
@@ -2640,6 +2740,7 @@ function accAggregate(ayFilter){
   accEntries.forEach(e=>{
     if(e.recurring)return; // sabit ödeme tanımları ayrı yönetilir
     if(e.artistPay)return; // sanatçı hesabı hareketleri ayrı yönetilir
+    if(e.docClient)return; // karşı taraf rehberi ayrı
     if(!ayUyar(e.date))return;
     const div=1+(e.kdv||0)/100;
     const net=e.kdv>0?e.amount/div:e.amount;
@@ -2769,6 +2870,7 @@ function renderAcc(){
   accEntries.forEach(e=>{
     if(e.recurring)return; // sabit ödemeler kendi kartında
     if(e.artistPay)return; // sanatçı hesabı kendi ekranında
+    if(e.docClient)return; // karşı taraf rehberi kendi kartında
     items.push({kind:'M',id:e.id,date:e.date||'',title:e.desc,
       sub:[e.firmId?firmName(e.firmId):'',e.kdv?'KDV %'+e.kdv:'KDV yok'].filter(Boolean).join(' · '),
       amount:e.amount,yon:e.yon,status:e.status||'bekliyor'});
