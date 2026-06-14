@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0040)https://aytuncan.github.io/konser-panel/ -->
+<html lang="tr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Konser Panel</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="./Konser Panel_files/css2" rel="stylesheet">
+<script src="./Konser Panel_files/xlsx.full.min.js.indir"></script>
+<script src="./Konser Panel_files/jspdf.umd.min.js.indir"></script>
 <style>
 /* ── TOKENS ────────────────────────────────────────────── */
 :root{
@@ -348,7 +348,7 @@ select option{background:var(--surface)}
 </style>
 </head>
 <body>
-<div id="loginScreen" style="display:flex;min-height:100vh;align-items:center;justify-content:center;background:var(--bg)">
+<div id="loginScreen" style="display: none; min-height: 100vh; align-items: center; justify-content: center; background: var(--bg);">
   <div style="width:100%;max-width:400px;padding:32px">
     <div style="text-align:center;margin-bottom:40px">
       <div style="width:48px;height:48px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 20px;color:#fff">🎵</div>
@@ -358,8 +358,8 @@ select option{background:var(--surface)}
     <div class="card" style="margin:0">
       <div class="card-title">Giriş Yap</div>
       <div style="display:flex;flex-direction:column;gap:16px">
-        <div><label>E-posta</label><input id="liEmail" type="email" placeholder="admin@sirket.com" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()"></div>
-        <div><label>Şifre</label><input id="liPass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div><label>E-posta</label><input id="liEmail" type="email" placeholder="admin@sirket.com" autocomplete="off" onkeydown="if(event.key===&#39;Enter&#39;)doLogin()"></div>
+        <div><label>Şifre</label><input id="liPass" type="password" placeholder="••••••••" onkeydown="if(event.key===&#39;Enter&#39;)doLogin()"></div>
         <button class="btn primary" id="liBtn" onclick="doLogin()" style="margin-top:8px">Giriş Yap</button>
       </div>
       <div id="liErr" style="color:var(--red);font-size:13px;margin-top:12px;display:none"></div>
@@ -370,7 +370,7 @@ select option{background:var(--surface)}
   </div>
 </div>
 
-<div id="appScreen" style="display:none">
+<div id="appScreen" style="display: flex;">
 
 <div class="app">
 
@@ -382,47 +382,47 @@ select option{background:var(--surface)}
 
     <nav class="nav">
       <div class="nav-section">Genel</div>
-      <button class="nav-item" id="tabDashboard" onclick="showTab('dashboard')">
+      <button class="nav-item active" id="tabDashboard" onclick="showTab(&#39;dashboard&#39;)">
         <span class="icon">⬚</span> Dashboard
       </button>
       <div class="nav-section">İşler</div>
-      <button class="nav-item" id="tabNew" onclick="showTab('new')">
+      <button class="nav-item" id="tabNew" onclick="showTab(&#39;new&#39;)">
         <span class="icon">✦</span> Yeni İş
       </button>
-      <button class="nav-item" id="tabSaved" onclick="showTab('saved')">
+      <button class="nav-item" id="tabSaved" onclick="showTab(&#39;saved&#39;)">
         <span class="icon">◈</span> İşler
       </button>
-      <button class="nav-item" id="tabOdeme" onclick="showTab('odeme')">
+      <button class="nav-item" id="tabOdeme" onclick="showTab(&#39;odeme&#39;)">
         <span class="icon">◎</span> Muhasebe
       </button>
-      <button class="nav-item" id="tabEkipOdeme" onclick="showTab('ekipodeme')">
+      <button class="nav-item" id="tabEkipOdeme" onclick="showTab(&#39;ekipodeme&#39;)">
         <span class="icon">◐</span> Ekip Ödemeleri
       </button>
-      <button class="nav-item" id="tabSanatci" onclick="showTab('sanatci')">
+      <button class="nav-item" id="tabSanatci" onclick="showTab(&#39;sanatci&#39;)">
         <span class="icon">★</span> Sanatçı Hesabı
       </button>
 
-      <div class="nav-section">Belge & Rehber</div>
-      <button class="nav-item" id="tabDoc" onclick="showTab('doc')">
-        <span class="icon">◻</span> Teklif & Sözleşme
+      <div class="nav-section">Belge &amp; Rehber</div>
+      <button class="nav-item" id="tabDoc" onclick="showTab(&#39;doc&#39;)">
+        <span class="icon">◻</span> Teklif &amp; Sözleşme
       </button>
-      <button class="nav-item" id="tabFirms" onclick="showTab('firms')">
+      <button class="nav-item" id="tabFirms" onclick="showTab(&#39;firms&#39;)">
         <span class="icon">⊡</span> Firmalar
       </button>
-      <button class="nav-item" id="tabVenues" onclick="showTab('venues')">
+      <button class="nav-item" id="tabVenues" onclick="showTab(&#39;venues&#39;)">
         <span class="icon">⊟</span> Mekanlar
       </button>
-      <button class="nav-item" id="tabEkip" onclick="showTab('ekip')">
+      <button class="nav-item" id="tabEkip" onclick="showTab(&#39;ekip&#39;)">
         <span class="icon">⋈</span> Ekip Rehberi
       </button>
 
       <div class="nav-section">Raporlar</div>
-      <button class="nav-item" id="tabAnaliz" onclick="showTab('analiz')">
+      <button class="nav-item" id="tabAnaliz" onclick="showTab(&#39;analiz&#39;)">
         <span class="icon">◉</span> Analiz
       </button>
 
-      <div class="nav-section" id="navSecYonetim" style="display:none">Yönetim</div>
-      <button class="nav-item" id="tabUsers" onclick="showTab('users')" style="display:none">
+      <div class="nav-section" id="navSecYonetim" style="display: block;">Yönetim</div>
+      <button class="nav-item" id="tabUsers" onclick="showTab(&#39;users&#39;)" style="display: flex;">
         <span class="icon">⚇</span> Kullanıcılar
       </button>
     </nav>
@@ -435,12 +435,12 @@ select option{background:var(--surface)}
     <header class="topbar">
       <button class="hamburger" onclick="openSidebar()">☰</button>
       <div style="flex:1">
-        <div class="topbar-title" id="pageTitle">Yeni İş</div>
+        <div class="topbar-title" id="pageTitle">Dashboard</div>
       </div>
       <div class="topbar-user">
-        <div class="user-avatar" id="userAvatar">CO</div>
+        <div class="user-avatar" id="userAvatar">AC</div>
         <div class="user-info">
-          <div class="name" id="userName">Kullanıcı</div>
+          <div class="name" id="userName">Aytun CAN</div>
           <div class="role" id="userRole">Yönetici</div>
         </div>
         <button class="btn ghost" style="flex:none;min-width:auto;padding:8px 14px;font-size:13px" onclick="openChangePass()">Şifre</button>
@@ -450,39 +450,51 @@ select option{background:var(--surface)}
 
     <div class="content">
 
-      <div id="view-dashboard" style="display:none">
+      <div id="view-dashboard" style="">
         <div class="card">
           <div class="card-title">Genel Bakış</div>
-          <div class="stat-grid" id="dashOzet"></div>
+          <div class="stat-grid" id="dashOzet">
+    <div class="stat"><div class="n">Toplam İş</div><div class="v">2</div></div>
+    <div class="stat"><div class="n">Bu Ayki Kâr</div><div class="v pos">324.250 ₺</div></div>
+    <div class="stat"><div class="n">Açık Alacak</div><div class="v pos">0 ₺</div></div>
+    <div class="stat"><div class="n">Ödenmemiş Ekip Kaşesi</div><div class="v pos">0 ₺</div></div>
+    <div class="stat"><div class="n">Bu Ay Sabit Ödeme</div><div class="v pos">0 ₺</div></div>
+    <div class="stat"><div class="n">Sanatçılara Kalan</div><div class="v neg">124.125 ₺</div></div></div>
         </div>
 
         <div class="card">
-          <div class="card-title" id="dashAyBaslik">Bu Ay Muhasebe Özeti</div>
+          <div class="card-title" id="dashAyBaslik">Haziran Ayı Muhasebe Özeti</div>
           <div class="hint" style="margin-bottom:20px">Sadece bu ayın işleri ve işlemleri. Detay için Muhasebe sekmesine git.</div>
-          <div class="stat-grid" id="dashAyOzet"></div>
+          <div class="stat-grid" id="dashAyOzet">
+    <div class="stat"><div class="n">Toplam Gelir (net)</div><div class="v">720.000 ₺</div></div>
+    <div class="stat"><div class="n">Toplam Gider (net)</div><div class="v">395.750 ₺</div></div>
+    <div class="stat"><div class="n">Net (gelir−gider)</div><div class="v pos">324.250 ₺</div></div>
+    <div class="stat"><div class="n">Net KDV</div><div class="v neg">0 ₺</div></div>
+    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Sanatçı Toplam Payı</div><div class="v">243.188 ₺</div></div>
+    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Menajer (Bana Kalan)</div><div class="v pos">81.063 ₺</div></div></div>
         </div>
 
         <div class="dashboard-grid">
           <div class="card">
             <div class="card-title">Yaklaşan Etkinlikler</div>
             <div class="hint" style="margin-bottom:16px">Bugün ve sonrası, en yakın tarihli üstte.</div>
-            <div id="dashEtkinlik"></div>
+            <div id="dashEtkinlik"><div class="anEmpty">Yaklaşan etkinlik yok.</div></div>
           </div>
           <div class="card">
             <div class="card-title">Yaklaşan / Geciken Ödemeler</div>
             <div class="hint" style="margin-bottom:16px">Vade planına göre açık tahsilatlar.</div>
-            <div id="dashVade"></div>
+            <div id="dashVade"><div class="anEmpty">Yaklaşan/geciken ödeme yok.</div></div>
           </div>
         </div>
 
         <div class="card">
           <div class="card-title">Ödenmemiş Ekip Kaşeleri</div>
           <div class="hint" style="margin-bottom:16px">Ekibe yapılacak açık ödemeler. Detay için "Ekip Ödemeleri" sekmesine git.</div>
-          <div id="dashKase"></div>
+          <div id="dashKase"><div class="anEmpty">Ödenmemiş Ekip Kaşesi yok 🎉</div></div>
         </div>
       </div>
 
-      <div id="view-new" class="cols2">
+      <div id="view-new" class="cols2" style="display: none;">
      
         <div class="card full" style="border-color:var(--accent);background:var(--accent-bg)">
           <div class="card-title" style="color:var(--accent)">Excel'den Aktar</div>
@@ -498,7 +510,7 @@ select option{background:var(--surface)}
             <div id="xlsxPreviewContent" style="font-size:14px;line-height:1.9"></div>
             <div class="actions" style="margin-top:16px">
               <button class="btn primary" onclick="applyXlsx()">Formu Doldur</button>
-              <button class="btn ghost" onclick="document.getElementById('xlsxPreview').style.display='none'">İptal</button>
+              <button class="btn ghost" onclick="document.getElementById(&#39;xlsxPreview&#39;).style.display=&#39;none&#39;">İptal</button>
             </div>
           </div>
           <div class="hint" style="margin-top:12px">Mevcut hesap formatındaki Excel dosyalarını okur: şehir, mekan, tarih, kapasite, komisyon, KDV, kaşe listesi, konser giderleri ve kâr paylaşımı otomatik dolar.</div>
@@ -509,9 +521,7 @@ select option{background:var(--surface)}
           <div class="grid">
             <div>
               <label>Mekan listesi</label>
-              <select id="mekanPick" onchange="pickVenue()">
-                <option value="">— elle gir —</option>
-              </select>
+              <select id="mekanPick" onchange="pickVenue()"><option value="">— elle gir —</option><option value="v1781191252364">DOROCK XL KADIKOY · İSTANBUL · 1200 kişi</option><option value="v1781444177891">KIBRIS ODTU BAHAR ŞENLİĞİ · KIBRIS · 1000 kişi</option></select>
             </div>
             <div><label>Mekan adı</label><input id="mekan" placeholder="HOLLY STONE" autocomplete="off"></div>
             <div>
@@ -525,28 +535,24 @@ select option{background:var(--surface)}
             <div>
               <label>İş Tipi</label>
               <div class="seg">
-                <button id="tipKapi" class="on" onclick="setTip('KAPI')">KAPI (bilet)</button>
-                <button id="tipOrg" onclick="setTip('ORGANIZATOR')">ORGANİZATÖR</button>
+                <button id="tipKapi" class="on" onclick="setTip(&#39;KAPI&#39;)">KAPI (bilet)</button>
+                <button id="tipOrg" onclick="setTip(&#39;ORGANIZATOR&#39;)">ORGANİZATÖR</button>
               </div>
             </div>
             <div>
               <label>Organizatör / Karşı taraf firma</label>
-              <select id="evFirmPick">
-                <option value="">— firma yok / seç —</option>
-              </select>
+              <select id="evFirmPick"><option value="">— firma yok / seç —</option><option value="f1781435106666">CAN OZAN YAPIM · İSTANBUL (Diğer)</option><option value="f1781435126560">DOROCK XL · İSTANBUL (Mekan)</option><option value="f1781435088500">FI ORGANİZASYON · İSTANBUL (Organizatör)</option><option value="f1781444217963">ORTADOĞU TEKNİK UNİVERSİTESİ · ANKARA (Müşteri)</option></select>
             </div>
             <div>
               <label>Sanatçı / sanatçı firması</label>
-              <select id="evArtistPick">
-                <option value="">— sanatçı yok / seç —</option>
-              </select>
+              <select id="evArtistPick"><option value="">— sanatçı yok / seç —</option><option value="f1781435106666">CAN OZAN YAPIM (Diğer)</option><option value="f1781435126560">DOROCK XL (Mekan)</option><option value="f1781435088500">FI ORGANİZASYON (Organizatör)</option><option value="f1781444217963">ORTADOĞU TEKNİK UNİVERSİTESİ (Müşteri)</option></select>
             </div>
           </div>
           <div class="hint">Organizatör firmayı seçersen alacak/verecek Muhasebe'de o firmanın cari hesabında toplanır. Sanatçıyı seçersen kârın sanatçı payı (%75) o sanatçının hesabına yazılır.</div>
         </div>
 
         <div class="card">
-          <div class="card-title">Salon & Katılım</div>
+          <div class="card-title">Salon &amp; Katılım</div>
           <div class="grid">
             <div><label>Salon kapasitesi (kişi)</label><input id="kapasite" type="number" min="0" oninput="calc()" placeholder="800"></div>
             <div><label>Satılan bilet / katılım</label><input id="satilan" type="number" min="0" oninput="calc()" placeholder="400"></div>
@@ -554,7 +560,7 @@ select option{background:var(--surface)}
           <div class="hint" id="dolulukHint">Doluluk oranı doldurunca burada görünür.</div>
         </div>
 
-        <div class="card" id="kapiBox">
+        <div class="card" id="kapiBox" style="display: block;">
           <div class="card-title">Bilet Satışı</div>
           <div class="grid">
             <div><label>Bilet adedi</label><input id="biletAdet" type="number" min="0" oninput="calc()" placeholder="400"></div>
@@ -593,15 +599,11 @@ select option{background:var(--surface)}
           <div class="grid">
             <div>
               <label>Hazır ekip seç → kaşeleri ekle</label>
-              <select id="ekipPick" onchange="addEkipToForm()">
-                <option value="">— ekip seç —</option>
-              </select>
+              <select id="ekipPick" onchange="addEkipToForm()"><option value="">— ekip seç —</option><option value="ekp1781435363595">FULL BAND (175.000 ₺)</option><option value="ekp1781435312256">FULL BAND BACKSİZ (158.000 ₺)</option></select>
             </div>
             <div>
               <label>Sabit gider seç → ekle</label>
-              <select id="giderPick" onchange="addGiderToForm()">
-                <option value="">— sabit gider seç —</option>
-              </select>
+              <select id="giderPick" onchange="addGiderToForm()"><option value="">— sabit gider seç —</option></select>
             </div>
           </div>
           <div class="hint">Ekip seçince ekibin tüm kaşeleri aşağıdaki Kaşe Giderleri'ne, sabit gider seçince Konser Giderleri'ne eklenir. Tutarları sonra düzenleyebilirsin. Liste boşsa "Ekip Rehberi" sekmesinden ekle.</div>
@@ -610,15 +612,23 @@ select option{background:var(--surface)}
         <div class="card">
           <div class="card-title">Kaşe Giderleri</div>
           <div class="row-head kase"><span>İsim</span><span>Tutar ₺</span><span>KDV?</span><span></span></div>
-          <div class="rows" id="kaseRows"></div>
-          <button class="addbtn" onclick="addRow('kase')">+ Kaşe ekle</button>
+          <div class="rows" id="kaseRows"><div class="row kase" data-odendi="0">
+    <input placeholder="İsim" value="" autocomplete="off" oninput="calc()">
+    <input type="number" min="0" placeholder="0" value="" oninput="calc()">
+    <select onchange="calc()"><option value="0" selected="">Yok</option><option value="1">Var</option></select>
+    <button class="rm" onclick="this.parentElement.remove();calc()">×</button></div></div>
+          <button class="addbtn" onclick="addRow(&#39;kase&#39;)">+ Kaşe ekle</button>
         </div>
 
         <div class="card">
           <div class="card-title">Konser Giderleri</div>
           <div class="row-head"><span>Açıklama</span><span>Tutar ₺</span><span>KDV?</span><span></span></div>
-          <div class="rows" id="giderRows"></div>
-          <button class="addbtn" onclick="addRow('gider')">+ Gider ekle</button>
+          <div class="rows" id="giderRows"><div class="row kase">
+    <input placeholder="Açıklama" value="" autocomplete="off" oninput="calc()">
+    <input type="number" min="0" placeholder="0" value="" oninput="calc()">
+    <select onchange="calc()"><option value="0" selected="">Yok</option><option value="1">Var</option></select>
+    <button class="rm" onclick="this.parentElement.remove();calc()">×</button></div></div>
+          <button class="addbtn" onclick="addRow(&#39;gider&#39;)">+ Gider ekle</button>
         </div>
 
         <div class="card">
@@ -644,16 +654,20 @@ select option{background:var(--surface)}
           <div class="rows" id="vadeRows"></div>
           <button class="addbtn" onclick="addVade()">+ Vade ekle</button>
 
-          <div class="lines" id="tahsilatOzet" style="margin-top:20px"></div>
+          <div class="lines" id="tahsilatOzet" style="margin-top:20px">
+    <div class="line"><span class="k">Beklenen (KDV dahil)</span><span class="v">0 ₺</span></div>
+    <div class="line"><span class="k">Alınan tahsilat</span><span class="v">0 ₺</span></div>
+    <div class="line strong"><span class="k">Kalan bakiye</span><span class="v ">0 ₺</span></div>
+    <div class="line sub"><span class="k">Durum</span><span class="v ">Beklenen tutar yok</span></div></div>
         </div>
 
         <div class="card result full">
           <div class="card-title">Sonuç</div>
           <div class="kpi">
             <div class="lbl">Kâr / Zarar (KDV hariç)</div>
-            <div class="val" id="rKar">0 ₺</div>
+            <div class="val pos" id="rKar">0 ₺</div>
           </div>
-          <div class="lines" id="rLines"></div>
+          <div class="lines" id="rLines"><div class="line"><span class="k">Ciro (KDV dahil)</span><span class="v">0 ₺</span></div><div class="line"><span class="k">Ciro (KDV hariç)</span><span class="v">0 ₺</span></div><div class="line"><span class="k">Komisyon</span><span class="v">-0 ₺</span></div><div class="line"><span class="k">Kaşe giderleri</span><span class="v">-0 ₺</span></div><div class="line"><span class="k">Konser giderleri</span><span class="v">-0 ₺</span></div><div class="line"><span class="k">— gider içi KDV</span><span class="v">0 ₺</span></div><div class="line strong"><span class="k">Kâr / Zarar (KDV hariç)</span><span class="v">0 ₺</span></div><div class="line sub"><span class="k">Net KDV (devlete/iade) — kâra dahil değil</span><span class="v">0 ₺</span></div></div>
           <div class="split">
             <div class="box"><div class="n" id="rP1n">CAN OZAN</div><div class="a" id="rP1">0 ₺</div></div>
             <div class="box"><div class="n" id="rP2n">MAN FEE</div><div class="a" id="rP2">0 ₺</div></div>
@@ -669,9 +683,9 @@ select option{background:var(--surface)}
 
       <div id="view-saved" style="display:none">
         <div class="seg" style="margin-bottom:24px;max-width:420px">
-          <button id="segAcik" class="on" onclick="setSavedFilter('acik')">Açık</button>
-          <button id="segTamam" onclick="setSavedFilter('tamam')">Tamamlanmış</button>
-          <button id="segTumu" onclick="setSavedFilter('tumu')">Tümü</button>
+          <button id="segAcik" class="on" onclick="setSavedFilter(&#39;acik&#39;)">Açık</button>
+          <button id="segTamam" onclick="setSavedFilter(&#39;tamam&#39;)">Tamamlanmış</button>
+          <button id="segTumu" onclick="setSavedFilter(&#39;tumu&#39;)">Tümü</button>
         </div>
         <div class="actions" style="margin-bottom:24px">
           <button class="btn ghost" onclick="exportAll()">Tümünü Excel'e aktar</button>
@@ -687,7 +701,7 @@ select option{background:var(--surface)}
         </div>
 
         <div class="card">
-          <div class="card-title">Vadeler & Alacaklar</div>
+          <div class="card-title">Vadeler &amp; Alacaklar</div>
           <div class="hint" style="margin-bottom:20px">İşlere girilen vade planlarına göre geciken, yaklaşan (3 gün içinde) ve bekleyen tahsilatlar.</div>
           <div class="stat-grid" id="vadeOzet" style="margin-bottom:24px"></div>
           <div id="vadeListe"></div>
@@ -728,8 +742,8 @@ select option{background:var(--surface)}
             <div>
               <label>Yön</label>
               <div class="seg">
-                <button id="accYonGelir" class="on" onclick="setAccYon('gelir')">GELİR</button>
-                <button id="accYonGider" onclick="setAccYon('gider')">GİDER</button>
+                <button id="accYonGelir" class="on" onclick="setAccYon(&#39;gelir&#39;)">GELİR</button>
+                <button id="accYonGider" onclick="setAccYon(&#39;gider&#39;)">GİDER</button>
               </div>
             </div>
             <div><label>Açıklama</label><input id="accDesc" placeholder="Ofis kirası / fatura no vb." autocomplete="off"></div>
@@ -790,8 +804,8 @@ select option{background:var(--surface)}
           <div class="card-title">İş Bazında Kaşeler</div>
           <div class="hint" style="margin-bottom:16px">Açık (ödenmemiş) kaşeler önce gösterilir. "Ödendi" düğmesine basınca işin içine kaydedilir, herkes görür.</div>
           <div class="seg" style="margin-bottom:20px;max-width:340px">
-            <button id="eoSegAcik" class="on" onclick="setEoFilter('acik')">Ödenmemiş</button>
-            <button id="eoSegTumu" onclick="setEoFilter('tumu')">Tümü</button>
+            <button id="eoSegAcik" class="on" onclick="setEoFilter(&#39;acik&#39;)">Ödenmemiş</button>
+            <button id="eoSegTumu" onclick="setEoFilter(&#39;tumu&#39;)">Tümü</button>
           </div>
           <div id="eoListe"></div>
         </div>
@@ -836,8 +850,8 @@ select option{background:var(--surface)}
               <div>
                 <label>Tür</label>
                 <div class="seg">
-                  <button id="saTurOdeme" class="on" onclick="setSaTur('odeme')">ÖDEME (sanatçıya)</button>
-                  <button id="saTurGider" onclick="setSaTur('gider')">GİDER (adına)</button>
+                  <button id="saTurOdeme" class="on" onclick="setSaTur(&#39;odeme&#39;)">ÖDEME (sanatçıya)</button>
+                  <button id="saTurGider" onclick="setSaTur(&#39;gider&#39;)">GİDER (adına)</button>
                 </div>
               </div>
               <div><label>Tarih</label><input id="saDate" type="date"></div>
@@ -851,7 +865,7 @@ select option{background:var(--surface)}
           </div>
 
           <div class="card">
-            <div class="card-title">Ödemeler & Giderler</div>
+            <div class="card-title">Ödemeler &amp; Giderler</div>
             <div id="saHareketler"></div>
           </div>
 
@@ -927,15 +941,16 @@ select option{background:var(--surface)}
           </div>
           <div style="margin-top:20px">
             <label>Teknik / ek şartlar (her satır ayrı madde)</label>
-            <textarea id="dTech" rows="4" placeholder="Ses ve ışık sistemi mekana aittir.&#10;Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
+            <textarea id="dTech" rows="4" placeholder="Ses ve ışık sistemi mekana aittir.
+Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
           </div>
         </div>
 
         <div class="actions">
-          <button class="btn primary" onclick="makePDF('teklif')">Teklif PDF indir</button>
-          <button class="btn primary" onclick="makePDF('sozlesme')">Sözleşme PDF indir</button>
-          <button class="btn ghost" onclick="previewDoc('teklif')">Teklifi önizle</button>
-          <button class="btn ghost" onclick="previewDoc('sozlesme')">Sözleşmeyi önizle</button>
+          <button class="btn primary" onclick="makePDF(&#39;teklif&#39;)">Teklif PDF indir</button>
+          <button class="btn primary" onclick="makePDF(&#39;sozlesme&#39;)">Sözleşme PDF indir</button>
+          <button class="btn ghost" onclick="previewDoc(&#39;teklif&#39;)">Teklifi önizle</button>
+          <button class="btn ghost" onclick="previewDoc(&#39;sozlesme&#39;)">Sözleşmeyi önizle</button>
         </div>
         <div class="hint" style="margin-top:12px">Not: Sözleşme taslağı genel bir başlangıç metnidir, hukuki danışmanlık değildir.</div>
 
@@ -1177,7 +1192,7 @@ select option{background:var(--surface)}
           <div id="anMekan"></div>
         </div>
         <div class="card">
-          <div class="card-title">Bilet & Doluluk</div>
+          <div class="card-title">Bilet &amp; Doluluk</div>
           <div id="anDoluluk"></div>
         </div>
         <div class="card">
@@ -3670,5 +3685,6 @@ async function toggleUserActive(id,cur){
 
 if(_token&&_user){document.getElementById("userName").textContent=_user.name;document.getElementById("userAvatar").textContent=_user.name.split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase();showApp();initApp();}else{showLogin();}
 </script>
-</body>
-</html>
+
+
+</body></html>
