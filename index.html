@@ -670,6 +670,33 @@ select option{background:var(--surface)}
         </div>
 
         <div class="card">
+          <div class="card-title">Aylık Sabit Ödemeler</div>
+          <div class="hint" style="margin-bottom:20px">Kira, maaş, abonelik gibi her ay tekrarlanan giderler. Bu ay ödenecekler ve durumları aşağıda; "ödendi" işareti backend'e kaydedilir.</div>
+          <div class="stat-grid" id="sabitOzet" style="margin-bottom:24px"></div>
+          <div id="sabitBuAy" style="margin-bottom:24px"></div>
+
+          <div class="card-title" id="sabitFormTitle" style="margin-top:8px">Yeni Sabit Ödeme</div>
+          <div class="grid">
+            <div><label>Açıklama *</label><input id="sabitDesc" placeholder="Ofis kirası" autocomplete="off"></div>
+            <div><label>Aylık tutar (₺, KDV dahil) *</label><input id="sabitAmount" type="number" min="0" placeholder="25000"></div>
+            <div><label>KDV oranı (%)</label><input id="sabitKdv" type="number" min="0" value="20"></div>
+            <div><label>Ödeme günü (ayın kaçı)</label><input id="sabitGun" type="number" min="1" max="31" value="1"></div>
+            <div>
+              <label>Firma (rehberden, opsiyonel)</label>
+              <select id="sabitFirm"><option value="">— firma yok / seç —</option></select>
+            </div>
+            <div><label>Başlangıç ayı</label><input id="sabitStart" type="month"></div>
+          </div>
+          <div class="actions" style="margin-top:24px">
+            <button class="btn primary" onclick="saveSabit()" id="sabitSaveBtn">Sabit ödeme kaydet</button>
+            <button class="btn ghost" onclick="resetSabitForm()">Temizle</button>
+          </div>
+
+          <div class="card-title" style="margin-top:32px">Tanımlı Sabit Ödemeler</div>
+          <div class="saved-list" id="sabitList"></div>
+        </div>
+
+        <div class="card">
           <div class="card-title" id="accFormTitle">Yeni İşlem (konser dışı)</div>
           <div class="hint" style="margin-bottom:20px">Kira, maaş, genel gider, konser dışı gelir vb.</div>
           <div class="grid">
@@ -2115,6 +2142,151 @@ function setAccYon(y){
   document.getElementById('accYonGelir').classList.toggle('on',y==='gelir');
   document.getElementById('accYonGider').classList.toggle('on',y==='gider');
 }
+
+// ── AYLIK SABİT ÖDEMELER (acc içinde recurring:true) ─────
+let editingSabitId=null;
+function sabitList(){ return accEntries.filter(e=>e.recurring); }
+
+function refreshSabitFirmPicker(){
+  const sel=document.getElementById('sabitFirm');if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— firma yok / seç —</option>';
+  firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.city?' · '+f.city:'');sel.appendChild(o);});
+  sel.value=cur;
+}
+function resetSabitForm(){
+  editingSabitId=null;
+  document.getElementById('sabitDesc').value='';
+  document.getElementById('sabitAmount').value='';
+  document.getElementById('sabitKdv').value=20;
+  document.getElementById('sabitGun').value=1;
+  document.getElementById('sabitFirm').value='';
+  document.getElementById('sabitStart').value='';
+  document.getElementById('sabitFormTitle').textContent='Yeni Sabit Ödeme';
+  document.getElementById('sabitSaveBtn').textContent='Sabit ödeme kaydet';
+}
+async function saveSabit(){
+  const desc=document.getElementById('sabitDesc').value.trim();
+  const amount=+document.getElementById('sabitAmount').value||0;
+  if(!desc||!amount){toast('Açıklama ve tutar gerekli');return;}
+  const mevcut=editingSabitId?accEntries.find(x=>x.id===editingSabitId):null;
+  const e={
+    id:editingSabitId||('sb'+Date.now()),
+    recurring:true,
+    yon:'gider',
+    desc,
+    amount,
+    kdv:+document.getElementById('sabitKdv').value||0,
+    gunu:+document.getElementById('sabitGun').value||1,
+    firmId:document.getElementById('sabitFirm').value||'',
+    start:document.getElementById('sabitStart').value||new Date().toISOString().slice(0,7),
+    paidMonths:mevcut?(mevcut.paidMonths||[]):[],
+    // acc listesinde tarih kafa karıştırmasın diye boş bırakıyoruz
+    date:'',
+    status:'tamam'
+  };
+  try{const ex=accEntries.find(x=>x.id===e.id);const res=await apiFetch('/api/acc'+(ex?'/'+e.id:''),{method:ex?'PUT':'POST',body:JSON.stringify(e)});if(!res||!res.ok){toast('Kaydedilemedi');return;}}catch(err){toast('Kaydedilemedi');return;}
+  await loadAcc();
+  resetSabitForm();
+  renderOdeme();
+  toast('Sabit ödeme kaydedildi');
+}
+function editSabit(id){
+  const e=accEntries.find(x=>x.id===id);if(!e)return;
+  editingSabitId=e.id;
+  document.getElementById('sabitDesc').value=e.desc||'';
+  document.getElementById('sabitAmount').value=e.amount||'';
+  document.getElementById('sabitKdv').value=e.kdv!=null?e.kdv:20;
+  document.getElementById('sabitGun').value=e.gunu||1;
+  refreshSabitFirmPicker();
+  document.getElementById('sabitFirm').value=e.firmId||'';
+  document.getElementById('sabitStart').value=e.start||'';
+  document.getElementById('sabitFormTitle').textContent='Sabit Ödeme Düzenle';
+  document.getElementById('sabitSaveBtn').textContent='Değişiklikleri kaydet';
+  document.getElementById('sabitFormTitle').scrollIntoView({behavior:'smooth'});
+}
+async function delSabit(id){
+  if(!confirm('Bu sabit ödemeyi silmek istiyor musun?'))return;
+  try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
+  await loadAcc();renderOdeme();toast('Silindi');
+}
+// bu ay anahtarı YYYY-MM
+function buAyKey(){ return new Date().toISOString().slice(0,7); }
+// bir sabit ödeme bu ay ödendi mi?
+function sabitOdendiMi(e, ayKey){ return (e.paidMonths||[]).includes(ayKey); }
+async function toggleSabitOdendi(id, ayKey){
+  const e=accEntries.find(x=>x.id===id);if(!e)return;
+  const pm=new Set(e.paidMonths||[]);
+  if(pm.has(ayKey))pm.delete(ayKey); else pm.add(ayKey);
+  e.paidMonths=[...pm];
+  try{await apiFetch('/api/acc/'+id,{method:'PUT',body:JSON.stringify(e)});}catch(err){toast('Kaydedilemedi');return;}
+  await loadAcc();renderOdeme();
+  toast(pm.has(ayKey)?'Ödendi işaretlendi':'Geri alındı');
+}
+function renderSabit(){
+  const list=sabitList();
+  const ayKey=buAyKey();
+  const bugunGun=new Date().getDate();
+  // özet
+  const aylikToplam=list.reduce((a,e)=>a+(e.amount||0),0);
+  const buAyOdenen=list.filter(e=>sabitOdendiMi(e,ayKey)).reduce((a,e)=>a+(e.amount||0),0);
+  const buAyKalan=aylikToplam-buAyOdenen;
+  const oz=document.getElementById('sabitOzet');
+  if(oz)oz.innerHTML=`
+    <div class="stat"><div class="n">Aylık Toplam</div><div class="v">${fmt(aylikToplam)}</div></div>
+    <div class="stat"><div class="n">Bu Ay Ödenen</div><div class="v pos">${fmt(buAyOdenen)}</div></div>
+    <div class="stat"><div class="n">Bu Ay Kalan</div><div class="v ${buAyKalan>0.5?'neg':'pos'}">${fmt(buAyKalan)}</div></div>`;
+
+  // bu ay durumu (kart liste)
+  const buAyWrap=document.getElementById('sabitBuAy');
+  if(buAyWrap){
+    if(!list.length){
+      buAyWrap.innerHTML='<div class="anEmpty">Tanımlı sabit ödeme yok. Aşağıdan ekle.</div>';
+    }else{
+      const sirali=list.slice().sort((a,b)=>(a.gunu||1)-(b.gunu||1));
+      let h='<table class="atable"><thead><tr><th>Açıklama</th><th>Gün</th><th>Tutar</th><th>Bu Ay</th><th></th></tr></thead><tbody>';
+      sirali.forEach(e=>{
+        const odendi=sabitOdendiMi(e,ayKey);
+        let durumTxt,renk;
+        if(odendi){durumTxt='Ödendi';renk='pos';}
+        else if(bugunGun>(e.gunu||1)){durumTxt='Gecikmiş';renk='neg';}
+        else if((e.gunu||1)-bugunGun<=3){durumTxt='Yaklaşıyor';renk='warn';}
+        else{durumTxt='Bekliyor';renk='bekliyor';}
+        const fnm=e.firmId?firmName(e.firmId):'';
+        h+=`<tr>
+          <td>${esc(e.desc)}${fnm?' · '+esc(fnm):''}</td>
+          <td>her ayın ${e.gunu||1}.</td>
+          <td>${fmt(e.amount)}</td>
+          <td><span class="vbadge ${renk}">${durumTxt}</span></td>
+          <td style="text-align:right"><button class="btn ${odendi?'ghost':'primary'}" style="flex:none;min-width:auto;padding:6px 12px;font-size:12px" onclick="toggleSabitOdendi('${e.id}','${ayKey}')">${odendi?'Geri al':'Ödendi ✓'}</button></td>
+        </tr>`;
+      });
+      h+='</tbody></table>';
+      buAyWrap.innerHTML=h;
+    }
+  }
+
+  // tanımlı liste (düzenle/sil)
+  const wrap=document.getElementById('sabitList');
+  if(!wrap)return;
+  if(!list.length){wrap.innerHTML='<div class="empty"><div class="big">↻</div>Henüz sabit ödeme yok.</div>';return;}
+  wrap.innerHTML='';
+  list.slice().sort((a,b)=>(a.gunu||1)-(b.gunu||1)).forEach(e=>{
+    const fnm=e.firmId?firmName(e.firmId):'';
+    const d=document.createElement('div');
+    d.className='saved-item';
+    d.onclick=(ev)=>{if(ev.target.classList.contains('del'))return;editSabit(e.id);};
+    d.innerHTML=`
+      <div class="info">
+        <div class="ttl">${esc(e.desc)}<span class="badge">AYLIK</span></div>
+        <div class="sub">Her ayın ${e.gunu||1}. günü${fnm?' · '+esc(fnm):''}${e.kdv?' · KDV %'+e.kdv:''}</div>
+      </div>
+      <div class="pnl"><div class="a neg">${fmt(e.amount)}</div></div>
+      <button class="del" title="Sil" onclick="delSabit('${e.id}')">🗑</button>`;
+    wrap.appendChild(d);
+  });
+}
+
 function refreshAccFirmPicker(){
   const sel=document.getElementById('accFirm');if(!sel)return;
   const cur=sel.value;
@@ -2218,6 +2390,7 @@ function accAggregate(){
   });
 
   accEntries.forEach(e=>{
+    if(e.recurring)return; // sabit ödeme tanımları ayrı yönetilir
     const div=1+(e.kdv||0)/100;
     const net=e.kdv>0?e.amount/div:e.amount;
     const kdvTutar=e.amount-net;
@@ -2292,6 +2465,8 @@ function renderOdeme(){
   const trNames=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
 
   renderVadeler();
+  renderSabit();
+  refreshSabitFirmPicker();
 
 document.getElementById('accOzet').innerHTML=`
     <div class="stat"><div class="n">Toplam Gelir (net)</div><div class="v">${fmt(agg.toplamGelir)}</div></div>
@@ -2342,6 +2517,7 @@ function renderAcc(){
       amount:c.ciroGross,yon:'gelir',status:t.durum==='tamam'?'tamam':'bekliyor',ev});
   });
   accEntries.forEach(e=>{
+    if(e.recurring)return; // sabit ödemeler kendi kartında
     items.push({kind:'M',id:e.id,date:e.date||'',title:e.desc,
       sub:[e.firmId?firmName(e.firmId):'',e.kdv?'KDV %'+e.kdv:'KDV yok'].filter(Boolean).join(' · '),
       amount:e.amount,yon:e.yon,status:e.status||'bekliyor'});
@@ -2661,6 +2837,10 @@ function renderDashboard(){
   });
   const acikKaseler=tumKaseler().filter(k=>!k.odendi);
   const acikKaseTutar=acikKaseler.reduce((a,k)=>a+k.amount,0);
+  // bu ay ödenmemiş sabit ödemeler
+  const _ayKey=buAyKey();
+  const sabitAcik=sabitList().filter(e=>!sabitOdendiMi(e,_ayKey));
+  const sabitAcikTutar=sabitAcik.reduce((a,e)=>a+(e.amount||0),0);
   const yaklasanEtkinlik=events.filter(ev=>{
     if(!ev.tarih)return false;
     const d=new Date(ev.tarih+'T00:00:00');
@@ -2671,7 +2851,8 @@ function renderDashboard(){
     <div class="stat"><div class="n">Toplam İş</div><div class="v">${events.length}</div></div>
     <div class="stat"><div class="n">Bu Ayki Kâr</div><div class="v ${buAyKar>=0?'pos':'neg'}">${fmt(buAyKar)}</div></div>
     <div class="stat"><div class="n">Açık Alacak</div><div class="v ${acikAlacak>0.5?'neg':'pos'}">${fmt(acikAlacak)}</div></div>
-    <div class="stat"><div class="n">Ödenmemiş Kaşe</div><div class="v ${acikKaseTutar>0.5?'neg':'pos'}">${fmt(acikKaseTutar)}</div></div>`;
+    <div class="stat"><div class="n">Ödenmemiş Kaşe</div><div class="v ${acikKaseTutar>0.5?'neg':'pos'}">${fmt(acikKaseTutar)}</div></div>
+    <div class="stat"><div class="n">Bu Ay Sabit Ödeme</div><div class="v ${sabitAcikTutar>0.5?'neg':'pos'}">${fmt(sabitAcikTutar)}</div></div>`;
 
   // yaklaşan etkinlikler
   const etkWrap=document.getElementById('dashEtkinlik');
