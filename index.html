@@ -392,14 +392,25 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabSaved" onclick="showTab(&#39;saved&#39;)">
         <span class="icon">◈</span> Konserler
       </button>
-      <button class="nav-item" id="tabOdeme" onclick="showTab(&#39;odeme&#39;)">
-        <span class="icon">◎</span> Muhasebe
+      <button class="nav-item" id="tabSanatci" onclick="showTab(&#39;sanatci&#39;)">
+        <span class="icon">★</span> Sanatçı Hesabı
+      </button>
+
+      <div class="nav-section">Muhasebe</div>
+      <button class="nav-item" id="tabMgenel" onclick="showTab('mgenel')">
+        <span class="icon">◎</span> Genel
+      </button>
+      <button class="nav-item" id="tabMgg" onclick="showTab('mgg')">
+        <span class="icon">⇅</span> Gelir / Gider
+      </button>
+      <button class="nav-item" id="tabMcari" onclick="showTab('mcari')">
+        <span class="icon">⊞</span> Cari Durum
+      </button>
+      <button class="nav-item" id="tabMkdv" onclick="showTab('mkdv')">
+        <span class="icon">%</span> KDV
       </button>
       <button class="nav-item" id="tabEkipOdeme" onclick="showTab(&#39;ekipodeme&#39;)">
         <span class="icon">◐</span> Ekip Ödemeleri
-      </button>
-      <button class="nav-item" id="tabSanatci" onclick="showTab(&#39;sanatci&#39;)">
-        <span class="icon">★</span> Sanatçı Hesabı
       </button>
 
       <div class="nav-section">Sözleşmeler</div>
@@ -708,12 +719,6 @@ select option{background:var(--surface)}
       </div>
 
       <div id="view-odeme" style="display:none">
-        <div class="seg" style="margin-bottom:24px;max-width:560px">
-          <button id="mtabGenel" class="on" onclick="setMtab('genel')">Genel</button>
-          <button id="mtabGg" onclick="setMtab('gg')">Gelir/Gider</button>
-          <button id="mtabCari" onclick="setMtab('cari')">Cari</button>
-          <button id="mtabKdv" onclick="setMtab('kdv')">KDV</button>
-        </div>
 
         <div class="card" data-mtab="genel">
           <div class="card-title">Genel Muhasebe Özeti</div>
@@ -1578,7 +1583,7 @@ function applyXlsx() {
 }
 
 const PAGE_TITLES={
-  dashboard:'Dashboard',new:'Yeni Etkinlik',saved:'Konserler',odeme:'Muhasebe',ekipodeme:'Ekip Ödemeleri',sanatci:'Sanatçı Hesabı',
+  dashboard:'Dashboard',new:'Yeni Etkinlik',saved:'Konserler',odeme:'Muhasebe',mgenel:'Muhasebe — Genel',mgg:'Muhasebe — Gelir/Gider',mcari:'Muhasebe — Cari Durum',mkdv:'Muhasebe — KDV',ekipodeme:'Ekip Ödemeleri',sanatci:'Sanatçı Hesabı',
   szhazirla:'Sözleşme Hazırla',szrehber:'Sözleşme Rehberi',szfirmam:'Firma Bilgilerim',szsablon:'Sözleşme Şablonu',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
   users:'Kullanıcılar'
 };
@@ -1619,25 +1624,26 @@ function fmt(n){
 }
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900);}
 function showTab(t){
+  // Muhasebe alt-sekmeleri (mgenel/mgg/mcari/mkdv) aynı view-odeme'yi kullanır
+  const muhAlt={mgenel:'genel',mgg:'gg',mcari:'cari',mkdv:'kdv'};
+  const isMuh=Object.keys(muhAlt).includes(t);
+  const activeView=isMuh?'odeme':t;
   ['dashboard','new','saved','odeme','ekipodeme','sanatci','szhazirla','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users'].forEach(id=>{
     const v=document.getElementById('view-'+id);
-    const tabId = id==='ekipodeme' ? 'tabEkipOdeme' : 'tab'+id.charAt(0).toUpperCase()+id.slice(1);
-    const b=document.getElementById(tabId);
-    if(v) {
-  if (t === id) {
-    v.style.display = ''; 
-  } else {
-    v.style.display = 'none';
-  }
-}
-    if(b) b.classList.toggle('active',t===id);
+    if(v) v.style.display=(activeView===id)?'':'none';
   });
+  // menü aktif işaretleme
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  const tabId = t==='ekipodeme' ? 'tabEkipOdeme' : 'tab'+t.charAt(0).toUpperCase()+t.slice(1);
+  const ab=document.getElementById(tabId);
+  if(ab)ab.classList.add('active');
+
   document.getElementById('pageTitle').textContent=PAGE_TITLES[t]||'';
   closeSidebar();
   if(t==='dashboard')renderDashboard();
   if(t==='new'){refreshEkipGiderPickers();refreshEvFirmPicker();refreshEvArtistPicker();}
   if(t==='saved')setSavedFilter(savedFilter);
-  if(t==='odeme'){refreshAccFirmPicker();renderOdeme();setMtab(mtabCur);}
+  if(isMuh){refreshAccFirmPicker();renderOdeme();setMtab(muhAlt[t]);}
   if(t==='ekipodeme')renderEkipOdeme();
   if(t==='sanatci'){refreshSaPicker();renderSanatci();}
   if(t==='szhazirla'){refreshDocPicker();refreshDcPicker();}
@@ -2950,10 +2956,6 @@ function restoreById(id){
 let mtabCur='genel';
 function setMtab(t){
   mtabCur=t;
-  ['genel','gg','cari','kdv'].forEach(x=>{
-    const b=document.getElementById('mtab'+x.charAt(0).toUpperCase()+x.slice(1));
-    if(b)b.classList.toggle('on',x===t);
-  });
   document.querySelectorAll('#view-odeme [data-mtab]').forEach(el=>{
     el.style.display=(el.getAttribute('data-mtab')===t)?'':'none';
   });
