@@ -949,6 +949,12 @@ select option{background:var(--surface)}
             <button class="btn primary" onclick="saveCompanyManual()">Firma bilgilerimi kaydet</button>
           </div>
         </div>
+
+        <div class="card" id="dangerZone" style="border-color:var(--red);display:none">
+          <div class="card-title" style="color:var(--red)">⚠ Tehlikeli Bölge</div>
+          <div class="hint" style="margin-bottom:16px">Tüm işler, firmalar, mekanlar, muhasebe kayıtları, ekip rehberi ve ayarları kalıcı olarak siler — programı sıfırdan başlatmak için. Bu işlem geri alınamaz. Önce "Konserler → Tümünü Excel'e aktar" ile yedek almanı öneririm.</div>
+          <button class="btn" style="background:var(--red);color:#fff" onclick="resetAllData()">Tümünü Sıfırla (sıfır program)</button>
+        </div>
       </div>
 
       <div id="view-szsablon" style="display:none">
@@ -2190,6 +2196,36 @@ function loadCompany(){
 function saveCompanyManual(){
   saveCompany();
   toast('Firma bilgilerin kaydedildi');
+}
+
+// ── TÜM VERİYİ SIFIRLA (tehlikeli) ──────────────────────
+async function resetAllData(){
+  if(!confirm('DİKKAT: Tüm işler, firmalar, mekanlar, muhasebe kayıtları, ekip rehberi ve ayarlar KALICI olarak silinecek. Bu işlem GERİ ALINAMAZ. Devam etmek istiyor musun?'))return;
+  const onay=prompt('Emin olmak için aşağıya büyük harfle SIFIRLA yaz:');
+  if(onay!=='SIFIRLA'){toast('İptal edildi');return;}
+  toast('Siliniyor, lütfen bekle...');
+  try{
+    // backend: events
+    await loadEvents();
+    for(const ev of events.slice()){try{await apiFetch('/api/events/'+ev.id,{method:'DELETE'});}catch(e){}}
+    // backend: firms
+    await loadFirms();
+    for(const f of firms.slice()){try{await apiFetch('/api/firms/'+f.id,{method:'DELETE'});}catch(e){}}
+    // backend: venues
+    await loadVenues();
+    for(const v of venues.slice()){try{await apiFetch('/api/venues/'+v.id,{method:'DELETE'});}catch(e){}}
+    // backend: acc (muhasebe + sabit ödeme + sanatçı + karşı taraf rehberi hepsi acc içinde)
+    await loadAcc();
+    for(const a of accEntries.slice()){try{await apiFetch('/api/acc/'+a.id,{method:'DELETE'});}catch(e){}}
+    // tarayıcı: ekip rehberi, firma bilgim, şablon
+    ['konser_kases','konser_ekipler','konser_giderler','konser_company','konser_sozlesme_sablonu'].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
+    // belleği temizle
+    events=[];firms=[];venues=[];accEntries=[];kases=[];ekipler=[];giderler=[];
+    toast('Tüm veriler silindi. Sıfır program hazır.');
+    setTimeout(()=>location.reload(),1500);
+  }catch(err){
+    toast('Silme sırasında hata oldu, tekrar dene');
+  }
 }
 
 // ── KARŞI TARAF REHBERİ (belgeler için, acc içinde docClient:true) ──
@@ -3971,6 +4007,7 @@ function applyUserUI(){
   if(roleEl)roleEl.textContent=isAdmin?'Yönetici':'Kullanıcı';
   document.getElementById('navSecYonetim').style.display=isAdmin?'block':'none';
   document.getElementById('tabUsers').style.display=isAdmin?'flex':'none';
+  const dz=document.getElementById('dangerZone');if(dz)dz.style.display=isAdmin?'block':'none';
 }
 
 function openChangePass(){
