@@ -392,6 +392,9 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabEkipOdeme" onclick="showTab('ekipodeme')">
         <span class="icon">◐</span> Ekip Ödemeleri
       </button>
+      <button class="nav-item" id="tabSanatci" onclick="showTab('sanatci')">
+        <span class="icon">★</span> Sanatçı Hesabı
+      </button>
 
       <div class="nav-section">Belge & Rehber</div>
       <button class="nav-item" id="tabDoc" onclick="showTab('doc')">
@@ -531,8 +534,14 @@ select option{background:var(--surface)}
                 <option value="">— firma yok / seç —</option>
               </select>
             </div>
+            <div>
+              <label>Sanatçı / sanatçı firması</label>
+              <select id="evArtistPick">
+                <option value="">— sanatçı yok / seç —</option>
+              </select>
+            </div>
           </div>
-          <div class="hint">Mekanı listeden seçersen şehir ve kapasite otomatik gelir ve kilitlenir. Organizatör firmayı seçersen alacak/verecek Muhasebe'de o firmanın cari hesabında toplanır.</div>
+          <div class="hint">Organizatör firmayı seçersen alacak/verecek Muhasebe'de o firmanın cari hesabında toplanır. Sanatçıyı seçersen kârın sanatçı payı (%75) o sanatçının hesabına yazılır.</div>
         </div>
 
         <div class="card">
@@ -770,6 +779,75 @@ select option{background:var(--surface)}
             <button id="eoSegTumu" onclick="setEoFilter('tumu')">Tümü</button>
           </div>
           <div id="eoListe"></div>
+        </div>
+      </div>
+
+      <div id="view-sanatci" style="display:none">
+        <div class="card">
+          <div class="card-title">Sanatçı Seç</div>
+          <div class="grid">
+            <div>
+              <label>Sanatçı / sanatçı firması</label>
+              <select id="saPick" onchange="renderSanatci()">
+                <option value="">— sanatçı seç —</option>
+              </select>
+            </div>
+            <div>
+              <label>Dönem (opsiyonel, ay filtresi)</label>
+              <input id="saAy" type="month" onchange="renderSanatci()">
+            </div>
+          </div>
+          <div class="hint">Sanatçıyı işe bağlamak için "Yeni İş" ekranında sanatçı seçmelisin. Burada o sanatçının tüm konserlerden payı (%75), ona yapılan ödemeler ve adına yapılan giderler toplanır.</div>
+        </div>
+
+        <div id="saBos" class="card"><div class="anEmpty">Sanatçı seç, hesabı burada görünsün.</div></div>
+
+        <div id="saIcerik" style="display:none">
+          <div class="card">
+            <div class="card-title">Cari Özet</div>
+            <div class="stat-grid" id="saOzet"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Konser Payları (kâr × %75)</div>
+            <div class="hint" style="margin-bottom:16px">Bu sanatçıya bağlı konserlerden hak ettiği pay.</div>
+            <div id="saKonserler"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title" id="saHareketFormTitle">Ödeme / Gider Ekle</div>
+            <div class="hint" style="margin-bottom:20px">Sanatçıya yaptığın ödeme (borç azalır) ya da onun adına yaptığın gider (borçtan düşülür).</div>
+            <div class="grid">
+              <div>
+                <label>Tür</label>
+                <div class="seg">
+                  <button id="saTurOdeme" class="on" onclick="setSaTur('odeme')">ÖDEME (sanatçıya)</button>
+                  <button id="saTurGider" onclick="setSaTur('gider')">GİDER (adına)</button>
+                </div>
+              </div>
+              <div><label>Tarih</label><input id="saDate" type="date"></div>
+              <div><label>Açıklama</label><input id="saDesc" placeholder="Avans / konaklama / ulaşım vb." autocomplete="off"></div>
+              <div><label>Tutar (₺)</label><input id="saAmount" type="number" min="0" placeholder="0"></div>
+            </div>
+            <div class="actions" style="margin-top:24px">
+              <button class="btn primary" onclick="saveSaHareket()" id="saSaveBtn">Kaydet</button>
+              <button class="btn ghost" onclick="resetSaForm()">Temizle</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Ödemeler & Giderler</div>
+            <div id="saHareketler"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Ay Sonu Raporu</div>
+            <div class="hint" style="margin-bottom:16px">Seçili döneme (ya da tümüne) göre özet. İndirip fatura için kullanabilirsin.</div>
+            <div id="saRapor"></div>
+            <div class="actions" style="margin-top:20px">
+              <button class="btn ghost" onclick="exportSanatci()">Raporu Excel indir</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1277,7 +1355,7 @@ function applyXlsx() {
 }
 
 const PAGE_TITLES={
-  dashboard:'Dashboard',new:'Yeni İş',saved:'İşler',odeme:'Muhasebe',ekipodeme:'Ekip Ödemeleri',
+  dashboard:'Dashboard',new:'Yeni İş',saved:'İşler',odeme:'Muhasebe',ekipodeme:'Ekip Ödemeleri',sanatci:'Sanatçı Hesabı',
   doc:'Teklif & Sözleşme',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
   users:'Kullanıcılar'
 };
@@ -1318,7 +1396,7 @@ function fmt(n){
 }
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900);}
 function showTab(t){
-  ['dashboard','new','saved','odeme','ekipodeme','doc','firms','venues','ekip','analiz','users'].forEach(id=>{
+  ['dashboard','new','saved','odeme','ekipodeme','sanatci','doc','firms','venues','ekip','analiz','users'].forEach(id=>{
     const v=document.getElementById('view-'+id);
     const tabId = id==='ekipodeme' ? 'tabEkipOdeme' : 'tab'+id.charAt(0).toUpperCase()+id.slice(1);
     const b=document.getElementById(tabId);
@@ -1334,10 +1412,11 @@ function showTab(t){
   document.getElementById('pageTitle').textContent=PAGE_TITLES[t]||'';
   closeSidebar();
   if(t==='dashboard')renderDashboard();
-  if(t==='new'){refreshEkipGiderPickers();refreshEvFirmPicker();}
+  if(t==='new'){refreshEkipGiderPickers();refreshEvFirmPicker();refreshEvArtistPicker();}
   if(t==='saved')setSavedFilter(savedFilter);
   if(t==='odeme'){refreshAccFirmPicker();renderOdeme();}
   if(t==='ekipodeme')renderEkipOdeme();
+  if(t==='sanatci'){refreshSaPicker();renderSanatci();}
   if(t==='doc'){refreshDocPicker();refreshFirmPicker();}
   if(t==='firms')renderFirms();
   if(t==='venues')renderVenues();
@@ -1565,6 +1644,7 @@ function gather(){
     tip,
     venueId:document.getElementById('mekanPick').value||'',
     firmId:document.getElementById('evFirmPick').value||'',
+    artistId:document.getElementById('evArtistPick').value||'',
     kapasite:+document.getElementById('kapasite').value||0,
     satilan:+document.getElementById('satilan').value||0,
     biletAdet:+document.getElementById('biletAdet').value||0,
@@ -1591,6 +1671,8 @@ function restore(ev){
   document.getElementById('mekanPick').value=ev.venueId||'';
   refreshEvFirmPicker();
   document.getElementById('evFirmPick').value=ev.firmId||'';
+  refreshEvArtistPicker();
+  document.getElementById('evArtistPick').value=ev.artistId||'';
   if(ev.venueId){['mekan','sehir','kapasite'].forEach(id=>{const e=document.getElementById(id);e.readOnly=true;e.style.opacity='.7';});}
   else{['mekan','sehir','kapasite'].forEach(id=>{const e=document.getElementById(id);e.readOnly=false;e.style.opacity='1';});}
   document.getElementById('biletAdet').value=ev.biletAdet||'';
@@ -1618,6 +1700,7 @@ function resetForm(){
   ['sehir','mekan','tarih','biletAdet','biletFiyat','orgBedel','kapasite','satilan'].forEach(id=>document.getElementById(id).value='');
   const mp=document.getElementById('mekanPick');if(mp)mp.value='';
   const efp=document.getElementById('evFirmPick');if(efp)efp.value='';
+  const eap=document.getElementById('evArtistPick');if(eap)eap.value='';
   ['mekan','sehir','kapasite'].forEach(id=>{const e=document.getElementById(id);e.readOnly=false;e.style.opacity='1';});
   document.getElementById('komOran').value=15.75;
   document.getElementById('kdvOran').value=20;document.getElementById('kdvOranOrg').value=20;
@@ -1906,6 +1989,13 @@ function refreshEvFirmPicker(){
   const cur=sel.value;
   sel.innerHTML='<option value="">— firma yok / seç —</option>';
   firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.city?' · '+f.city:'')+(f.type?' ('+f.type+')':'');sel.appendChild(o);});
+  sel.value=cur;
+}
+function refreshEvArtistPicker(){
+  const sel=document.getElementById('evArtistPick');if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— sanatçı yok / seç —</option>';
+  firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');sel.appendChild(o);});
   sel.value=cur;
 }
 function fillClientFromFirm(){
@@ -2391,6 +2481,7 @@ function accAggregate(){
 
   accEntries.forEach(e=>{
     if(e.recurring)return; // sabit ödeme tanımları ayrı yönetilir
+    if(e.artistPay)return; // sanatçı hesabı hareketleri ayrı yönetilir
     const div=1+(e.kdv||0)/100;
     const net=e.kdv>0?e.amount/div:e.amount;
     const kdvTutar=e.amount-net;
@@ -2518,6 +2609,7 @@ function renderAcc(){
   });
   accEntries.forEach(e=>{
     if(e.recurring)return; // sabit ödemeler kendi kartında
+    if(e.artistPay)return; // sanatçı hesabı kendi ekranında
     items.push({kind:'M',id:e.id,date:e.date||'',title:e.desc,
       sub:[e.firmId?firmName(e.firmId):'',e.kdv?'KDV %'+e.kdv:'KDV yok'].filter(Boolean).join(' · '),
       amount:e.amount,yon:e.yon,status:e.status||'bekliyor'});
@@ -2822,6 +2914,200 @@ function addGiderToForm(){
   toast(g.name+' eklendi');
 }
 
+// ── SANATÇI HESABI ───────────────────────────────────────
+let saTur='odeme';
+let editingSaId=null;
+function setSaTur(t){
+  saTur=t;
+  document.getElementById('saTurOdeme').classList.toggle('on',t==='odeme');
+  document.getElementById('saTurGider').classList.toggle('on',t==='gider');
+}
+function refreshSaPicker(){
+  const sel=document.getElementById('saPick');if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— sanatçı seç —</option>';
+  // sadece bir işe sanatçı olarak bağlanmış firmaları + tüm firmaları göster
+  firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');sel.appendChild(o);});
+  sel.value=cur;
+}
+// sanatçı hareketleri acc içinde: artistPay:true, artistId, saTur('odeme'|'gider')
+function saHareketler(artistId){
+  return accEntries.filter(e=>e.artistPay && e.artistId===artistId);
+}
+// bu sanatçıya bağlı konserler ve payları
+function saKonserPaylari(artistId, ayFilter){
+  const arr=[];
+  events.forEach(ev=>{
+    if(ev.artistId!==artistId)return;
+    if(ayFilter && (ev.tarih||'').slice(0,7)!==ayFilter)return;
+    const c=computeFor(ev);
+    arr.push({ev, pay:c.p1amt, kar:c.kar});
+  });
+  return arr;
+}
+function resetSaForm(){
+  editingSaId=null;
+  document.getElementById('saDate').value='';
+  document.getElementById('saDesc').value='';
+  document.getElementById('saAmount').value='';
+  setSaTur('odeme');
+  document.getElementById('saHareketFormTitle').textContent='Ödeme / Gider Ekle';
+  document.getElementById('saSaveBtn').textContent='Kaydet';
+}
+async function saveSaHareket(){
+  const artistId=document.getElementById('saPick').value;
+  if(!artistId){toast('Önce sanatçı seç');return;}
+  const amount=+document.getElementById('saAmount').value||0;
+  const desc=document.getElementById('saDesc').value.trim();
+  if(!amount||!desc){toast('Açıklama ve tutar gerekli');return;}
+  const e={
+    id:editingSaId||('sa'+Date.now()),
+    artistPay:true,
+    artistId,
+    saTur,                    // 'odeme' = sanatçıya ödendi, 'gider' = adına gider
+    date:document.getElementById('saDate').value||'',
+    desc,
+    amount,
+    yon:'gider',              // muhasebe genelinde gider gibi ama accAggregate'te atlanacak
+    kdv:0,
+    status:'tamam'
+  };
+  try{const ex=accEntries.find(x=>x.id===e.id);const res=await apiFetch('/api/acc'+(ex?'/'+e.id:''),{method:ex?'PUT':'POST',body:JSON.stringify(e)});if(!res||!res.ok){toast('Kaydedilemedi');return;}}catch(err){toast('Kaydedilemedi');return;}
+  await loadAcc();
+  resetSaForm();
+  renderSanatci();
+  toast('Kaydedildi');
+}
+function editSaHareket(id){
+  const e=accEntries.find(x=>x.id===id);if(!e)return;
+  editingSaId=e.id;
+  document.getElementById('saDate').value=e.date||'';
+  document.getElementById('saDesc').value=e.desc||'';
+  document.getElementById('saAmount').value=e.amount||'';
+  setSaTur(e.saTur||'odeme');
+  document.getElementById('saHareketFormTitle').textContent='Hareketi Düzenle';
+  document.getElementById('saSaveBtn').textContent='Değişiklikleri kaydet';
+  document.getElementById('saHareketFormTitle').scrollIntoView({behavior:'smooth'});
+}
+async function delSaHareket(id){
+  if(!confirm('Bu kaydı silmek istiyor musun?'))return;
+  try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
+  await loadAcc();renderSanatci();toast('Silindi');
+}
+function renderSanatci(){
+  const artistId=document.getElementById('saPick').value;
+  const ayFilter=document.getElementById('saAy').value||'';
+  const bos=document.getElementById('saBos');
+  const icerik=document.getElementById('saIcerik');
+  if(!artistId){bos.style.display='block';icerik.style.display='none';return;}
+  bos.style.display='none';icerik.style.display='block';
+
+  const konserler=saKonserPaylari(artistId, ayFilter);
+  const hareketler=saHareketler(artistId).filter(h=>!ayFilter||(h.date||'').slice(0,7)===ayFilter);
+
+  const toplamPay=konserler.reduce((a,k)=>a+k.pay,0);          // sanatçının hak ettiği (%75)
+  const odenen=hareketler.filter(h=>h.saTur==='odeme').reduce((a,h)=>a+h.amount,0);
+  const giderler=hareketler.filter(h=>h.saTur==='gider').reduce((a,h)=>a+h.amount,0);
+  const kalan=toplamPay-odenen-giderler;                       // sanatçıya hâlâ ödenecek
+
+  document.getElementById('saOzet').innerHTML=`
+    <div class="stat"><div class="n">Hak Ettiği Pay (%75)</div><div class="v">${fmt(toplamPay)}</div></div>
+    <div class="stat"><div class="n">Ödenen</div><div class="v pos">${fmt(odenen)}</div></div>
+    <div class="stat"><div class="n">Adına Gider</div><div class="v">${fmt(giderler)}</div></div>
+    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Kalan (Ödenecek)</div><div class="v ${kalan>0.5?'neg':'pos'}">${fmt(kalan)}</div></div>`;
+
+  // konserler tablosu
+  const kWrap=document.getElementById('saKonserler');
+  if(!konserler.length){
+    kWrap.innerHTML='<div class="anEmpty">Bu sanatçıya bağlı konser yok. Yeni İş\'te sanatçı seçmelisin.</div>';
+  }else{
+    let h='<table class="atable"><thead><tr><th>İş</th><th>Tarih</th><th>Kâr</th><th>Pay (%75)</th></tr></thead><tbody>';
+    konserler.slice().sort((a,b)=>(b.ev.tarih||'').localeCompare(a.ev.tarih||'')).forEach(k=>{
+      const isim=(k.ev.sehir||'')+(k.ev.mekan?' · '+k.ev.mekan:'');
+      h+=`<tr style="cursor:pointer" onclick='restoreById("${k.ev.id}")'><td>${esc(isim)}</td><td>${k.ev.tarih?trDate(k.ev.tarih):'—'}</td><td>${fmt(k.kar)}</td><td class="pos">${fmt(k.pay)}</td></tr>`;
+    });
+    h+=`<tr style="font-weight:700"><td>TOPLAM</td><td></td><td></td><td class="pos">${fmt(toplamPay)}</td></tr>`;
+    h+='</tbody></table>';
+    kWrap.innerHTML=h;
+  }
+
+  // hareketler
+  const hWrap=document.getElementById('saHareketler');
+  if(!hareketler.length){
+    hWrap.innerHTML='<div class="anEmpty">Henüz ödeme/gider yok.</div>';
+  }else{
+    hWrap.innerHTML='';
+    hareketler.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(h=>{
+      const tur=h.saTur==='odeme'?'Ödeme':'Gider';
+      const renk=h.saTur==='odeme'?'pos':'';
+      const d=document.createElement('div');
+      d.className='saved-item';
+      d.onclick=(ev)=>{if(ev.target.classList.contains('del'))return;editSaHareket(h.id);};
+      d.innerHTML=`
+        <div class="info">
+          <div class="ttl">${esc(h.desc)}<span class="badge">${tur}</span></div>
+          <div class="sub">${h.date?trDate(h.date):'tarih yok'}</div>
+        </div>
+        <div class="pnl"><div class="a ${renk}">${fmt(h.amount)}</div></div>
+        <button class="del" title="Sil" onclick="delSaHareket('${h.id}')">🗑</button>`;
+      hWrap.appendChild(d);
+    });
+  }
+
+  // ay sonu raporu
+  const fnm=firmName(artistId)||'Sanatçı';
+  const donem=ayFilter?ayDisplay(ayFilter):'Tüm zamanlar';
+  document.getElementById('saRapor').innerHTML=`
+    <table class="atable"><tbody>
+      <tr><td>Sanatçı</td><td>${esc(fnm)}</td></tr>
+      <tr><td>Dönem</td><td>${donem}</td></tr>
+      <tr><td>Konser sayısı</td><td>${konserler.length}</td></tr>
+      <tr><td>Hak ettiği pay (%75)</td><td class="pos">${fmt(toplamPay)}</td></tr>
+      <tr><td>Yapılan ödeme</td><td>${fmt(odenen)}</td></tr>
+      <tr><td>Adına gider</td><td>${fmt(giderler)}</td></tr>
+      <tr style="font-weight:700"><td>NET KALAN (ödenecek)</td><td class="${kalan>0.5?'neg':'pos'}">${fmt(kalan)}</td></tr>
+    </tbody></table>`;
+}
+function ayDisplay(ayKey){
+  const trNames=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const [y,m]=ayKey.split('-');
+  return trNames[+m-1]+' '+y;
+}
+function exportSanatci(){
+  const artistId=document.getElementById('saPick').value;
+  if(!artistId){toast('Önce sanatçı seç');return;}
+  const ayFilter=document.getElementById('saAy').value||'';
+  const konserler=saKonserPaylari(artistId, ayFilter);
+  const hareketler=saHareketler(artistId).filter(h=>!ayFilter||(h.date||'').slice(0,7)===ayFilter);
+  const toplamPay=konserler.reduce((a,k)=>a+k.pay,0);
+  const odenen=hareketler.filter(h=>h.saTur==='odeme').reduce((a,h)=>a+h.amount,0);
+  const giderler=hareketler.filter(h=>h.saTur==='gider').reduce((a,h)=>a+h.amount,0);
+  const kalan=toplamPay-odenen-giderler;
+  const fnm=firmName(artistId)||'Sanatci';
+  const rows=[
+    ['SANATÇI HESAP RAPORU'],
+    ['Sanatçı',fnm],
+    ['Dönem',ayFilter?ayDisplay(ayFilter):'Tüm zamanlar'],
+    [],
+    ['KONSERLER','Tarih','Kâr','Pay (%75)'],
+  ];
+  konserler.forEach(k=>rows.push([(k.ev.sehir||'')+' '+(k.ev.mekan||''),k.ev.tarih||'',Math.round(k.kar),Math.round(k.pay)]));
+  rows.push(['Toplam Pay','','',Math.round(toplamPay)],[]);
+  rows.push(['ÖDEMELER & GİDERLER','Tür','Tarih','Tutar']);
+  hareketler.forEach(h=>rows.push([h.desc,h.saTur==='odeme'?'Ödeme':'Gider',h.date||'',Math.round(h.amount)]));
+  rows.push([]);
+  rows.push(['Hak ettiği pay',Math.round(toplamPay)]);
+  rows.push(['Yapılan ödeme',Math.round(odenen)]);
+  rows.push(['Adına gider',Math.round(giderler)]);
+  rows.push(['NET KALAN',Math.round(kalan)]);
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:32},{wch:14},{wch:12},{wch:12}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'RAPOR');
+  XLSX.writeFile(wb,safeName(fnm)+'_'+(ayFilter||'tum')+'.xlsx');
+  toast('Rapor indirildi');
+}
+
 // ── DASHBOARD ────────────────────────────────────────────
 function renderDashboard(){
   const bugun=new Date();bugun.setHours(0,0,0,0);
@@ -2841,6 +3127,16 @@ function renderDashboard(){
   const _ayKey=buAyKey();
   const sabitAcik=sabitList().filter(e=>!sabitOdendiMi(e,_ayKey));
   const sabitAcikTutar=sabitAcik.reduce((a,e)=>a+(e.amount||0),0);
+  // sanatçılara toplam kalan (tüm sanatçılar)
+  let sanatciKalan=0;
+  const _artistIds=[...new Set(events.map(ev=>ev.artistId).filter(Boolean))];
+  _artistIds.forEach(aid=>{
+    const pay=saKonserPaylari(aid,'').reduce((a,k)=>a+k.pay,0);
+    const har=saHareketler(aid);
+    const od=har.filter(h=>h.saTur==='odeme').reduce((a,h)=>a+h.amount,0);
+    const gi=har.filter(h=>h.saTur==='gider').reduce((a,h)=>a+h.amount,0);
+    sanatciKalan+=(pay-od-gi);
+  });
   const yaklasanEtkinlik=events.filter(ev=>{
     if(!ev.tarih)return false;
     const d=new Date(ev.tarih+'T00:00:00');
@@ -2852,7 +3148,8 @@ function renderDashboard(){
     <div class="stat"><div class="n">Bu Ayki Kâr</div><div class="v ${buAyKar>=0?'pos':'neg'}">${fmt(buAyKar)}</div></div>
     <div class="stat"><div class="n">Açık Alacak</div><div class="v ${acikAlacak>0.5?'neg':'pos'}">${fmt(acikAlacak)}</div></div>
     <div class="stat"><div class="n">Ödenmemiş Kaşe</div><div class="v ${acikKaseTutar>0.5?'neg':'pos'}">${fmt(acikKaseTutar)}</div></div>
-    <div class="stat"><div class="n">Bu Ay Sabit Ödeme</div><div class="v ${sabitAcikTutar>0.5?'neg':'pos'}">${fmt(sabitAcikTutar)}</div></div>`;
+    <div class="stat"><div class="n">Bu Ay Sabit Ödeme</div><div class="v ${sabitAcikTutar>0.5?'neg':'pos'}">${fmt(sabitAcikTutar)}</div></div>
+    <div class="stat"><div class="n">Sanatçılara Kalan</div><div class="v ${sanatciKalan>0.5?'neg':'pos'}">${fmt(sanatciKalan)}</div></div>`;
 
   // yaklaşan etkinlikler
   const etkWrap=document.getElementById('dashEtkinlik');
@@ -3115,6 +3412,7 @@ async function initApp(){
   refreshVenuePicker();
   refreshEkipGiderPickers();
   refreshEvFirmPicker();
+  refreshEvArtistPicker();
   setAccYon('gelir');
   calc();
   showTab('dashboard');
