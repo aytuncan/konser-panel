@@ -833,17 +833,30 @@ select option{background:var(--surface)}
 
         <div class="card">
           <div class="card-title">Kişi Bazında Toplam</div>
-          <div class="hint" style="margin-bottom:16px">Her kişiye tüm işlerden toplam ne kadar ödenecek ve ne kadarı ödendi.</div>
+          <div class="hint" style="margin-bottom:16px">Her kişi için: kaç işte kaşesi var, kaçı ödenmemiş, kaçı ödenmiş, toplam/kalan tutar ve genel durum.</div>
           <div id="eoKisi"></div>
         </div>
 
         <div class="card">
           <div class="card-title">İş Bazında Kaşeler</div>
-          <div class="hint" style="margin-bottom:16px">Açık (ödenmemiş) kaşeler önce gösterilir. "Ödendi" düğmesine basınca işin içine kaydedilir, herkes görür.</div>
+          <div class="hint" style="margin-bottom:16px">Açık (ödenmemiş) kaşeler önce gösterilir. Tek tek "Ödendi" yapabilir ya da kutucukları seçip toplu ödeme işaretleyebilirsin.</div>
           <div class="seg" style="margin-bottom:20px;max-width:340px">
             <button id="eoSegAcik" class="on" onclick="setEoFilter(&#39;acik&#39;)">Ödenmemiş</button>
             <button id="eoSegTumu" onclick="setEoFilter(&#39;tumu&#39;)">Tümü</button>
           </div>
+
+          <div id="topluBar" style="display:none;background:var(--accent-bg);border:1px solid var(--accent);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+            <div style="font-weight:700;margin-bottom:12px"><span id="topluSayi">0</span> kaşe seçili · Toplam: <span id="topluTutar">0 ₺</span></div>
+            <div class="grid" style="margin-bottom:12px">
+              <div><label>Ödeme tarihi</label><input id="topluTarih" type="date"></div>
+              <div><label>Not (banka/havale)</label><input id="topluNot" placeholder="Garanti'den havale vb." autocomplete="off"></div>
+            </div>
+            <div class="actions">
+              <button class="btn primary" onclick="topluOde()">Seçilenleri ödendi işaretle</button>
+              <button class="btn ghost" onclick="topluSecimTemizle()">Seçimi temizle</button>
+            </div>
+          </div>
+
           <div id="eoListe"></div>
         </div>
       </div>
@@ -1673,11 +1686,11 @@ function syncPay(which){
   calc();
 }
 
-function addRow(kind,name='',amount='',kdv=false,odendi=false){
+function addRow(kind,name='',amount='',kdv=false,odendi=false,odemeTarih='',odemeNot=''){
   const wrap=document.getElementById(kind==='kase'?'kaseRows':'giderRows');
   const div=document.createElement('div');
   div.className='row kase';
-  if(kind==='kase')div.dataset.odendi=odendi?'1':'0';
+  if(kind==='kase'){div.dataset.odendi=odendi?'1':'0';div.dataset.odemeTarih=odemeTarih||'';div.dataset.odemeNot=odemeNot||'';}
   div.innerHTML=`
     <input placeholder="${kind==='kase'?'İsim':'Açıklama'}" value="${name.replace(/"/g,'&quot;')}" autocomplete="off" oninput="calc()">
     <input type="number" min="0" placeholder="0" value="${amount}" oninput="calc()">
@@ -1691,7 +1704,7 @@ function readRows(kind){
   return [...wrap.children].map(r=>{
     const i=r.querySelectorAll('input'),s=r.querySelector('select');
     const o={name:i[0].value,amount:+i[1].value||0,kdv:s.value==='1'};
-    if(kind==='kase')o.odendi=r.dataset.odendi==='1';
+    if(kind==='kase'){o.odendi=r.dataset.odendi==='1';if(r.dataset.odemeTarih)o.odemeTarih=r.dataset.odemeTarih;if(r.dataset.odemeNot)o.odemeNot=r.dataset.odemeNot;}
     return o;
   }).filter(x=>x.name||x.amount);
 }
@@ -1926,7 +1939,7 @@ function restore(ev){
   document.getElementById('p1ad').value=ev.p1ad||'';document.getElementById('p1pay').value=ev.p1pay;
   document.getElementById('p2ad').value=ev.p2ad||'';document.getElementById('p2pay').value=ev.p2pay;
   document.getElementById('kaseRows').innerHTML='';document.getElementById('giderRows').innerHTML='';
-  (ev.kase||[]).forEach(k=>addRow('kase',k.name,k.amount,k.kdv,k.odendi));
+  (ev.kase||[]).forEach(k=>addRow('kase',k.name,k.amount,k.kdv,k.odendi,k.odemeTarih||'',k.odemeNot||''));
   (ev.gider||[]).forEach(g=>addRow('gider',g.name,g.amount,g.kdv));
   if(!(ev.kase||[]).length)addRow('kase');
   if(!(ev.gider||[]).length)addRow('gider');
@@ -3735,19 +3748,32 @@ function renderEkipOdeme(){
   const byKisi={};
   all.forEach(k=>{
     const ad=(k.name||'(isimsiz)').trim();
-    if(!byKisi[ad])byKisi[ad]={toplam:0,odenen:0,kalan:0,adet:0};
+    if(!byKisi[ad])byKisi[ad]={toplam:0,odenen:0,kalan:0,adet:0,odenenAdet:0,acikAdet:0};
     byKisi[ad].toplam+=k.amount;
     byKisi[ad].adet++;
-    if(k.odendi)byKisi[ad].odenen+=k.amount; else byKisi[ad].kalan+=k.amount;
+    if(k.odendi){byKisi[ad].odenen+=k.amount;byKisi[ad].odenenAdet++;}
+    else{byKisi[ad].kalan+=k.amount;byKisi[ad].acikAdet++;}
   });
   const kisiArr=Object.entries(byKisi).map(([ad,v])=>({ad,...v})).sort((a,b)=>b.kalan-a.kalan||b.toplam-a.toplam);
   const kisiWrap=document.getElementById('eoKisi');
   if(!kisiArr.length){
     kisiWrap.innerHTML='<div class="anEmpty">Henüz kaşe girilmiş iş yok.</div>';
   }else{
-    let h='<table class="atable"><thead><tr><th>Kişi</th><th>İş</th><th>Toplam</th><th>Ödenen</th><th>Kalan</th></tr></thead><tbody>';
+    let h='<table class="atable"><thead><tr><th>Kişi</th><th>İş</th><th>Ödenmeyen</th><th>Ödenen</th><th>Toplam</th><th>Kalan</th><th>Durum</th></tr></thead><tbody>';
     kisiArr.forEach(k=>{
-      h+=`<tr><td>${esc(k.ad)}</td><td>${k.adet}</td><td>${fmt(k.toplam)}</td><td class="pos">${fmt(k.odenen)}</td><td class="${k.kalan>0.5?'neg':'pos'}">${fmt(k.kalan)}</td></tr>`;
+      let durum,renk;
+      if(k.acikAdet===0){durum='Tamamlandı';renk='pos';}
+      else if(k.odenenAdet===0){durum='Hiç ödenmedi';renk='neg';}
+      else{durum='Kısmi';renk='warn';}
+      h+=`<tr>
+        <td>${esc(k.ad)}</td>
+        <td>${k.adet}</td>
+        <td class="${k.acikAdet>0?'neg':''}">${k.acikAdet}</td>
+        <td class="pos">${k.odenenAdet}</td>
+        <td>${fmt(k.toplam)}</td>
+        <td class="${k.kalan>0.5?'neg':'pos'}">${fmt(k.kalan)}</td>
+        <td><span class="vbadge ${renk}">${durum}</span></td>
+      </tr>`;
     });
     h+='</tbody></table>';
     kisiWrap.innerHTML=h;
@@ -3774,26 +3800,82 @@ function renderEkipOdemeListe(){
   liste.forEach(k=>{
     const isim=(k.ev.sehir||'')+(k.ev.mekan?' · '+k.ev.mekan:'');
     const tarih=k.ev.tarih?trDate(k.ev.tarih):'tarih yok';
+    const kdata=(k.ev.kase||[])[k.idx]||{};
+    const odemeBilgi=k.odendi&&(kdata.odemeTarih||kdata.odemeNot)
+      ? ` · <span class="pos">${kdata.odemeTarih?trDate(kdata.odemeTarih):''}${kdata.odemeNot?' · '+esc(kdata.odemeNot):''}</span>`
+      : '';
     const d=document.createElement('div');
     d.className='saved-item';
     d.style.cursor='default';
+    // ödenmemişlere checkbox
+    const cb=k.odendi?'' :
+      `<input type="checkbox" class="eoCheck" data-eid="${k.ev.id}" data-idx="${k.idx}" data-amount="${k.amount}" onchange="topluGuncelle()" style="width:20px;height:20px;flex:none;cursor:pointer;accent-color:var(--accent)">`;
     d.innerHTML=`
+      ${cb}
       <div class="info">
         <div class="ttl">${esc(k.name)} <span class="vbadge ${k.odendi?'pos':'bekliyor'}">${k.odendi?'Ödendi':'Bekliyor'}</span></div>
-        <div class="sub">${esc(isim)} · ${tarih}</div>
+        <div class="sub">${esc(isim)} · ${tarih}${odemeBilgi}</div>
       </div>
       <div class="pnl"><div class="a">${fmt(k.amount)}</div></div>
       <button class="btn ${k.odendi?'ghost':'primary'}" style="flex:none;min-width:auto;padding:8px 14px;font-size:13px"
         onclick="toggleKaseOdendi('${k.ev.id}',${k.idx})">${k.odendi?'Geri al':'Ödendi ✓'}</button>`;
     wrap.appendChild(d);
   });
+  topluGuncelle();
+}
+
+// toplu seçim: seçili kutucukları say ve toplamı göster
+function topluGuncelle(){
+  const checks=[...document.querySelectorAll('.eoCheck:checked')];
+  const bar=document.getElementById('topluBar');
+  if(!bar)return;
+  if(!checks.length){bar.style.display='none';return;}
+  bar.style.display='block';
+  const toplam=checks.reduce((a,c)=>a+(+c.dataset.amount||0),0);
+  document.getElementById('topluSayi').textContent=checks.length;
+  document.getElementById('topluTutar').textContent=fmt(toplam);
+}
+function topluSecimTemizle(){
+  document.querySelectorAll('.eoCheck:checked').forEach(c=>c.checked=false);
+  topluGuncelle();
+}
+async function topluOde(){
+  const checks=[...document.querySelectorAll('.eoCheck:checked')];
+  if(!checks.length){toast('Önce kaşe seç');return;}
+  const tarih=document.getElementById('topluTarih').value||new Date().toISOString().slice(0,10);
+  const not=document.getElementById('topluNot').value.trim();
+  if(!confirm(checks.length+' kaşe ödendi olarak işaretlenecek. Devam?'))return;
+  // hangi event'ler etkileniyor topla, her birini bir kez kaydet
+  const etkilenen={};
+  checks.forEach(c=>{
+    const eid=c.dataset.eid, idx=+c.dataset.idx;
+    const ev=events.find(e=>e.id===eid);
+    if(!ev||!ev.kase||!ev.kase[idx])return;
+    ev.kase[idx].odendi=true;
+    ev.kase[idx].odemeTarih=tarih;
+    ev.kase[idx].odemeNot=not;
+    etkilenen[eid]=ev;
+  });
+  // backend'e kaydet (her event bir kez)
+  for(const eid in etkilenen){await persist(etkilenen[eid]);}
+  await loadEvents();
+  document.getElementById('topluTarih').value='';
+  document.getElementById('topluNot').value='';
+  renderEkipOdeme();
+  toast(checks.length+' kaşe ödendi olarak işaretlendi');
 }
 
 async function toggleKaseOdendi(eventId, kaseIdx){
   const ev=events.find(e=>e.id===eventId);
   if(!ev||!ev.kase||!ev.kase[kaseIdx])return;
-  ev.kase[kaseIdx].odendi=!ev.kase[kaseIdx].odendi;
-  const yeniDurum=ev.kase[kaseIdx].odendi;
+  const yeniDurum=!ev.kase[kaseIdx].odendi;
+  ev.kase[kaseIdx].odendi=yeniDurum;
+  if(yeniDurum){
+    if(!ev.kase[kaseIdx].odemeTarih)ev.kase[kaseIdx].odemeTarih=new Date().toISOString().slice(0,10);
+  }else{
+    ev.kase[kaseIdx].odemeTarih='';
+    ev.kase[kaseIdx].odemeNot='';
+  }
   // backend'e kaydet
   await persist(ev);
   await loadEvents();
