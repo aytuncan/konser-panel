@@ -554,7 +554,14 @@ select option{background:var(--surface)}
             <div><label>Bilet adedi</label><input id="biletAdet" type="number" min="0" oninput="calc()" placeholder="400"></div>
             <div><label>Bilet fiyatı (₺)</label><input id="biletFiyat" type="number" min="0" oninput="calc()" placeholder="1500"></div>
             <div><label>Komisyon oranı (%)</label><input id="komOran" type="number" min="0" step="0.01" value="15.75" oninput="calc()"></div>
-            <div><label>KDV oranı (%)</label><input id="kdvOran" type="number" min="0" value="20" oninput="calc()"></div>
+            <div>
+  <label>KDV Durumu</label>
+  <select id="kdvOran" onchange="calc()">
+    <option value="20">%20 Dahil</option>
+    <option value="10">%10 Dahil</option>
+    <option value="0">KDV Yok</option>
+  </select>
+</div>
           </div>
           <div class="hint">Ciro = adet × fiyat. Komisyon ve KDV bu tutardan ayrıştırılır.</div>
         </div>
@@ -563,7 +570,14 @@ select option{background:var(--surface)}
           <div class="card-title">Organizatör Bedeli</div>
           <div class="grid">
             <div><label>Anlaşılan bedel (₺)</label><input id="orgBedel" type="number" min="0" oninput="calc()" placeholder="270000"></div>
-            <div><label>KDV oranı (%)</label><input id="kdvOranOrg" type="number" min="0" value="20" oninput="calc()"></div>
+            <div>
+  <label>KDV Durumu</label>
+  <select id="kdvOranOrg" onchange="calc()">
+    <option value="20">%20 Dahil</option>
+    <option value="10">%10 Dahil</option>
+    <option value="0">KDV Yok</option>
+  </select>
+</div>
           </div>
           <div class="hint">Komisyon yok. Bedel KDV dahil kabul edilir, içinden KDV ayrıştırılır.</div>
         </div>
