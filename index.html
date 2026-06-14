@@ -1589,7 +1589,7 @@ function compute(){
   const kase=readRows('kase'), gider=readRows('gider');
   const sumKase=kase.reduce((a,b)=>a+b.amount,0);
   const sumGider=gider.reduce((a,b)=>a+b.amount,0);
-  const giderKdv=[...kase,...gider].reduce((a,b)=>a+(b.kdv?b.amount-b.amount/kdvDiv:0),0);
+  const giderKdv=[...kase,...gider].reduce((a,b)=>a+(b.kdv?b.amount-b.amount/1.2:0),0);
   const toplamGider=sumKase+sumGider;
 
   const ciroNet=kdvRate>0?ciroGross/kdvDiv:ciroGross;
@@ -1813,7 +1813,7 @@ function computeFor(ev){
   const all=[...(ev.kase||[]),...(ev.gider||[])];
   const sumKase=(ev.kase||[]).reduce((a,b)=>a+b.amount,0);
   const sumGider=(ev.gider||[]).reduce((a,b)=>a+b.amount,0);
-  const giderKdv=all.reduce((a,b)=>a+(b.kdv?b.amount-b.amount/kdvDiv:0),0);
+  const giderKdv=all.reduce((a,b)=>a+(b.kdv?b.amount-b.amount/1.2:0),0);
   const toplamGider=sumKase+sumGider;
   const ciroNet=kdvRate>0?ciroGross/kdvDiv:ciroGross;
   const giderNet=toplamGider-giderKdv;
