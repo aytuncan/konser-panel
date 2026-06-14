@@ -12,19 +12,19 @@
 <style>
 /* ── TOKENS ────────────────────────────────────────────── */
 :root{
-  --bg:        #0a0a0c;
-  --surface:   #121215;
-  --surface2:  #1a1a1f;
-  --border:    #2d2d31;
-  --border2:   #3a3a40;
-  --ink:       #e2e8f0;
-  --muted:     #94a3b8;
-  --faint:     #1e1e24;
-  --accent:    #6366f1;
-  --accent-bg: #1e1e2f;
-  --green:     #4ade80;
-  --red:       #f87171;
-  --amber:     #fbbf24;
+  --bg:        #f5f6f8;
+  --surface:   #ffffff;
+  --surface2:  #f0f1f4;
+  --border:    #e2e5ea;
+  --border2:   #d0d4dc;
+  --ink:       #1a1d29;
+  --muted:     #6b7280;
+  --faint:     #eef0f3;
+  --accent:    #4f46e5;
+  --accent-bg: #eef0fe;
+  --green:     #16a34a;
+  --red:       #dc2626;
+  --amber:     #d97706;
   --sidebar-w: 240px;
   --header-h:  64px;
   --radius:    8px;
@@ -48,7 +48,7 @@ button{cursor:pointer;font-family:inherit}
 /* sidebar */
 .sidebar{
   width:var(--sidebar-w);flex-shrink:0;
-  background:var(--bg);
+  background:var(--surface);
   border-right:1px solid var(--border);
   display:flex;flex-direction:column;
   position:fixed;top:0;left:0;bottom:0;z-index:40;
@@ -119,7 +119,7 @@ button{cursor:pointer;font-family:inherit}
 .topbar{
   height:var(--header-h);display:flex;align-items:center;
   padding:0 32px;border-bottom:1px solid var(--border);
-  background:var(--bg);position:sticky;top:0;z-index:30;
+  background:var(--surface);position:sticky;top:0;z-index:30;
   gap:16px;flex-shrink:0;
 }
 .topbar-title{font-size:18px;font-weight:700;flex:1;letter-spacing:-.3px}
@@ -243,8 +243,8 @@ select option{background:var(--surface)}
   flex:1;min-width:120px;padding:10px 16px;border-radius:var(--radius);
   border:none;font-size:14px;font-weight:500;transition:.15s;
 }
-.btn.primary{background:var(--ink);color:var(--bg)}
-.btn.primary:hover{background:#fff;transform:translateY(-1px)}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.primary:hover{background:#4338ca;transform:translateY(-1px)}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--border)}
 .btn.ghost:hover{background:var(--surface2);border-color:var(--border2)}
 .btn.danger{background:transparent;color:var(--red);border:1px solid var(--border)}
