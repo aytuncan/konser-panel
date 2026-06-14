@@ -2332,22 +2332,22 @@ function previewDoc(type){
 }
 async function makePDF(type){
   const d=docData();
-  if(!d.co.coName){toast('Önce firma adını gir');return;}
-  const {jsPDF}=window.jspdf;
-  const tmp=document.createElement('div');
-  tmp.style.cssText='position:fixed;left:-9999px;top:0;width:720px;background:#fff;color:#1a1a1a;padding:40px;font-family:Helvetica,Arial,sans-serif';
-  tmp.innerHTML=docHTML(type);
-  document.body.appendChild(tmp);
-  const pdf=new jsPDF('p','pt','a4');
-  await pdf.html(tmp,{
-    callback:()=>{
-      const fn=(type==='teklif'?'Teklif':'Sozlesme')+'_'+safeName(d.city+' '+d.venue)+'.pdf';
-      pdf.save(fn);
-      document.body.removeChild(tmp);
-      toast('PDF indirildi');
-    },
-    x:24,y:24,width:547,windowWidth:720
-  });
+  if(!d.co.coName){toast('Önce kendi firma adını gir (Firma Bilgileri kartı)');showTab('doc');return;}
+  const baslik=type==='teklif'?'Teklif':'Sözleşme';
+  const win=window.open('','_blank');
+  if(!win){toast('Açılır pencere engellendi, izin ver');return;}
+  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+    <title>${baslik} - ${esc(d.venue||'')}</title>
+    <style>
+      @page{size:A4;margin:18mm}
+      *{box-sizing:border-box}
+      body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;line-height:1.6;margin:0;padding:20px;font-size:13px}
+      @media print{body{padding:0}}
+    </style></head><body>${docHTML(type)}
+    <script>window.onload=function(){window.print();}<\/script>
+    </body></html>`);
+  win.document.close();
+  toast('Yazdırma penceresi açıldı — "PDF olarak kaydet" seç');
 }
 
 let accEntries=[];        
