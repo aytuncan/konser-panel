@@ -476,7 +476,7 @@ select option{background:var(--surface)}
         </div>
 
         <div class="card">
-          <div class="card-title">Ödenmemiş Ekip Kaşesiler</div>
+          <div class="card-title">Ödenmemiş Ekip Kaşeleri</div>
           <div class="hint" style="margin-bottom:16px">Ekibe yapılacak açık ödemeler. Detay için "Ekip Ödemeleri" sekmesine git.</div>
           <div id="dashKase"></div>
         </div>
@@ -3237,7 +3237,7 @@ function renderDashboard(){
     });
   }
 
-  // Ödenmemiş Ekip Kaşesiler
+  // Ödenmemiş Ekip Kaşeleri
   const kaseWrap=document.getElementById('dashKase');
   const kaseSirali=acikKaseler.slice().sort((a,b)=>(a.ev.tarih||'9999').localeCompare(b.ev.tarih||'9999')).slice(0,10);
   if(!kaseSirali.length){
