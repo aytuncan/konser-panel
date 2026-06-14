@@ -476,7 +476,7 @@ select option{background:var(--surface)}
         </div>
 
         <div class="card">
-          <div class="card-title">Ödenmemiş Kaşeler</div>
+          <div class="card-title">Ödenmemiş Ekip Kaşesiler</div>
           <div class="hint" style="margin-bottom:16px">Ekibe yapılacak açık ödemeler. Detay için "Ekip Ödemeleri" sekmesine git.</div>
           <div id="dashKase"></div>
         </div>
@@ -3159,7 +3159,7 @@ function renderDashboard(){
     <div class="stat"><div class="n">Toplam İş</div><div class="v">${events.length}</div></div>
     <div class="stat"><div class="n">Bu Ayki Kâr</div><div class="v ${buAyKar>=0?'pos':'neg'}">${fmt(buAyKar)}</div></div>
     <div class="stat"><div class="n">Açık Alacak</div><div class="v ${acikAlacak>0.5?'neg':'pos'}">${fmt(acikAlacak)}</div></div>
-    <div class="stat"><div class="n">Ödenmemiş Kaşe</div><div class="v ${acikKaseTutar>0.5?'neg':'pos'}">${fmt(acikKaseTutar)}</div></div>
+    <div class="stat"><div class="n">Ödenmemiş Ekip Kaşesi</div><div class="v ${acikKaseTutar>0.5?'neg':'pos'}">${fmt(acikKaseTutar)}</div></div>
     <div class="stat"><div class="n">Bu Ay Sabit Ödeme</div><div class="v ${sabitAcikTutar>0.5?'neg':'pos'}">${fmt(sabitAcikTutar)}</div></div>
     <div class="stat"><div class="n">Sanatçılara Kalan</div><div class="v ${sanatciKalan>0.5?'neg':'pos'}">${fmt(sanatciKalan)}</div></div>`;
 
@@ -3237,11 +3237,11 @@ function renderDashboard(){
     });
   }
 
-  // ödenmemiş kaşeler
+  // Ödenmemiş Ekip Kaşesiler
   const kaseWrap=document.getElementById('dashKase');
   const kaseSirali=acikKaseler.slice().sort((a,b)=>(a.ev.tarih||'9999').localeCompare(b.ev.tarih||'9999')).slice(0,10);
   if(!kaseSirali.length){
-    kaseWrap.innerHTML='<div class="anEmpty">Ödenmemiş kaşe yok 🎉</div>';
+    kaseWrap.innerHTML='<div class="anEmpty">Ödenmemiş Ekip Kaşesi yok 🎉</div>';
   }else{
     let h='<table class="atable"><thead><tr><th>Kişi</th><th>İş</th><th>Tarih</th><th>Tutar</th></tr></thead><tbody>';
     kaseSirali.forEach(k=>{
@@ -3329,7 +3329,7 @@ function renderEkipOdemeListe(){
   });
   const wrap=document.getElementById('eoListe');
   if(!liste.length){
-    wrap.innerHTML='<div class="anEmpty">'+(eoFilter==='acik'?'Ödenmemiş kaşe yok. Hepsi ödendi 🎉':'Kaşe yok.')+'</div>';
+    wrap.innerHTML='<div class="anEmpty">'+(eoFilter==='acik'?'Ödenmemiş Ekip Kaşesi yok. Hepsi ödendi 🎉':'Kaşe yok.')+'</div>';
     return;
   }
   wrap.innerHTML='';
