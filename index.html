@@ -786,7 +786,10 @@ select option{background:var(--surface)}
                 <option value="tamam">Ödendi / Tahsil edildi</option>
               </select>
             </div>
+            <div><label>Fiş linki (Drive vb.)</label><input id="accFisLink" placeholder="https://drive.google.com/..." autocomplete="off"></div>
+            <div><label>Fatura linki (Drive vb.)</label><input id="accFaturaLink" placeholder="https://drive.google.com/..." autocomplete="off"></div>
           </div>
+          <div class="hint" style="margin-top:8px">Fiş/fatura görselini Google Drive'a (veya benzeri) yükle, paylaşım linkini buraya yapıştır. Kayıtta tıklanabilir olur.</div>
           <div class="actions" style="margin-top:24px">
             <button class="btn primary" onclick="saveAcc()" id="accSaveBtn">İşlemi kaydet</button>
             <button class="btn ghost" onclick="resetAccForm()">Temizle</button>
@@ -2786,6 +2789,8 @@ function resetAccForm(){
   document.getElementById('accKdv').value=20;
   document.getElementById('accFirm').value='';
   document.getElementById('accStatus').value='bekliyor';
+  document.getElementById('accFisLink').value='';
+  document.getElementById('accFaturaLink').value='';
   setAccYon('gelir');
   document.getElementById('accFormTitle').textContent='Yeni İşlem (konser dışı)';
   document.getElementById('accSaveBtn').textContent='İşlemi kaydet';
@@ -2802,7 +2807,9 @@ async function saveAcc(){
     yon:accYon,
     kdv:+document.getElementById('accKdv').value||0,
     firmId:document.getElementById('accFirm').value||'',
-    status:document.getElementById('accStatus').value||'bekliyor'
+    status:document.getElementById('accStatus').value||'bekliyor',
+    fisLink:document.getElementById('accFisLink').value.trim()||'',
+    faturaLink:document.getElementById('accFaturaLink').value.trim()||''
   };
   try{const ex=accEntries.find(x=>x.id===e.id);const res=await apiFetch('/api/acc'+(ex?'/'+e.id:''),{method:ex?'PUT':'POST',body:JSON.stringify(e)});if(!res||!res.ok){toast('Kaydedilemedi');return;}}catch(err){toast('Kaydedilemedi');return;}
   await loadAcc();
@@ -2820,6 +2827,8 @@ function editAcc(id){
   refreshAccFirmPicker();
   document.getElementById('accFirm').value=e.firmId||'';
   document.getElementById('accStatus').value=e.status||'bekliyor';
+  document.getElementById('accFisLink').value=e.fisLink||'';
+  document.getElementById('accFaturaLink').value=e.faturaLink||'';
   setAccYon(e.yon||'gelir');
   document.getElementById('accFormTitle').textContent='İşlem Düzenle';
   document.getElementById('accSaveBtn').textContent='Değişiklikleri kaydet';
@@ -3033,7 +3042,7 @@ function renderAcc(){
     if(e.docClient)return; // karşı taraf rehberi kendi kartında
     items.push({kind:'M',id:e.id,date:e.date||'',title:e.desc,
       sub:[e.firmId?firmName(e.firmId):'',e.kdv?'KDV %'+e.kdv:'KDV yok'].filter(Boolean).join(' · '),
-      amount:e.amount,yon:e.yon,status:e.status||'bekliyor'});
+      amount:e.amount,yon:e.yon,status:e.status||'bekliyor',fisLink:e.fisLink||'',faturaLink:e.faturaLink||''});
   });
   // filtre uygula
   let filt=items.filter(it=>{
@@ -3060,13 +3069,17 @@ function renderAcc(){
     const amtCls=it.yon==='gelir'?'pos':'neg';
     const stTxt=it.status==='tamam'?'✓ kapandı':'açık';
     const stCls=it.status==='tamam'?'pos':'neg';
+    const linkler=[];
+    if(it.fisLink)linkler.push(`<a href="${esc(it.fisLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:none;font-weight:600">📄 Fiş</a>`);
+    if(it.faturaLink)linkler.push(`<a href="${esc(it.faturaLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:none;font-weight:600">🧾 Fatura</a>`);
+    const linkHtml=linkler.length?' · '+linkler.join(' · '):'';
     const d=document.createElement('div');
     d.className='saved-item';
     d.onclick=(e)=>{if(e.target.classList.contains('del'))return; if(it.kind==='K')restore(it.ev); else editAcc(it.id);};
     d.innerHTML=`
       <div class="info">
         <div class="ttl">${esc(it.title||'(başlıksız)')}<span class="badge">${it.kind}</span></div>
-        <div class="sub">${it.date||'tarih yok'} · ${esc(it.sub)} · <span class="${stCls}">${stTxt}</span></div>
+        <div class="sub">${it.date||'tarih yok'} · ${esc(it.sub)} · <span class="${stCls}">${stTxt}</span>${linkHtml}</div>
       </div>
       <div class="pnl">
         <div class="a ${amtCls}">${sign}${fmt(it.amount)}</div>
