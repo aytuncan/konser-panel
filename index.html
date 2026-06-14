@@ -412,6 +412,9 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabSzfirmam" onclick="showTab('szfirmam')">
         <span class="icon">★</span> Firma Bilgilerim
       </button>
+      <button class="nav-item" id="tabSzsablon" onclick="showTab('szsablon')">
+        <span class="icon">▤</span> Sözleşme Şablonu
+      </button>
 
       <div class="nav-section">Belge &amp; Rehber</div>
       <button class="nav-item" id="tabFirms" onclick="showTab(&#39;firms&#39;)">
@@ -909,6 +912,22 @@ select option{background:var(--surface)}
         </div>
       </div>
 
+      <div id="view-szsablon" style="display:none">
+        <div class="card">
+          <div class="card-title">Sözleşme Şablonu</div>
+          <div class="hint" style="margin-bottom:16px">Sözleşme metnini buradan düzenle ve kaydet. Her yeni sözleşmede bu şablon otomatik gelir, yer tutucular gerçek bilgilerle dolar. "Sözleşme Hazırla"da da üstünde değişiklik yapabilirsin.</div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:1.8">
+            <b>Kullanabileceğin yer tutucular</b> (otomatik dolar):<br>
+            <code>{sanatci}</code> · <code>{tarih}</code> · <code>{mekan}</code> · <code>{sehir}</code> · <code>{saat}</code> · <code>{sure}</code> · <code>{ucret}</code> · <code>{kdv}</code> · <code>{toplam}</code> · <code>{avans}</code> · <code>{bakiye}</code> · <code>{odeme}</code> · <code>{firma}</code> · <code>{karsi_taraf}</code> · <code>{teknik}</code>
+          </div>
+          <textarea id="sablonText" rows="22" style="font-family:inherit;line-height:1.7" placeholder="Sözleşme metnini buraya yaz..."></textarea>
+          <div class="actions" style="margin-top:20px">
+            <button class="btn primary" onclick="saveSablon()">Şablonu kaydet</button>
+            <button class="btn ghost" onclick="sablonStandartYukle()">Standart şablonu yükle</button>
+          </div>
+        </div>
+      </div>
+
       <div id="view-szrehber" style="display:none">
         <div class="card">
           <div class="card-title" id="dcFormTitle">Yeni Karşı Taraf Ekle</div>
@@ -990,6 +1009,16 @@ select option{background:var(--surface)}
             <textarea id="dTech" rows="4" placeholder="Ses ve ışık sistemi mekana aittir.
 Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
           </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Sözleşme Metni (düzenlenebilir)</div>
+          <div class="hint" style="margin-bottom:14px">Sözleşme PDF'i bu metinden üretilir. "Şablonu getir ve doldur" ile kayıtlı şablonun gelir, yukarıdaki bilgilerle dolar. İstediğin gibi değiştirip PDF alabilirsin. (Bu kutu boşken PDF, şablonu otomatik kullanır.)</div>
+          <div class="actions" style="margin-bottom:14px">
+            <button class="btn ghost" onclick="sozlesmeMetniGetir()">Şablonu getir ve doldur</button>
+            <button class="btn ghost" onclick="document.getElementById('dSozlesmeText').value=''">Kutuyu temizle</button>
+          </div>
+          <textarea id="dSozlesmeText" rows="16" style="font-family:inherit;line-height:1.7" placeholder="Boş bırakırsan kayıtlı şablon otomatik kullanılır. Düzenlemek için 'Şablonu getir ve doldur'a bas."></textarea>
         </div>
 
         <div class="actions">
@@ -1532,7 +1561,7 @@ function applyXlsx() {
 
 const PAGE_TITLES={
   dashboard:'Dashboard',new:'Yeni İş',saved:'İşler',odeme:'Muhasebe',ekipodeme:'Ekip Ödemeleri',sanatci:'Sanatçı Hesabı',
-  szhazirla:'Sözleşme Hazırla',szrehber:'Sözleşme Rehberi',szfirmam:'Firma Bilgilerim',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
+  szhazirla:'Sözleşme Hazırla',szrehber:'Sözleşme Rehberi',szfirmam:'Firma Bilgilerim',szsablon:'Sözleşme Şablonu',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
   users:'Kullanıcılar'
 };
 function openSidebar(){
@@ -1572,7 +1601,7 @@ function fmt(n){
 }
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900);}
 function showTab(t){
-  ['dashboard','new','saved','odeme','ekipodeme','sanatci','szhazirla','szrehber','szfirmam','firms','venues','ekip','analiz','users'].forEach(id=>{
+  ['dashboard','new','saved','odeme','ekipodeme','sanatci','szhazirla','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users'].forEach(id=>{
     const v=document.getElementById('view-'+id);
     const tabId = id==='ekipodeme' ? 'tabEkipOdeme' : 'tab'+id.charAt(0).toUpperCase()+id.slice(1);
     const b=document.getElementById(tabId);
@@ -1595,6 +1624,7 @@ function showTab(t){
   if(t==='sanatci'){refreshSaPicker();renderSanatci();}
   if(t==='szhazirla'){refreshDocPicker();refreshDcPicker();}
   if(t==='szrehber'){renderDcList();}
+  if(t==='szsablon'){loadSablon();}
   if(t==='firms')renderFirms();
   if(t==='venues')renderVenues();
   if(t==='ekip')renderEkip();
@@ -2396,6 +2426,67 @@ function docData(){
 function trMoney(n){return (Math.round(n||0)).toLocaleString('tr-TR')+' TL';}
 function trDate(s){if(!s)return '.../.../......';const [y,m,d]=s.split('-');return `${d}.${m}.${y}`;}
 
+// ── SÖZLEŞME ŞABLONU ─────────────────────────────────────
+const STD_SOZLESME_SABLONU=`İşbu sözleşme; bir tarafta {firma} (bundan sonra "ORGANİZATÖR" olarak anılacaktır) ile diğer tarafta {karsi_taraf} (bundan sonra "MEKAN/İŞVEREN" olarak anılacaktır) arasında aşağıdaki şartlarla akdedilmiştir.
+
+Madde 1. Konu: Yukarıda belirtilen sanatçı/grubun ({sanatci}), {tarih} tarihinde, {mekan} ({sehir}) adresinde sahne performansı sunmasıdır.
+
+Madde 2. Ücret ve Ödeme: Hizmet bedeli {ucret} + KDV = {toplam} (KDV dahil)'dir. {odeme}.
+
+Madde 3. Tarafların Yükümlülükleri: MEKAN/İŞVEREN, performans için uygun sahne, ses ve ışık sistemini çalışır halde temin eder. ORGANİZATÖR, sanatçının belirtilen sürede ve nitelikte sahne almasını sağlar.
+
+Madde 4. İptal/Mücbir Sebep: MEKAN/İŞVEREN kaynaklı iptallerde ödenen avans iade edilmez. Doğal afet, resmî yasak, sağlık vb. mücbir sebeplerde taraflar yeni bir tarihte uzlaşmaya çalışır; uzlaşılamazsa avans iade edilir.
+
+Madde 5. Telif ve Tanıtım: Etkinliğin tanıtım görsellerinde sanatçı adı/görseli yalnızca bu etkinlik kapsamında kullanılabilir.
+
+Madde 6. Uyuşmazlık: İşbu sözleşmeden doğacak uyuşmazlıklarda {sehir} Mahkemeleri ve İcra Daireleri yetkilidir.
+
+Madde 7. İşbu sözleşme taraflarca okunarak imza altına alınmıştır. Tarih: {tarih}`;
+
+function sozlesmeSablonGetir(){
+  try{const s=localStorage.getItem('konser_sozlesme_sablonu');return s||STD_SOZLESME_SABLONU;}catch(e){return STD_SOZLESME_SABLONU;}
+}
+function loadSablon(){
+  const el=document.getElementById('sablonText');
+  if(el)el.value=sozlesmeSablonGetir();
+}
+function saveSablon(){
+  try{localStorage.setItem('konser_sozlesme_sablonu',document.getElementById('sablonText').value);toast('Şablon kaydedildi');}catch(e){toast('Kaydedilemedi');}
+}
+function sablonStandartYukle(){
+  const el=document.getElementById('sablonText');
+  if(el){el.value=STD_SOZLESME_SABLONU;toast('Standart şablon yüklendi (kaydetmeyi unutma)');}
+}
+// Sözleşme Hazırla'da: şablonu al, yer tutucuları doldur, düzenlenebilir kutuya yaz
+function sozlesmeMetniGetir(){
+  const d=docData();
+  const el=document.getElementById('dSozlesmeText');
+  if(el){el.value=sablonDoldur(sozlesmeSablonGetir(),d);toast('Şablon getirildi ve dolduruldu');}
+}
+// yer tutucuları gerçek değerlerle doldur
+function sablonDoldur(metin, d){
+  const map={
+    '{sanatci}':d.artist||'..........',
+    '{tarih}':trDate(d.date),
+    '{mekan}':d.venue||'..........',
+    '{sehir}':d.city||'..........',
+    '{saat}':d.time||'',
+    '{sure}':d.dur||'',
+    '{ucret}':trMoney(d.fee),
+    '{kdv}':trMoney(d.kdv),
+    '{toplam}':trMoney(d.total),
+    '{avans}':trMoney(d.advance),
+    '{bakiye}':trMoney(d.balance),
+    '{odeme}':d.payTerm||'etkinlik günü ödenecektir',
+    '{firma}':(d.co.coName||'..........')+((d.co.coTaxOffice||d.co.coTaxNo)?' ('+[d.co.coTaxOffice,d.co.coTaxNo].filter(Boolean).join(' / ')+')':''),
+    '{karsi_taraf}':(d.client||'..........')+((d.firm&&(d.firm.taxOffice||d.firm.taxNo))?' ('+[d.firm.taxOffice,d.firm.taxNo].filter(Boolean).join(' / ')+')':''),
+    '{teknik}':d.tech.length?d.tech.map(t=>'– '+t).join('\n'):''
+  };
+  let out=metin;
+  for(const [k,v] of Object.entries(map)){out=out.split(k).join(v);}
+  return out;
+}
+
 function docHTML(type){
   const d=docData();
   const today=new Date().toLocaleDateString('tr-TR');
@@ -2444,18 +2535,15 @@ function docHTML(type){
        <p style="font-size:12px;margin-top:20px">Saygılarımızla,<br><b>${esc(d.co.coName)}</b><br>${esc(d.co.coAuth)}</p>`;
   }
 
-  const art=(n,body)=>`<p style="margin:9px 0;font-size:11.5px"><b>Madde ${n}.</b> ${body}</p>`;
+  // Sözleşme: kullanıcının "Sözleşme Hazırla"da düzenlediği metni kullan,
+  // boşsa şablonu yer tutucularla doldur
+  const editEl=document.getElementById('dSozlesmeText');
+  let govde=(editEl&&editEl.value.trim())?editEl.value:sablonDoldur(sozlesmeSablonGetir(),d);
+  // teknik şartlar metinde {teknik} yoksa ve varsa, sona ekle
+  const govdeHtml=esc(govde).replace(/\n/g,'<br>');
   return head+title+
-    `<p style="font-size:11.5px">İşbu sözleşme; bir tarafta <b>${esc(d.co.coName)||'..........'}</b>${(d.co.coTaxOffice||d.co.coTaxNo)?' ('+esc([d.co.coTaxOffice,d.co.coTaxNo].filter(Boolean).join(' / '))+')':''} (bundan sonra "ORGANİZATÖR" olarak anılacaktır) ile diğer tarafta <b>${esc(d.client)||'..........'}</b>${d.firm&&(d.firm.taxOffice||d.firm.taxNo)?' ('+esc([d.firm.taxOffice,d.firm.taxNo].filter(Boolean).join(' / '))+')':''} (bundan sonra "MEKAN/İŞVEREN" olarak anılacaktır) arasında aşağıdaki şartlarla akdedilmiştir.</p>`+
     infoTable+
-    art(1,`<u>Konu:</u> Yukarıda belirtilen sanatçı/grubun, belirtilen tarih, mekan ve saatte sahne performansı sunmasıdır.`)+
-    art(2,`<u>Ücret ve Ödeme:</u> Hizmet bedeli ${trMoney(d.fee)}${d.kdvRate>0?' + KDV (%'+d.kdvRate+') = '+trMoney(d.total)+' (KDV dahil)':''}'dir. ${d.advance>0?'Sözleşme imzasında '+trMoney(d.advance)+' avans ödenmiş olup kalan '+trMoney(d.balance)+' ':' Bedel '} ${esc(d.payTerm)||'etkinlik günü ödenecektir'}.`)+
-    art(3,`<u>Tarafların Yükümlülükleri:</u> MEKAN/İŞVEREN, performans için uygun sahne, ses ve ışık sistemini çalışır halde temin eder. ORGANİZATÖR, sanatçının belirtilen sürede ve nitelikte sahne almasını sağlar.`)+
-    (d.tech.length?art(4,`<u>Ek/Teknik Şartlar:</u><br>${d.tech.map((t,i)=>'– '+esc(t)).join('<br>')}`):'')+
-    art(d.tech.length?5:4,`<u>İptal/Mücbir Sebep:</u> MEKAN/İŞVEREN kaynaklı iptallerde ödenen avans iade edilmez. Doğal afet, resmî yasak, sağlık vb. mücbir sebeplerde taraflar yeni bir tarihte uzlaşmaya çalışır; uzlaşılamazsa avans iade edilir.`)+
-    art(d.tech.length?6:5,`<u>Telif ve Tanıtım:</u> Etkinliğin tanıtım görsellerinde sanatçı adı/görseli yalnızca bu etkinlik kapsamında kullanılabilir.`)+
-    art(d.tech.length?7:6,`<u>Uyuşmazlık:</u> İşbu sözleşmeden doğacak uyuşmazlıklarda ${esc(d.city)||'..........'} Mahkemeleri ve İcra Daireleri yetkilidir.`)+
-    art(d.tech.length?8:7,`İşbu sözleşme ${d.tech.length?8:7} maddeden ibaret olup taraflarca okunarak imza altına alınmıştır. Tarih: ${trDate(d.date)||today}`)+
+    `<div style="font-size:11.5px;margin-top:10px;line-height:1.7">${govdeHtml}</div>`+
     `<table style="width:100%;margin-top:34px;font-size:11.5px"><tr>
       <td style="width:50%;text-align:center">
         <div style="border-top:1px solid #1a1a1a;margin:0 20px;padding-top:6px">ORGANİZATÖR</div>
