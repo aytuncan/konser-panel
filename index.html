@@ -790,7 +790,7 @@ select option{background:var(--surface)}
 
         <div class="card">
           <div class="card-title">Cari Durum (firma bazında)</div>
-          <div class="hint" style="margin-bottom:20px">Pozitif = firma bize borçlu. Negatif = biz firmaya borçluyuz.</div>
+          <div class="hint" style="margin-bottom:20px">Beklenen = işin toplam tutarı. Alınan = tahsil edilen (kapora dahil). Alacak = kalan. Pozitif net = firma bize borçlu.</div>
           <div id="accCari"></div>
         </div>
 
@@ -2828,7 +2828,7 @@ function accAggregate(ayFilter){
   let toplamArtist=0, toplamManager=0;                        
   const aylik={};                               
   const cari={};                                
-  const ensureCari=(id,nm)=>{const k=id||('__'+nm);if(!cari[k])cari[k]={name:nm||firmName(id)||'(firmasız)',alacak:0,borc:0};return cari[k];};
+  const ensureCari=(id,nm)=>{const k=id||('__'+nm);if(!cari[k])cari[k]={name:nm||firmName(id)||'(firmasız)',alacak:0,borc:0,beklenen:0,alinan:0};return cari[k];};
   const addAy=(date,hes,ind)=>{if(!date)return;const m=date.slice(0,7);if(!aylik[m])aylik[m]={hes:0,ind:0};aylik[m].hes+=hes;aylik[m].ind+=ind;};
   const ayUyar=(d)=>!ayFilter||((d||'').slice(0,7)===ayFilter);
 
@@ -2845,12 +2845,16 @@ function accAggregate(ayFilter){
     // değilse mekan/şehir adıyla göster
     if(a.tah.kalan>0.5){
       alacak+=a.tah.kalan;
+      let c2;
       if(ev.firmId){
-        ensureCari(ev.firmId, firmName(ev.firmId)).alacak+=a.tah.kalan;
+        c2=ensureCari(ev.firmId, firmName(ev.firmId));
       }else{
         const nm=ev.mekan||ev.sehir||'(konser)';
-        ensureCari('', nm).alacak+=a.tah.kalan;
+        c2=ensureCari('', nm);
       }
+      c2.alacak+=a.tah.kalan;
+      c2.beklenen+=a.tah.bek;
+      c2.alinan+=a.tah.al;
     }
   });
 
@@ -2965,9 +2969,11 @@ document.getElementById('accOzet').innerHTML=`
   const cari=agg.cari.map(c=>({...c,net:c.alacak-c.borc})).filter(c=>Math.abs(c.net)>0.5||c.alacak>0.5||c.borc>0.5)
     .sort((a,b)=>Math.abs(b.net)-Math.abs(a.net));
   if(cari.length){
-    let h='<table class="atable"><thead><tr><th>Firma / İş</th><th>Alacak</th><th>Borç</th><th>Net Bakiye</th></tr></thead><tbody>';
-    cari.forEach(c=>{h+=`<tr><td>${esc(c.name)}</td><td>${fmt(c.alacak)}</td><td>${fmt(c.borc)}</td><td class="${c.net>=0?'pos':'neg'}">${fmt(c.net)}</td></tr>`;});
-    h+=`<tr style="font-weight:700"><td>TOPLAM</td><td class="pos">${fmt(agg.alacak)}</td><td class="neg">${fmt(agg.borc)}</td><td class="${(agg.alacak-agg.borc)>=0?'pos':'neg'}">${fmt(agg.alacak-agg.borc)}</td></tr>`;
+    const tBek=cari.reduce((a,c)=>a+(c.beklenen||0),0);
+    const tAl=cari.reduce((a,c)=>a+(c.alinan||0),0);
+    let h='<table class="atable"><thead><tr><th>Firma / İş</th><th>Beklenen</th><th>Alınan</th><th>Alacak (kalan)</th><th>Borç</th><th>Net Bakiye</th></tr></thead><tbody>';
+    cari.forEach(c=>{h+=`<tr><td>${esc(c.name)}</td><td>${fmt(c.beklenen||0)}</td><td class="pos">${fmt(c.alinan||0)}</td><td>${fmt(c.alacak)}</td><td>${fmt(c.borc)}</td><td class="${c.net>=0?'pos':'neg'}">${fmt(c.net)}</td></tr>`;});
+    h+=`<tr style="font-weight:700"><td>TOPLAM</td><td>${fmt(tBek)}</td><td class="pos">${fmt(tAl)}</td><td class="pos">${fmt(agg.alacak)}</td><td class="neg">${fmt(agg.borc)}</td><td class="${(agg.alacak-agg.borc)>=0?'pos':'neg'}">${fmt(agg.alacak-agg.borc)}</td></tr>`;
     h+='</tbody></table>';
     document.getElementById('accCari').innerHTML=h;
   }else document.getElementById('accCari').innerHTML='<div class="anEmpty">Açık alacak/borç yok.</div>';
