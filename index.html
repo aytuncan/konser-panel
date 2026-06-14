@@ -708,20 +708,27 @@ select option{background:var(--surface)}
       </div>
 
       <div id="view-odeme" style="display:none">
-        <div class="card">
+        <div class="seg" style="margin-bottom:24px;max-width:560px">
+          <button id="mtabGenel" class="on" onclick="setMtab('genel')">Genel</button>
+          <button id="mtabGg" onclick="setMtab('gg')">Gelir/Gider</button>
+          <button id="mtabCari" onclick="setMtab('cari')">Cari</button>
+          <button id="mtabKdv" onclick="setMtab('kdv')">KDV</button>
+        </div>
+
+        <div class="card" data-mtab="genel">
           <div class="card-title">Genel Muhasebe Özeti</div>
           <div class="hint" style="margin-bottom:20px">Konser işleri + elle girilen işlemler birlikte. Tutarlar KDV dahildir.</div>
           <div class="stat-grid" id="accOzet"></div>
         </div>
 
-        <div class="card">
+        <div class="card" data-mtab="genel">
           <div class="card-title">Vadeler &amp; Alacaklar</div>
           <div class="hint" style="margin-bottom:20px">İşlere girilen vade planlarına göre geciken, yaklaşan (3 gün içinde) ve bekleyen tahsilatlar.</div>
           <div class="stat-grid" id="vadeOzet" style="margin-bottom:24px"></div>
           <div id="vadeListe"></div>
         </div>
 
-        <div class="card">
+        <div class="card" data-mtab="gg">
           <div class="card-title">Aylık Sabit Ödemeler</div>
           <div class="hint" style="margin-bottom:20px">Kira, maaş, abonelik gibi her ay tekrarlanan giderler. Bu ay ödenecekler ve durumları aşağıda; "ödendi" işareti backend'e kaydedilir.</div>
           <div class="stat-grid" id="sabitOzet" style="margin-bottom:24px"></div>
@@ -748,7 +755,7 @@ select option{background:var(--surface)}
           <div class="saved-list" id="sabitList"></div>
         </div>
 
-        <div class="card">
+        <div class="card" data-mtab="gg">
           <div class="card-title" id="accFormTitle">Yeni İşlem (konser dışı)</div>
           <div class="hint" style="margin-bottom:20px">Kira, maaş, genel gider, konser dışı gelir vb.</div>
           <div class="grid">
@@ -781,20 +788,20 @@ select option{background:var(--surface)}
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" data-mtab="kdv">
           <div class="card-title">KDV Özeti</div>
           <div class="hint" style="margin-bottom:20px">Hesaplanan KDV (gelirden) − İndirilecek KDV (giderden) = Net KDV.</div>
           <div class="stat-grid" id="kdvOzet" style="margin-bottom:24px"></div>
           <div id="kdvAylik"></div>
         </div>
 
-        <div class="card">
+        <div class="card" data-mtab="cari">
           <div class="card-title">Cari Durum (firma bazında)</div>
           <div class="hint" style="margin-bottom:20px">Beklenen = işin toplam tutarı. Alınan = tahsil edilen (kapora dahil). Alacak = kalan. Pozitif net = firma bize borçlu.</div>
           <div id="accCari"></div>
         </div>
 
-        <div class="card">
+        <div class="card" data-mtab="gg">
           <div class="card-title">Tüm İşlemler</div>
           <div class="seg" style="margin-bottom:16px">
             <button id="accFltAll" class="on" onclick="setAccFilter('all')">Tümü</button>
@@ -1630,7 +1637,7 @@ function showTab(t){
   if(t==='dashboard')renderDashboard();
   if(t==='new'){refreshEkipGiderPickers();refreshEvFirmPicker();refreshEvArtistPicker();}
   if(t==='saved')setSavedFilter(savedFilter);
-  if(t==='odeme'){refreshAccFirmPicker();renderOdeme();}
+  if(t==='odeme'){refreshAccFirmPicker();renderOdeme();setMtab(mtabCur);}
   if(t==='ekipodeme')renderEkipOdeme();
   if(t==='sanatci'){refreshSaPicker();renderSanatci();}
   if(t==='szhazirla'){refreshDocPicker();refreshDcPicker();}
@@ -2940,6 +2947,17 @@ function restoreById(id){
   if(ev)restore(ev);
 }
 
+let mtabCur='genel';
+function setMtab(t){
+  mtabCur=t;
+  ['genel','gg','cari','kdv'].forEach(x=>{
+    const b=document.getElementById('mtab'+x.charAt(0).toUpperCase()+x.slice(1));
+    if(b)b.classList.toggle('on',x===t);
+  });
+  document.querySelectorAll('#view-odeme [data-mtab]').forEach(el=>{
+    el.style.display=(el.getAttribute('data-mtab')===t)?'':'none';
+  });
+}
 function renderOdeme(){
   const agg=accAggregate();
   const trNames=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
