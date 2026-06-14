@@ -654,10 +654,13 @@ select option{background:var(--surface)}
 
         <div class="card">
           <div class="card-title">Tahsilat / Ödemeler</div>
-          <div class="hint" id="tahsilatHint" style="margin-bottom:16px">Bu işten beklenen toplam tutar (KDV dahil) ve alınan ödemeler.</div>
+          <div class="hint" id="tahsilatHint" style="margin-bottom:16px">Bu işten beklenen toplam tutar (KDV dahil) ve alınan ödemeler. Kapora/ön avans da buraya eklenir, alınan tahsilattan düşülür.</div>
           <div class="row-head" style="grid-template-columns:1fr 110px 120px 36px"><span>Açıklama</span><span>Tutar ₺</span><span>Tarih</span><span></span></div>
           <div class="rows" id="odemeRows"></div>
-          <button class="addbtn" onclick="addOdeme()">+ Ödeme / tahsilat ekle</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <button class="addbtn" style="flex:1;min-width:160px" onclick="addOdeme()">+ Ödeme / tahsilat ekle</button>
+            <button class="addbtn" style="flex:1;min-width:160px" onclick="addKapora()">+ Kapora ekle</button>
+          </div>
 
           <div class="card-title" style="margin-top:32px">Vade Planı (beklenen ödemeler)</div>
           <div class="hint" style="margin-bottom:16px">Taksit/vade tarihlerini gir. Tahsil edilen toplam, en erken vadeden başlayarak vadelere dağıtılır; geciken ve yaklaşan vadeler işaretlenir.</div>
@@ -1688,6 +1691,14 @@ function readOdemeler(){
     const i=r.querySelectorAll('input');
     return {name:i[0].value,amount:+i[1].value||0,date:i[2].value||''};
   }).filter(x=>x.name||x.amount);
+}
+function addKapora(){
+  const bugun=new Date().toISOString().slice(0,10);
+  addOdeme('Kapora','',bugun);
+  // yeni eklenen satırın tutar kutusuna odaklan
+  const wrap=document.getElementById('odemeRows');
+  const son=wrap.lastElementChild;
+  if(son){const inp=son.querySelectorAll('input')[1];if(inp)inp.focus();}
 }
 function addVade(name='',amount='',date=''){
   const wrap=document.getElementById('vadeRows');
