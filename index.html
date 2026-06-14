@@ -447,6 +447,9 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabUsers" onclick="showTab(&#39;users&#39;)" style="display: flex;">
         <span class="icon">⚇</span> Kullanıcılar
       </button>
+      <button class="nav-item" id="tabAyarlar" onclick="showTab('ayarlar')" style="display: flex;">
+        <span class="icon">⚙</span> Ayarlar
+      </button>
     </nav>
 
   </aside>
@@ -949,12 +952,6 @@ select option{background:var(--surface)}
             <button class="btn primary" onclick="saveCompanyManual()">Firma bilgilerimi kaydet</button>
           </div>
         </div>
-
-        <div class="card" id="dangerZone" style="border-color:var(--red);display:none">
-          <div class="card-title" style="color:var(--red)">⚠ Tehlikeli Bölge</div>
-          <div class="hint" style="margin-bottom:16px">Tüm işler, firmalar, mekanlar, muhasebe kayıtları, ekip rehberi ve ayarları kalıcı olarak siler — programı sıfırdan başlatmak için. Bu işlem geri alınamaz. Önce "Konserler → Tümünü Excel'e aktar" ile yedek almanı öneririm.</div>
-          <button class="btn" style="background:var(--red);color:#fff" onclick="resetAllData()">Tümünü Sıfırla (sıfır program)</button>
-        </div>
       </div>
 
       <div id="view-szsablon" style="display:none">
@@ -1346,6 +1343,29 @@ Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
         </div>
       </div>
 
+      <div id="view-ayarlar" style="display:none">
+        <div class="card">
+          <div class="card-title">Yedek Al</div>
+          <div class="hint" style="margin-bottom:16px">Tüm verini (işler, firmalar, mekanlar, muhasebe, sanatçı, sözleşme rehberi, ayarlar) tek bir dosyaya indirir. Düzenli olarak yedek almanı öneririm.</div>
+          <button class="btn primary" onclick="yedekAl()">Yedek dosyasını indir (.json)</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Yedek Yükle (Geri Yükle)</div>
+          <div class="hint" style="margin-bottom:16px">Daha önce aldığın yedek dosyasını (.json) seçip geri yükle. <b style="color:var(--red)">Dikkat:</b> Bu işlem mevcut verinin üzerine yazar. Önce mevcut durumun yedeğini al.</div>
+          <input type="file" id="yedekDosya" accept=".json,application/json" style="margin-bottom:16px">
+          <div class="actions">
+            <button class="btn primary" onclick="yedekYukle()">Seçili yedeği geri yükle</button>
+          </div>
+        </div>
+
+        <div class="card" style="border-color:var(--red)">
+          <div class="card-title" style="color:var(--red)">⚠ Sistemi Sıfırla</div>
+          <div class="hint" style="margin-bottom:16px">Tüm işler, firmalar, mekanlar, muhasebe kayıtları, ekip rehberi ve ayarları kalıcı olarak siler — programı sıfırdan başlatmak için. Bu işlem geri alınamaz. Önce yukarıdan yedek al!</div>
+          <button class="btn" style="background:var(--red);color:#fff" onclick="resetAllData()">Tümünü Sıfırla (sıfır program)</button>
+        </div>
+      </div>
+
     </div></div></div></div><div id="changePassModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;align-items:center;justify-content:center;padding:16px">
   <div class="card" style="max-width:400px;width:100%;margin:0;padding:32px">
     <div class="card-title">Şifre Değiştir</div>
@@ -1607,7 +1627,7 @@ function applyXlsx() {
 const PAGE_TITLES={
   dashboard:'Dashboard',new:'Yeni Etkinlik',saved:'Konserler',odeme:'Muhasebe',mgenel:'Muhasebe — Genel',mgg:'Muhasebe — Gelir/Gider',mcari:'Muhasebe — Cari Durum',mkdv:'Muhasebe — KDV',ekipodeme:'Ekip Ödemeleri',sanatci:'Sanatçı Hesabı',
   szhazirla:'Sözleşme Hazırla',szrehber:'Sözleşme Rehberi',szfirmam:'Firma Bilgilerim',szsablon:'Sözleşme Şablonu',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
-  users:'Kullanıcılar'
+  users:'Kullanıcılar',ayarlar:'Ayarlar'
 };
 function openSidebar(){
   document.getElementById('sidebar').classList.add('open');
@@ -1650,7 +1670,7 @@ function showTab(t){
   const muhAlt={mgenel:'genel',mgg:'gg',mcari:'cari',mkdv:'kdv'};
   const isMuh=Object.keys(muhAlt).includes(t);
   const activeView=isMuh?'odeme':t;
-  ['dashboard','new','saved','odeme','ekipodeme','sanatci','szhazirla','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users'].forEach(id=>{
+  ['dashboard','new','saved','odeme','ekipodeme','sanatci','szhazirla','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users','ayarlar'].forEach(id=>{
     const v=document.getElementById('view-'+id);
     if(v) v.style.display=(activeView===id)?'':'none';
   });
@@ -2201,6 +2221,53 @@ async function saveCompanyManual(){
 }
 
 // ── TÜM VERİYİ SIFIRLA (tehlikeli) ──────────────────────
+// ── YEDEK AL / YÜKLE ────────────────────────────────────
+async function yedekAl(){
+  toast('Yedek hazırlanıyor...');
+  try{
+    await loadEvents();await loadFirms();await loadVenues();await loadAcc();
+    const yedek={
+      surum:1,
+      tarih:new Date().toISOString(),
+      events,firms,venues,accEntries
+    };
+    const blob=new Blob([JSON.stringify(yedek,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download='konser-panel-yedek-'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Yedek indirildi');
+  }catch(e){toast('Yedek alınamadı');}
+}
+async function yedekYukle(){
+  const inp=document.getElementById('yedekDosya');
+  if(!inp||!inp.files||!inp.files[0]){toast('Önce yedek dosyası seç');return;}
+  const dosya=inp.files[0];
+  let yedek;
+  try{yedek=JSON.parse(await dosya.text());}catch(e){toast('Dosya okunamadı / geçersiz');return;}
+  if(!yedek||!Array.isArray(yedek.events)){toast('Geçersiz yedek dosyası');return;}
+  if(!confirm('DİKKAT: Bu yedek geri yüklenecek. Mevcut verinin ÜZERİNE yazılır. Önce mevcut durumun yedeğini aldın mı? Devam?'))return;
+  const onay=prompt('Onaylamak için GERİ YÜKLE yaz:');
+  if(onay!=='GERİ YÜKLE'){toast('İptal edildi');return;}
+  toast('Geri yükleniyor, lütfen bekle...');
+  try{
+    // önce mevcut her şeyi sil
+    await loadEvents();for(const ev of events.slice()){try{await apiFetch('/api/events/'+ev.id,{method:'DELETE'});}catch(e){}}
+    await loadFirms();for(const f of firms.slice()){try{await apiFetch('/api/firms/'+f.id,{method:'DELETE'});}catch(e){}}
+    await loadVenues();for(const v of venues.slice()){try{await apiFetch('/api/venues/'+v.id,{method:'DELETE'});}catch(e){}}
+    await loadAcc();for(const a of accEntries.slice()){try{await apiFetch('/api/acc/'+a.id,{method:'DELETE'});}catch(e){}}
+    // sonra yedekten yükle
+    for(const ev of (yedek.events||[])){try{await apiFetch('/api/events',{method:'POST',body:JSON.stringify(ev)});}catch(e){}}
+    for(const f of (yedek.firms||[])){try{await apiFetch('/api/firms',{method:'POST',body:JSON.stringify(f)});}catch(e){}}
+    for(const v of (yedek.venues||[])){try{await apiFetch('/api/venues',{method:'POST',body:JSON.stringify(v)});}catch(e){}}
+    for(const a of (yedek.accEntries||[])){try{await apiFetch('/api/acc',{method:'POST',body:JSON.stringify(a)});}catch(e){}}
+    toast('Yedek geri yüklendi');
+    setTimeout(()=>location.reload(),1500);
+  }catch(e){toast('Geri yükleme sırasında hata oldu');}
+}
+
 async function resetAllData(){
   if(!confirm('DİKKAT: Tüm işler, firmalar, mekanlar, muhasebe kayıtları, ekip rehberi ve ayarlar KALICI olarak silinecek. Bu işlem GERİ ALINAMAZ. Devam etmek istiyor musun?'))return;
   const onay=prompt('Emin olmak için aşağıya büyük harfle SIFIRLA yaz:');
@@ -4034,7 +4101,7 @@ function applyUserUI(){
   if(roleEl)roleEl.textContent=isAdmin?'Yönetici':'Kullanıcı';
   document.getElementById('navSecYonetim').style.display=isAdmin?'block':'none';
   document.getElementById('tabUsers').style.display=isAdmin?'flex':'none';
-  const dz=document.getElementById('dangerZone');if(dz)dz.style.display=isAdmin?'block':'none';
+  const ay=document.getElementById('tabAyarlar');if(ay)ay.style.display=isAdmin?'flex':'none';
 }
 
 function openChangePass(){
