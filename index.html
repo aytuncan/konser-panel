@@ -454,6 +454,12 @@ select option{background:var(--surface)}
           <div class="stat-grid" id="dashOzet"></div>
         </div>
 
+        <div class="card">
+          <div class="card-title" id="dashAyBaslik">Bu Ay Muhasebe Özeti</div>
+          <div class="hint" style="margin-bottom:20px">Sadece bu ayın işleri ve işlemleri. Detay için Muhasebe sekmesine git.</div>
+          <div class="stat-grid" id="dashAyOzet"></div>
+        </div>
+
         <div class="dashboard-grid">
           <div class="card">
             <div class="card-title">Yaklaşan Etkinlikler</div>
@@ -2448,7 +2454,7 @@ function eventAsAcc(ev){
   return {kdvDahil,kdvOran,gelirKdv,indirKdv,tah:t,c,ev};
 }
 
-function accAggregate(){
+function accAggregate(ayFilter){
   let hesaplananKdv=0, indirilecekKdv=0;       
   let toplamGelir=0, toplamGider=0;            
   let alacak=0, borc=0;
@@ -2457,8 +2463,10 @@ function accAggregate(){
   const cari={};                                
   const ensureCari=(id,nm)=>{const k=id||('__'+nm);if(!cari[k])cari[k]={name:nm||firmName(id)||'(firmasız)',alacak:0,borc:0};return cari[k];};
   const addAy=(date,hes,ind)=>{if(!date)return;const m=date.slice(0,7);if(!aylik[m])aylik[m]={hes:0,ind:0};aylik[m].hes+=hes;aylik[m].ind+=ind;};
+  const ayUyar=(d)=>!ayFilter||((d||'').slice(0,7)===ayFilter);
 
   events.forEach(ev=>{
+    if(!ayUyar(ev.tarih))return;
     const a=eventAsAcc(ev);
     hesaplananKdv+=a.gelirKdv;
     indirilecekKdv+=a.indirKdv;
@@ -2482,6 +2490,7 @@ function accAggregate(){
   accEntries.forEach(e=>{
     if(e.recurring)return; // sabit ödeme tanımları ayrı yönetilir
     if(e.artistPay)return; // sanatçı hesabı hareketleri ayrı yönetilir
+    if(!ayUyar(e.date))return;
     const div=1+(e.kdv||0)/100;
     const net=e.kdv>0?e.amount/div:e.amount;
     const kdvTutar=e.amount-net;
@@ -3150,6 +3159,19 @@ function renderDashboard(){
     <div class="stat"><div class="n">Ödenmemiş Kaşe</div><div class="v ${acikKaseTutar>0.5?'neg':'pos'}">${fmt(acikKaseTutar)}</div></div>
     <div class="stat"><div class="n">Bu Ay Sabit Ödeme</div><div class="v ${sabitAcikTutar>0.5?'neg':'pos'}">${fmt(sabitAcikTutar)}</div></div>
     <div class="stat"><div class="n">Sanatçılara Kalan</div><div class="v ${sanatciKalan>0.5?'neg':'pos'}">${fmt(sanatciKalan)}</div></div>`;
+
+  // Bu ay muhasebe özeti (Muhasebe'deki 6 kartın aynısı, bu ay filtreli)
+  const aggAy=accAggregate(ay);
+  const trAyAdlari=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const baslikEl=document.getElementById('dashAyBaslik');
+  if(baslikEl){const mo=+ay.slice(5,7);baslikEl.textContent=trAyAdlari[mo-1]+' Ayı Muhasebe Özeti';}
+  document.getElementById('dashAyOzet').innerHTML=`
+    <div class="stat"><div class="n">Toplam Gelir (net)</div><div class="v">${fmt(aggAy.toplamGelir)}</div></div>
+    <div class="stat"><div class="n">Toplam Gider (net)</div><div class="v">${fmt(aggAy.toplamGider)}</div></div>
+    <div class="stat"><div class="n">Net (gelir−gider)</div><div class="v ${aggAy.netKar>=0?'pos':'neg'}">${fmt(aggAy.netKar)}</div></div>
+    <div class="stat"><div class="n">Net KDV</div><div class="v ${aggAy.netKdv>=0?'neg':'pos'}">${fmt(aggAy.netKdv)}</div></div>
+    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Sanatçı Toplam Payı</div><div class="v">${fmt(aggAy.toplamArtist)}</div></div>
+    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Menajer (Bana Kalan)</div><div class="v pos">${fmt(aggAy.toplamManager)}</div></div>`;
 
   // yaklaşan etkinlikler
   const etkWrap=document.getElementById('dashEtkinlik');
