@@ -882,7 +882,8 @@ select option{background:var(--surface)}
 
       <div id="view-doc" style="display:none">
         <div class="card">
-          <div class="card-title">Firma Bilgileri (kaydedilir)</div>
+          <div class="card-title">Kendi Firma Bilgilerin</div>
+          <div class="hint" style="margin-bottom:20px">Bir kere doldur, kaydet — her teklif/sözleşmede otomatik gelir. Bu, belgelerde "ORGANİZATÖR" (senin firman) olarak görünür.</div>
           <div class="grid">
             <div><label>Firma / organizasyon adı</label><input id="coName" placeholder="ÖRNEK ORGANİZASYON LTD. ŞTİ." autocomplete="off" oninput="saveCompany()"></div>
             <div><label>Yetkili kişi</label><input id="coAuth" placeholder="Ad Soyad" autocomplete="off" oninput="saveCompany()"></div>
@@ -892,6 +893,9 @@ select option{background:var(--surface)}
             <div><label>Vergi dairesi / no</label><input id="coTax" placeholder="Vergi D. - No" autocomplete="off" oninput="saveCompany()"></div>
             <div><label>IBAN</label><input id="coIban" placeholder="TR.." autocomplete="off" oninput="saveCompany()"></div>
             <div><label>Belge no ön eki</label><input id="coPrefix" value="TKF" autocomplete="off" oninput="saveCompany()"></div>
+          </div>
+          <div class="actions" style="margin-top:24px">
+            <button class="btn primary" onclick="saveCompanyManual()">Firma bilgilerimi kaydet</button>
           </div>
         </div>
 
@@ -930,6 +934,7 @@ select option{background:var(--surface)}
             <select id="dFirmPick" onchange="fillClientFromFirm()">
               <option value="">— rehberden seç / elle gir —</option>
             </select>
+            <div class="hint" style="margin-top:6px">Firma rehberde yoksa "Firmalar" sekmesinden bir kere ekle, sonra burada listede çıkar. Seçince aşağıdaki alanlar otomatik dolar.</div>
           </div>
           <div style="margin-top:20px">
             <label>Karşı taraf adı</label>
@@ -2045,6 +2050,27 @@ function exportAll(){
 }
 
 const CO_FIELDS=['coName','coAuth','coPhone','coMail','coAddr','coTax','coIban','coPrefix'];
+
+// Kendi firma bilgisi — tarayıcıda saklanır, her belgede otomatik gelir
+function saveCompany(){
+  try{
+    const o={};
+    CO_FIELDS.forEach(f=>{const e=document.getElementById(f);if(e)o[f]=e.value;});
+    localStorage.setItem('konser_company',JSON.stringify(o));
+  }catch(e){}
+}
+function loadCompany(){
+  try{
+    const raw=localStorage.getItem('konser_company');
+    if(!raw)return;
+    const o=JSON.parse(raw);
+    CO_FIELDS.forEach(f=>{const e=document.getElementById(f);if(e&&o[f]!=null)e.value=o[f];});
+  }catch(e){}
+}
+function saveCompanyManual(){
+  saveCompany();
+  toast('Firma bilgilerin kaydedildi');
+}
 
 let firms=[];
 let editingFirmId=null;
@@ -3560,6 +3586,7 @@ async function initApp(){
   refreshEvFirmPicker();
   refreshEvArtistPicker();
   setAccYon('gelir');
+  loadCompany();
   calc();
   showTab('dashboard');
 }
