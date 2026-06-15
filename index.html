@@ -3730,17 +3730,19 @@ function renderDashboard(){
 
   // ── HOBOS KASASI ──────────────────────────────────────
   // Konser tarafı: tahsil edilen / bekleyen, ve bunların menajer (%25) payı
-  let konserAlinan=0, konserBekleyen=0, menajerAlinan=0, menajerBekleyen=0;
+  let konserAlinan=0, konserBekleyen=0, menajerAlinan=0, menajerBekleyen=0, tahsilEdilenKdv=0;
   events.forEach(ev=>{
     const c=computeFor(ev);
     const t=tahsilatFor(ev);
     konserAlinan+=t.al;
     konserBekleyen+=Math.max(0,t.kalan);
-    // menajer payı = kârın p2 oranı; ciroya göre tahsil oranıyla dağıt
     const oran=t.bek>0?(t.al/t.bek):0;
+    // menajer payı = kârın p2 oranı; ciroya göre tahsil oranıyla dağıt
     const menajerToplam=c.p2amt; // bu işin toplam menajer payı
     menajerAlinan+=menajerToplam*oran;
     menajerBekleyen+=menajerToplam*(1-oran);
+    // tahsil edilen kısmın içindeki KDV (net KDV = gelir KDV − gider KDV, tahsil oranıyla)
+    tahsilEdilenKdv+=c.netKdv*oran;
   });
   // Tüm kaşeler (ödenen + ödenmeyen — hepsi senin paran değil, çıkacak/çıktı)
   const tumKaseToplam=tumKaseler().reduce((a,k)=>a+k.amount,0);
@@ -3764,15 +3766,29 @@ function renderDashboard(){
   const tahsilEdilen=konserAlinan+sirketGelirAlinan;
   // Çıkan/çıkacak toplam: TÜM kaşeler + sanatçı ödemeleri + şirket giderleri
   const odenenToplam=tumKaseToplam+sanatciOdeme+sirketGiderOdenen;
-  // Eldeki net = tahsil edilen − çıkan/çıkacak
+  // Eldeki net = tahsil edilen − çıkan/çıkacak (KDV dahil, fiziksel kasa)
   const eldekiNet=tahsilEdilen-odenenToplam;
+  // Tahsil edilen şirket gelirinin KDV'si (kdv oranına göre içinden ayrıştır)
+  let sirketKdv=0;
+  accEntries.forEach(e=>{
+    if(e.type==='cfg'||e.recurring||e.artistPay||e.docClient)return;
+    if(e.yon==='gelir'&&e.status==='tamam'){
+      const r=(e.kdv||0)/100; if(r>0)sirketKdv+=(e.amount||0)-(e.amount||0)/(1+r);
+    }
+  });
+  // Toplam ödenecek KDV (kasadaki paranın içinden devlete gidecek)
+  const odenecekKdv=tahsilEdilenKdv+sirketKdv;
+  // KDV hariç gerçekten senin olan
+  const eldekiKdvsiz=eldekiNet-odenecekKdv;
   // Bekleyen alacak (alınmamış)
   const bekleyen=konserBekleyen+sirketGelirBekleyen;
   const kasaSirketEl=document.getElementById('kasaSirket');
   if(kasaSirketEl)kasaSirketEl.innerHTML=`
     <div class="stat"><div class="n">Tahsil Edilen</div><div class="v pos">${fmt(tahsilEdilen)}</div></div>
     <div class="stat"><div class="n">Kaşe + Sanatçı + Gider</div><div class="v neg">${fmt(odenenToplam)}</div></div>
-    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Eldeki Net Para</div><div class="v ${eldekiNet>=0?'pos':'neg'}">${fmt(eldekiNet)}</div></div>
+    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Eldeki Para (KDV dahil)</div><div class="v ${eldekiNet>=0?'pos':'neg'}">${fmt(eldekiNet)}</div></div>
+    <div class="stat"><div class="n">İçinden Ödenecek KDV</div><div class="v neg">${fmt(odenecekKdv)}</div></div>
+    <div class="stat" style="border-color:var(--green);background:rgba(90,209,154,0.07)"><div class="n">Eldeki Net (KDV hariç)</div><div class="v ${eldekiKdvsiz>=0?'pos':'neg'}">${fmt(eldekiKdvsiz)}</div></div>
     <div class="stat"><div class="n">Bekleyen Alacak</div><div class="v">${fmt(bekleyen)}</div></div>`;
   const kasaMenajerEl=document.getElementById('kasaMenajer');
   if(kasaMenajerEl)kasaMenajerEl.innerHTML=`
