@@ -424,6 +424,9 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabSzhazirla" onclick="showTab('szhazirla')">
         <span class="icon">◻</span> Sözleşme Hazırla
       </button>
+      <button class="nav-item" id="tabSzyapilan" onclick="showTab('szyapilan')">
+        <span class="icon">✓</span> Yapılan Sözleşmeler
+      </button>
       <button class="nav-item" id="tabSzrehber" onclick="showTab('szrehber')">
         <span class="icon">☰</span> Sözleşme Rehberi
       </button>
@@ -1102,6 +1105,22 @@ select option{background:var(--surface)}
             <button class="btn ghost" onclick="sablonStandartYukle()">Hobos standart şablonunu yükle</button>
           </div>
           <div class="hint" style="margin-top:10px">Kaydettiğin şablon buluta yazılır, her cihazdan aynı gelir. Değişiklik yaptıktan sonra "Şablonu Kaydet"e basmayı unutma.</div>
+        </div>
+      </div>
+
+      <div id="view-szyapilan" style="display:none">
+        <div class="card">
+          <div class="card-title">✓ Yapılan Sözleşmeler</div>
+          <div class="hint" style="margin-bottom:16px">Kaydettiğin tüm sözleşmeler durumlarıyla burada. Durumu değiştir, imzalı PDF'e eriş, düzenlemek için tıkla.</div>
+          <div class="actions" style="margin-bottom:16px">
+            <button class="btn ghost" id="szFiltreAll" onclick="szSetFiltre('all')">Tümü</button>
+            <button class="btn ghost" id="szFiltreTeklif" onclick="szSetFiltre('teklif')">Teklif Gönderildi</button>
+            <button class="btn ghost" id="szFiltreBekliyor" onclick="szSetFiltre('bekliyor')">Bekliyor</button>
+            <button class="btn ghost" id="szFiltreOnay" onclick="szSetFiltre('onaylandi')">Onaylandı</button>
+            <button class="btn ghost" id="szFiltreRed" onclick="szSetFiltre('red')">Reddedildi</button>
+          </div>
+          <div id="szYapilanOzet" class="stat-grid" style="margin-bottom:18px"></div>
+          <div id="szYapilanList"><div class="anEmpty">Henüz kayıtlı sözleşme yok.</div></div>
         </div>
       </div>
 
@@ -1791,7 +1810,7 @@ function applyXlsx() {
 
 const PAGE_TITLES={
   dashboard:'Dashboard',new:'Yeni Etkinlik',saved:'Konserler',odeme:'Muhasebe',mgenel:'Muhasebe — Genel',mgg:'Muhasebe — Gelir/Gider',mcari:'Muhasebe — Cari Durum',mkdv:'Muhasebe — KDV',ekipodeme:'Ekip Ödemeleri',sanatci:'Sanatçı Hesabı',
-  szhazirla:'Sözleşme Hazırla',szrehber:'Sözleşme Rehberi',szfirmam:'Firma Bilgilerim',szsablon:'Sözleşme Şablonu',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
+  szhazirla:'Sözleşme Hazırla',szyapilan:'Yapılan Sözleşmeler',szrehber:'Sözleşme Rehberi',szfirmam:'Firma Bilgilerim',szsablon:'Sözleşme Şablonu',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
   users:'Kullanıcılar',ayarlar:'Ayarlar',simulasyon:'Hızlı Simülasyon',simdetay:'Detaylı Simülasyon'
 };
 function openSidebar(){
@@ -1835,7 +1854,7 @@ function showTab(t){
   const muhAlt={mgenel:'genel',mgg:'gg',mcari:'cari',mkdv:'kdv'};
   const isMuh=Object.keys(muhAlt).includes(t);
   const activeView=isMuh?'odeme':t;
-  ['dashboard','new','saved','simulasyon','simdetay','odeme','ekipodeme','sanatci','szhazirla','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users','ayarlar'].forEach(id=>{
+  ['dashboard','new','saved','simulasyon','simdetay','odeme','ekipodeme','sanatci','szhazirla','szyapilan','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users','ayarlar'].forEach(id=>{
     const v=document.getElementById('view-'+id);
     if(v) v.style.display=(activeView===id)?'':'none';
   });
@@ -1867,6 +1886,7 @@ function showTab(t){
   }
   if(t==='sanatci'){refreshSaPicker();renderSanatci();}
   if(t==='szhazirla'){refreshDocPicker();refreshDcPicker();szRenderKayitli();}
+  if(t==='szyapilan'){szSetFiltre(szFiltre);}
   if(t==='szrehber'){renderDcList();}
   if(t==='szsablon'){loadSablon();}
   if(t==='firms')renderFirms();
@@ -2944,7 +2964,9 @@ async function szKaydet(){
   const entry={
     id:szEditId||('sz'+Date.now()),
     type:'cfg', cfg:'sozlesme_'+(szEditId||Date.now()),
-    desc:ad, date:data.dDate||'', driveLink:data.dDriveLink||'', szData:data
+    desc:ad, date:data.dDate||'', driveLink:data.dDriveLink||'',
+    durum:(accEntries.find(x=>x.id===szEditId)||{}).durum||'teklif',
+    szData:data
   };
   try{
     const ex=accEntries.find(x=>x.id===szEditId);
@@ -2991,7 +3013,75 @@ function szRenderKayitli(){
 async function szSil(id){
   if(!confirm('Bu kayıtlı sözleşmeyi silmek istiyor musun?'))return;
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
-  await loadAcc();szRenderKayitli();toast('Silindi');
+  await loadAcc();szRenderKayitli();szRenderYapilan();toast('Silindi');
+}
+
+// ── YAPILAN SÖZLEŞMELER (durum takibi) ────────────────
+const SZ_DURUMLAR={
+  teklif:{ad:'Teklif Gönderildi',renk:'var(--blue)',bg:'rgba(127,168,255,0.12)'},
+  bekliyor:{ad:'Bekliyor',renk:'var(--amber)',bg:'rgba(245,177,61,0.12)'},
+  onaylandi:{ad:'Onaylandı',renk:'var(--green)',bg:'rgba(90,209,154,0.12)'},
+  red:{ad:'Reddedildi',renk:'var(--red)',bg:'rgba(240,122,122,0.12)'}
+};
+let szFiltre='all';
+function szSetFiltre(f){
+  szFiltre=f;
+  ['All','Teklif','Bekliyor','Onay','Red'].forEach(x=>{
+    const b=document.getElementById('szFiltre'+x);if(b)b.classList.remove('active');
+  });
+  const map={all:'All',teklif:'Teklif',bekliyor:'Bekliyor',onaylandi:'Onay',red:'Red'};
+  const btn=document.getElementById('szFiltre'+map[f]);if(btn)btn.classList.add('active');
+  szRenderYapilan();
+}
+async function szDurumDegistir(id,yeniDurum){
+  const e=accEntries.find(x=>x.id===id);if(!e)return;
+  e.durum=yeniDurum;
+  try{
+    await apiFetch('/api/acc/'+id,{method:'PUT',body:JSON.stringify(e)});
+  }catch(err){toast('Güncellenemedi');return;}
+  szRenderYapilan();
+  toast('Durum güncellendi: '+SZ_DURUMLAR[yeniDurum].ad);
+}
+function szRenderYapilan(){
+  const wrap=document.getElementById('szYapilanList');
+  const ozetEl=document.getElementById('szYapilanOzet');
+  if(!wrap)return;
+  let list=szKayitlilar();
+  // özet sayıları
+  const say={teklif:0,bekliyor:0,onaylandi:0,red:0};
+  list.forEach(e=>{const d=e.durum||'teklif';if(say[d]!=null)say[d]++;});
+  if(ozetEl)ozetEl.innerHTML=`
+    <div class="stat"><div class="n">Teklif Gönderildi</div><div class="v" style="color:var(--blue)">${say.teklif}</div></div>
+    <div class="stat"><div class="n">Bekliyor</div><div class="v" style="color:var(--amber)">${say.bekliyor}</div></div>
+    <div class="stat"><div class="n">Onaylandı</div><div class="v pos">${say.onaylandi}</div></div>
+    <div class="stat"><div class="n">Reddedildi</div><div class="v neg">${say.red}</div></div>`;
+  // filtre
+  if(szFiltre!=='all')list=list.filter(e=>(e.durum||'teklif')===szFiltre);
+  if(!list.length){wrap.innerHTML='<div class="anEmpty">'+(szFiltre==='all'?'Henüz kayıtlı sözleşme yok.':'Bu durumda sözleşme yok.')+'</div>';return;}
+  wrap.innerHTML='';
+  list.forEach(e=>{
+    const durum=e.durum||'teklif';
+    const dinfo=SZ_DURUMLAR[durum]||SZ_DURUMLAR.teklif;
+    const tutar=e.szData&&e.szData.dFee?fmt(+e.szData.dFee):'';
+    const drv=e.driveLink?`<a href="${esc(e.driveLink)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:none;font-size:12px" title="İmzalı PDF">📄 İmzalı</a>`:'';
+    const d=document.createElement('div');
+    d.className='saved-item';
+    d.style.flexWrap='wrap';
+    d.onclick=(ev)=>{if(ev.target.closest('select')||ev.target.closest('a')||ev.target.closest('.del'))return;szEditId=e.id;szLoad(e.szData);showTab('szhazirla');setTimeout(()=>document.getElementById('view-szhazirla').scrollIntoView({behavior:'smooth'}),100);toast('Düzenlemek için yüklendi');};
+    let opts='';
+    for(const [k,v] of Object.entries(SZ_DURUMLAR)){opts+=`<option value="${k}"${k===durum?' selected':''}>${v.ad}</option>`;}
+    d.innerHTML=`
+      <div class="info" style="flex:1;min-width:160px">
+        <div class="ttl">${esc(e.desc||'(adsız)')} <span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${dinfo.bg};color:${dinfo.renk};margin-left:6px">${dinfo.ad}</span></div>
+        <div class="sub">${[e.date||'tarih yok',tutar].filter(Boolean).join(' · ')}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        ${drv}
+        <select onchange="szDurumDegistir('${e.id}',this.value)" onclick="event.stopPropagation()" style="padding:6px 8px;font-size:12px;width:auto">${opts}</select>
+        <button class="del" title="Sil" onclick="szSil('${e.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px 8px">🗑</button>
+      </div>`;
+    wrap.appendChild(d);
+  });
 }
 
 function previewDoc(type){
