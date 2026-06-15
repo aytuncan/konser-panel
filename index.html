@@ -2720,12 +2720,7 @@ function fillFromSaved(){
   document.getElementById('dDate').value=ev.tarih||'';
   const fee=ev.tip==='ORGANIZATOR'?Math.round(c.ciroNet):Math.round(c.ciroNet);
   document.getElementById('dFee').value=ev.tip==='ORGANIZATOR'?ev.orgBedel||Math.round(c.ciroNet):'';
-  // Sanatçı adı: önce sanatçı rehberinden (artistId), sonra kâr paylaşımı 1. taraf (p1ad).
-  // İlk kaşe ismi KULLANILMAZ — o ekip üyesi olabilir.
-  let sanatci='';
-  if(ev.artistId){const f=firms.find(x=>x.id===ev.artistId);if(f)sanatci=f.name;}
-  if(!sanatci && ev.p1ad && ev.p1ad!=='MAN FEE')sanatci=ev.p1ad;
-  document.getElementById('dArtist').value=sanatci;
+  // Sanatçı alanı otomatik doldurulmaz — kullanıcı elle yazar.
 }
 
 function docData(){
