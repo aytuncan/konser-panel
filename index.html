@@ -1826,13 +1826,13 @@ function showTab(t){
   if(t==='ekipodeme')renderEkipOdeme();
   if(t==='simulasyon')renderSim();
   if(t==='simdetay'){
-    // ilk açılışta örnek firmalar + birer satır kur
     if(!document.querySelector('#sdFirmaRows .row')){
       sdAddFirma('Biletix',13,20);
       sdAddFirma('Bugece',0,20);
       sdAddBilet('Biletix','standart',850,1000);
       sdAddGider('Ulaşım (uçuş+transfer)',31000,20);
     }
+    renderSimProjectList(); // BUNU EKLEDİK
     renderSimDetay();
   }
   if(t==='sanatci'){refreshSaPicker();renderSanatci();}
