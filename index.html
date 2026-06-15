@@ -3150,10 +3150,17 @@ document.getElementById('accOzet').innerHTML=`
   if(cari.length){
     const tBek=cari.reduce((a,c)=>a+(c.beklenen||0),0);
     const tAl=cari.reduce((a,c)=>a+(c.alinan||0),0);
-    let h='<table class="atable"><thead><tr><th>Firma / İş</th><th>Beklenen</th><th>Alınan</th><th>Alacak (kalan)</th><th>Borç</th><th>Net Bakiye</th></tr></thead><tbody>';
-    cari.forEach(c=>{h+=`<tr><td>${esc(c.name)}</td><td>${fmt(c.beklenen||0)}</td><td class="pos">${fmt(c.alinan||0)}</td><td>${fmt(c.alacak)}</td><td>${fmt(c.borc)}</td><td class="${c.net>=0?'pos':'neg'}">${fmt(c.net)}</td></tr>`;});
-    h+=`<tr style="font-weight:700"><td>TOPLAM</td><td>${fmt(tBek)}</td><td class="pos">${fmt(tAl)}</td><td class="pos">${fmt(agg.alacak)}</td><td class="neg">${fmt(agg.borc)}</td><td class="${(agg.alacak-agg.borc)>=0?'pos':'neg'}">${fmt(agg.alacak-agg.borc)}</td></tr>`;
+    const maxNet=Math.max(...cari.map(c=>Math.abs(c.net)),1); // en büyük bakiye (bar ölçeği)
+    let h='<table class="atable"><thead><tr><th>Firma / İş</th><th>Beklenen</th><th>Alınan</th><th>Alacak (kalan)</th><th>Borç</th><th>Net Bakiye</th><th style="width:140px">Görsel</th></tr></thead><tbody>';
+    cari.forEach(c=>{
+      const w=Math.round(Math.abs(c.net)/maxNet*100);
+      const renk=c.net>=0?'var(--green)':'var(--red)';
+      const bar=`<div style="background:var(--bg);border-radius:6px;height:14px;width:100%;overflow:hidden"><div style="height:100%;width:${w}%;background:${renk};border-radius:6px;transition:width .4s ease"></div></div>`;
+      h+=`<tr><td>${esc(c.name)}</td><td>${fmt(c.beklenen||0)}</td><td class="pos">${fmt(c.alinan||0)}</td><td>${fmt(c.alacak)}</td><td>${fmt(c.borc)}</td><td class="${c.net>=0?'pos':'neg'}">${fmt(c.net)}</td><td>${bar}</td></tr>`;
+    });
+    h+=`<tr style="font-weight:700"><td>TOPLAM</td><td>${fmt(tBek)}</td><td class="pos">${fmt(tAl)}</td><td class="pos">${fmt(agg.alacak)}</td><td class="neg">${fmt(agg.borc)}</td><td class="${(agg.alacak-agg.borc)>=0?'pos':'neg'}">${fmt(agg.alacak-agg.borc)}</td><td></td></tr>`;
     h+='</tbody></table>';
+    h+='<div class="hint" style="margin-top:12px"><span style="display:inline-block;width:12px;height:12px;background:var(--green);border-radius:3px;vertical-align:middle"></span> Alacak (firma sana borçlu) &nbsp;&nbsp; <span style="display:inline-block;width:12px;height:12px;background:var(--red);border-radius:3px;vertical-align:middle"></span> Borç (sen firmaya borçlusun)</div>';
     document.getElementById('accCari').innerHTML=h;
   }else document.getElementById('accCari').innerHTML='<div class="anEmpty">Açık alacak/borç yok.</div>';
 
