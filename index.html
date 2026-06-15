@@ -1389,12 +1389,21 @@ let _token=localStorage.getItem('konser_token')||'';
 let _user=JSON.parse(localStorage.getItem('konser_user')||'null');
 
 async function apiFetch(path,opts={}){
-  const res=await fetch(API_URL+path,{
-    ...opts,
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+_token,...(opts.headers||{})},
-  });
-  if(res.status===401){doLogout();return null;}
-  return res;
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),15000); // 15 sn timeout
+  try{
+    const res=await fetch(API_URL+path,{
+      ...opts,
+      signal:ctrl.signal,
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_token,...(opts.headers||{})},
+    });
+    clearTimeout(timer);
+    if(res.status===401){doLogout();return null;}
+    return res;
+  }catch(e){
+    clearTimeout(timer);
+    return null; // ağ hatası / timeout -> null, çağıran taraf boş dizi kullanır
+  }
 }
 function doLogout(){
   _token='';_user=null;
@@ -4077,10 +4086,14 @@ async function initApp(){
   applyUserUI();
   addRow('kase');addRow('gider');
   setTip('KAPI');
-  await loadEvents();
-  await loadFirms();
-  await loadVenues();
-  await loadAcc();
+  // ana verileri paralel yükle - biri takılsa/yavaşsa diğerleri beklemesin
+  await Promise.all([
+    loadEvents(),
+    loadFirms(),
+    loadVenues(),
+    loadAcc()
+  ]);
+  // bunlar accEntries'ten okur, loadAcc'tan sonra olmalı
   await loadKases();
   await loadEkipler();
   await loadGiderler();
