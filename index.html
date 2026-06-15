@@ -398,6 +398,7 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabSimdetay" onclick="showTab('simdetay')">
         <span class="icon">📊</span> Detaylı Simülasyon
       </button>
+      <div id="navSimList" style="margin:2px 0 6px 0"></div>
       <button class="nav-item" id="tabSanatci" onclick="showTab(&#39;sanatci&#39;)">
         <span class="icon">★</span> Sanatçı Hesabı
       </button>
@@ -4206,20 +4207,42 @@ function sdKayitlilar(){
 function sdRenderKayitli(){
   const wrap=document.getElementById('sdKayitliList');
   const list=sdKayitlilar();
-  if(!list.length){wrap.innerHTML='<div class="anEmpty">Henüz kayıtlı simülasyon yok.</div>';return;}
-  wrap.innerHTML='';
-  list.forEach(e=>{
-    const d=document.createElement('div');
-    d.className='saved-item';
-    d.onclick=(ev)=>{if(ev.target.classList.contains('del'))return;sdEditId=e.id;sdLoad(e.simData);document.getElementById('view-simdetay').scrollIntoView({behavior:'smooth'});toast('Yüklendi');};
-    d.innerHTML=`
-      <div class="info">
-        <div class="ttl">${esc(e.desc||'(adsız)')}</div>
-        <div class="sub">${e.date||'tarih yok'}</div>
-      </div>
-      <button class="del" title="Sil" onclick="sdSil('${e.id}')">🗑</button>`;
-    wrap.appendChild(d);
-  });
+  if(!list.length){wrap.innerHTML='<div class="anEmpty">Henüz kayıtlı simülasyon yok.</div>';}
+  else{
+    wrap.innerHTML='';
+    list.forEach(e=>{
+      const d=document.createElement('div');
+      d.className='saved-item';
+      d.onclick=(ev)=>{if(ev.target.classList.contains('del'))return;sdEditId=e.id;sdLoad(e.simData);document.getElementById('view-simdetay').scrollIntoView({behavior:'smooth'});toast('Yüklendi');};
+      d.innerHTML=`
+        <div class="info">
+          <div class="ttl">${esc(e.desc||'(adsız)')}</div>
+          <div class="sub">${e.date||'tarih yok'}</div>
+        </div>
+        <button class="del" title="Sil" onclick="sdSil('${e.id}')">🗑</button>`;
+      wrap.appendChild(d);
+    });
+  }
+  sdRenderNavList();
+}
+// Sol menüde Detaylı Simülasyon altındaki proje listesi
+function sdRenderNavList(){
+  const nav=document.getElementById('navSimList');
+  if(!nav)return;
+  const list=sdKayitlilar();
+  if(!list.length){nav.innerHTML='';return;}
+  nav.innerHTML=list.map(e=>`
+    <button class="nav-item" style="padding-left:38px;font-size:13px;opacity:.85" onclick="sdAcProje('${e.id}')" title="${esc(e.desc||'')}">
+      <span class="icon" style="font-size:11px">└</span> ${esc((e.desc||'(adsız)').slice(0,22))}
+    </button>`).join('');
+}
+function sdAcProje(id){
+  const e=sdKayitlilar().find(x=>x.id===id);
+  if(!e)return;
+  showTab('simdetay');
+  sdEditId=e.id;
+  sdLoad(e.simData);
+  toast('Yüklendi');
 }
 async function sdSil(id){
   if(!confirm('Bu kayıtlı simülasyonu silmek istiyor musun?'))return;
@@ -4780,6 +4803,7 @@ async function initApp(){
   refreshEkipGiderPickers();
   refreshEvFirmPicker();
   refreshEvArtistPicker();
+  sdRenderNavList();
   setAccYon('gelir');
   loadCompany();
   calc();
