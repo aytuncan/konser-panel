@@ -873,6 +873,22 @@ select option{background:var(--surface)}
           <div id="vadeListe"></div>
         </div>
 
+        <div class="card" data-mtab="genel">
+          <div class="card-title">Firma Carileri</div>
+          <div class="hint" style="margin-bottom:16px">Tüm firmaların alacak/borç durumu tek tabloda. Ara, filtrele, başlığa tıklayıp sırala.</div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+            <input id="cariGenelSearch" placeholder="🔍 Firma ara..." oninput="renderCariGenel()" style="flex:1;min-width:200px">
+          </div>
+          <div class="actions" style="margin-bottom:16px">
+            <button class="btn ghost active" id="cgFiltreAll" onclick="cariGenelFiltre('all')">Tümü</button>
+            <button class="btn ghost" id="cgFiltreAlacak" onclick="cariGenelFiltre('alacak')">Alacak</button>
+            <button class="btn ghost" id="cgFiltreBorc" onclick="cariGenelFiltre('borc')">Borç</button>
+            <button class="btn ghost" id="cgFiltreBekliyor" onclick="cariGenelFiltre('bekliyor')">Bekliyor</button>
+            <button class="btn ghost" id="cgFiltreTamam" onclick="cariGenelFiltre('tamam')">Tamamlandı</button>
+          </div>
+          <div id="cariGenelTablo"></div>
+        </div>
+
         <div class="card" data-mtab="gg">
           <div class="card-title">Aylık Sabit Ödemeler</div>
           <div class="hint" style="margin-bottom:20px">Kira, maaş, abonelik gibi her ay tekrarlanan giderler. Bu ay ödenecekler ve durumları aşağıda; "ödendi" işareti backend'e kaydedilir.</div>
@@ -3502,6 +3518,80 @@ function setMtab(t){
     el.style.display=(el.getAttribute('data-mtab')===t)?'':'none';
   });
 }
+// ── FİRMA CARİLERİ (Genel ekranı, filtreli/aranabilir/sıralanabilir) ──
+let cgFiltre='all', cgSiraAlan='net', cgSiraYon=-1;
+function cariGenelFiltre(f){
+  cgFiltre=f;
+  ['All','Alacak','Borc','Bekliyor','Tamam'].forEach(x=>{const b=document.getElementById('cgFiltre'+x);if(b)b.classList.remove('active');});
+  const map={all:'All',alacak:'Alacak',borc:'Borc',bekliyor:'Bekliyor',tamam:'Tamam'};
+  const btn=document.getElementById('cgFiltre'+map[f]);if(btn)btn.classList.add('active');
+  renderCariGenel();
+}
+function cariGenelSirala(alan){
+  if(cgSiraAlan===alan)cgSiraYon*=-1; else {cgSiraAlan=alan;cgSiraYon=-1;}
+  renderCariGenel();
+}
+function renderCariGenel(){
+  const wrap=document.getElementById('cariGenelTablo');
+  if(!wrap)return;
+  const agg=accAggregate();
+  let list=agg.cari.map(c=>({
+    ...c, net:(c.alacak||0)-(c.borc||0),
+    durum:(c.alacak>0.5)?'bekliyor':((c.borc>0.5)?'borc':'tamam')
+  })).filter(c=>(c.beklenen>0.5||c.alinan>0.5||c.alacak>0.5||c.borc>0.5));
+  // arama
+  const q=(document.getElementById('cariGenelSearch')?.value||'').toLocaleLowerCase('tr');
+  if(q)list=list.filter(c=>(c.name||'').toLocaleLowerCase('tr').includes(q));
+  // filtre
+  if(cgFiltre==='alacak')list=list.filter(c=>c.alacak>0.5);
+  else if(cgFiltre==='borc')list=list.filter(c=>c.borc>0.5);
+  else if(cgFiltre==='bekliyor')list=list.filter(c=>c.durum==='bekliyor');
+  else if(cgFiltre==='tamam')list=list.filter(c=>c.durum==='tamam');
+  // sıralama
+  list.sort((a,b)=>{
+    if(cgSiraAlan==='name'){
+      const av=(a.name||'').toLocaleLowerCase('tr'), bv=(b.name||'').toLocaleLowerCase('tr');
+      return cgSiraYon*av.localeCompare(bv,'tr');
+    }
+    const av=a[cgSiraAlan]||0, bv=b[cgSiraAlan]||0;
+    return cgSiraYon<0?(bv-av):(av-bv);
+  });
+  if(!list.length){wrap.innerHTML='<div class="anEmpty">'+(q||cgFiltre!=='all'?'Eşleşen firma yok.':'Henüz firma carisi yok.')+'</div>';return;}
+  // toplamlar
+  const tBek=list.reduce((a,c)=>a+(c.beklenen||0),0);
+  const tAl=list.reduce((a,c)=>a+(c.alinan||0),0);
+  const tAlacak=list.reduce((a,c)=>a+(c.alacak||0),0);
+  const tBorc=list.reduce((a,c)=>a+(c.borc||0),0);
+  const ok=(alan)=>cgSiraAlan===alan?(cgSiraYon<0?' ▼':' ▲'):'';
+  const durumBadge=(c)=>{
+    if(c.durum==='bekliyor')return '<span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(245,177,61,0.15);color:var(--amber)">Bekliyor</span>';
+    if(c.durum==='borc')return '<span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(240,122,122,0.15);color:var(--red)">Borç</span>';
+    return '<span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(90,209,154,0.15);color:var(--green)">Tamamlandı</span>';
+  };
+  let h='<table class="atable"><thead><tr>'+
+    `<th style="cursor:pointer" onclick="cariGenelSirala('name')">Firma${ok('name')}</th>`+
+    `<th style="cursor:pointer" onclick="cariGenelSirala('beklenen')">Beklenen${ok('beklenen')}</th>`+
+    `<th style="cursor:pointer" onclick="cariGenelSirala('alinan')">Alınan${ok('alinan')}</th>`+
+    `<th style="cursor:pointer" onclick="cariGenelSirala('alacak')">Alacak${ok('alacak')}</th>`+
+    `<th style="cursor:pointer" onclick="cariGenelSirala('borc')">Borç${ok('borc')}</th>`+
+    `<th style="cursor:pointer" onclick="cariGenelSirala('net')">Net${ok('net')}</th>`+
+    `<th>Durum</th></tr></thead><tbody>`;
+  list.forEach(c=>{
+    h+=`<tr>
+      <td>${esc(c.name)}</td>
+      <td>${fmt(c.beklenen||0)}</td>
+      <td class="pos">${fmt(c.alinan||0)}</td>
+      <td>${fmt(c.alacak||0)}</td>
+      <td>${fmt(c.borc||0)}</td>
+      <td class="${c.net>=0?'pos':'neg'}">${fmt(c.net)}</td>
+      <td>${durumBadge(c)}</td>
+    </tr>`;
+  });
+  h+=`<tr style="font-weight:700"><td>TOPLAM (${list.length})</td><td>${fmt(tBek)}</td><td class="pos">${fmt(tAl)}</td><td class="pos">${fmt(tAlacak)}</td><td class="neg">${fmt(tBorc)}</td><td class="${(tAlacak-tBorc)>=0?'pos':'neg'}">${fmt(tAlacak-tBorc)}</td><td></td></tr>`;
+  h+='</tbody></table>';
+  wrap.innerHTML=h;
+}
+
 function renderOdeme(){
   const agg=accAggregate();
   const trNames=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
@@ -3509,6 +3599,7 @@ function renderOdeme(){
   renderVadeler();
   renderSabit();
   refreshSabitFirmPicker();
+  renderCariGenel();
 
 document.getElementById('accOzet').innerHTML=`
     <div class="stat"><div class="n">Toplam Gelir (net)</div><div class="v">${fmt(agg.toplamGelir)}</div></div>
