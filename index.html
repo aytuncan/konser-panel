@@ -476,6 +476,15 @@ select option{background:var(--surface)}
     <div class="content">
 
       <div id="view-dashboard" style="">
+        <div class="card" style="border-color:var(--accent)">
+          <div class="card-title">💰 Hobos Kasası</div>
+          <div class="hint" style="margin-bottom:20px">Eldeki para (tahsil edilen − ödenen) ve henüz alınmamış alacaklar. Üstte tüm şirket, altta menajer (Hobos'a kalan %25) payı.</div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Tüm Şirket</div>
+          <div class="stat-grid" id="kasaSirket" style="margin-bottom:24px"></div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Menajer Payı (Hobos · %25)</div>
+          <div class="stat-grid" id="kasaMenajer"></div>
+        </div>
+
         <div class="card">
           <div class="card-title">Genel Bakış</div>
           <div class="stat-grid" id="dashOzet"></div>
@@ -3232,20 +3241,15 @@ let editingEkipId=null;
 let editingGiderId=null;
 
 // cfg kaydını kaydet: cfg alanına göre bul (ID'ye güvenme, backend ID atayabilir).
-// POST yanıtının gerçek ID'sini sakla ki sonraki güncellemeler PUT ile gitsin.
+// Kaydettikten sonra loadAcc ile backend'den taze listeyi çekeriz — en garantili yol.
 async function saveCfg(cfgName, liste){
   const ex=accEntries.find(x=>x.type==='cfg' && x.cfg===cfgName);
   const o={type:'cfg',cfg:cfgName,liste};
   if(ex&&ex.id)o.id=ex.id;
   try{
-    const res=await apiFetch('/api/acc'+(ex&&ex.id?'/'+ex.id:''),{method:ex&&ex.id?'PUT':'POST',body:JSON.stringify(o)});
-    if(res&&res.ok){
-      let saved=null;
-      try{saved=await res.json();}catch(e){}
-      const realId=(saved&&saved.id)?saved.id:(o.id||('cfg_'+cfgName));
-      o.id=realId;
-      if(ex)Object.assign(ex,o); else accEntries.push(o);
-    }
+    await apiFetch('/api/acc'+(ex&&ex.id?'/'+ex.id:''),{method:ex&&ex.id?'PUT':'POST',body:JSON.stringify(o)});
+    // backend ne kaydettiyse onu geri çek (gerçek ID dahil)
+    await loadAcc();
   }catch(e){}
 }
 function getCfg(cfgName){
@@ -3723,6 +3727,45 @@ async function refreshDashboard(){
 function renderDashboard(){
   const bugun=new Date();bugun.setHours(0,0,0,0);
   const ay=new Date().toISOString().slice(0,7); // YYYY-MM
+
+  // ── HOBOS KASASI ──────────────────────────────────────
+  // Konser tarafı: tahsil edilen / bekleyen, ve bunların menajer (%25) payı
+  let konserAlinan=0, konserBekleyen=0, menajerAlinan=0, menajerBekleyen=0;
+  events.forEach(ev=>{
+    const c=computeFor(ev);
+    const t=tahsilatFor(ev);
+    konserAlinan+=t.al;
+    konserBekleyen+=Math.max(0,t.kalan);
+    // menajer payı = kârın p2 oranı; ciroya göre tahsil oranıyla dağıt
+    const oran=t.bek>0?(t.al/t.bek):0;
+    const menajerToplam=c.p2amt; // bu işin toplam menajer payı
+    menajerAlinan+=menajerToplam*oran;
+    menajerBekleyen+=menajerToplam*(1-oran);
+  });
+  // Şirket gelir/gider (acc): eldeki = kapanmış (tamam), bekleyen = açık
+  let sirketGelirAlinan=0, sirketGiderOdenen=0, sirketGelirBekleyen=0, sirketGiderBekleyen=0;
+  accEntries.forEach(e=>{
+    if(e.type==='cfg'||e.recurring||e.artistPay||e.docClient)return; // sadece normal gelir/gider
+    const tutar=e.amount||0;
+    if(e.yon==='gelir'){
+      if(e.status==='tamam')sirketGelirAlinan+=tutar; else sirketGelirBekleyen+=tutar;
+    }else{
+      if(e.status==='tamam')sirketGiderOdenen+=tutar; else sirketGiderBekleyen+=tutar;
+    }
+  });
+  // Eldeki tüm para: konser tahsilatı + şirket geliri − şirket gideri
+  const eldeki=konserAlinan+sirketGelirAlinan-sirketGiderOdenen;
+  const bekleyen=konserBekleyen+sirketGelirBekleyen-sirketGiderBekleyen;
+  const kasaSirketEl=document.getElementById('kasaSirket');
+  if(kasaSirketEl)kasaSirketEl.innerHTML=`
+    <div class="stat"><div class="n">Eldeki Para</div><div class="v ${eldeki>=0?'pos':'neg'}">${fmt(eldeki)}</div></div>
+    <div class="stat"><div class="n">Bekleyen (alınmamış)</div><div class="v">${fmt(bekleyen)}</div></div>
+    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Toplam Beklenen</div><div class="v ${(eldeki+bekleyen)>=0?'pos':'neg'}">${fmt(eldeki+bekleyen)}</div></div>`;
+  const kasaMenajerEl=document.getElementById('kasaMenajer');
+  if(kasaMenajerEl)kasaMenajerEl.innerHTML=`
+    <div class="stat"><div class="n">Eldeki Menajer Payı</div><div class="v pos">${fmt(menajerAlinan)}</div></div>
+    <div class="stat"><div class="n">Bekleyen Menajer Payı</div><div class="v">${fmt(menajerBekleyen)}</div></div>
+    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Toplam Menajer Payı</div><div class="v pos">${fmt(menajerAlinan+menajerBekleyen)}</div></div>`;
 
   // özet kartları
   let buAyKar=0, acikAlacak=0;
