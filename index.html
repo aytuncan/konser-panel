@@ -1200,6 +1200,7 @@ select option{background:var(--surface)}
           <div class="grid" style="margin-top:20px">
             <div><label>Karşı taraf yetkilisi</label><input id="dClientAuth" placeholder="Ad Soyad" autocomplete="off"></div>
             <div><label>Karşı taraf telefon</label><input id="dClientPhone" placeholder="+90 ..." autocomplete="off"></div>
+            <div><label>Karşı taraf e-posta</label><input id="dClientMail" placeholder="info@..." autocomplete="off"></div>
           </div>
           <div style="margin-top:20px">
             <label>Teknik / ek şartlar (her satır ayrı madde)</label>
@@ -1242,6 +1243,7 @@ Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
           <button class="btn primary" onclick="makePDF('sozlesme')">Sözleşme PDF indir</button>
           <button class="btn ghost" onclick="previewDoc('teklif')">Teklifi önizle</button>
           <button class="btn ghost" onclick="previewDoc('sozlesme')">Sözleşmeyi önizle</button>
+          <button class="btn ghost" onclick="szMailYolla(null)">📧 Mail ile yolla</button>
         </div>
         <div class="hint" style="margin-top:12px">Not: Sözleşme taslağı genel bir başlangıç metnidir, hukuki danışmanlık değildir.</div>
 
@@ -2574,6 +2576,7 @@ function fillClientFromDc(){
   set('dClient',f.name);
   set('dClientAuth',f.auth);
   set('dClientPhone',f.phone);
+  set('dClientMail',f.mail);
 }
 
 let firms=[];
@@ -2664,6 +2667,7 @@ function fillClientFromFirm(){
   document.getElementById('dClient').value=f.name||'';
   document.getElementById('dClientAuth').value=f.auth||'';
   document.getElementById('dClientPhone').value=f.phone||'';
+  const mailEl=document.getElementById('dClientMail');if(mailEl&&f.mail)mailEl.value=f.mail;
   if(!document.getElementById('dCity').value&&f.city)document.getElementById('dCity').value=f.city;
 }
 
@@ -2776,7 +2780,7 @@ function docData(){
   const firm=accEntries.find(x=>x.id===dcId && x.docClient)||null;
   return {co,artist:g('dArtist'),date:g('dDate'),venue:g('dVenue'),city:g('dCity'),
     time:g('dTime'),soundcheck:g('dSoundcheck'),dur:g('dDur'),fee,kdvRate,kdv,total,advance,balance:total-advance,
-    payTerm:g('dPayTerm'),client:g('dClient'),clientAuth:g('dClientAuth'),clientPhone:g('dClientPhone'),
+    payTerm:g('dPayTerm'),client:g('dClient'),clientAuth:g('dClientAuth'),clientPhone:g('dClientPhone'),clientMail:g('dClientMail'),
     firm,tech:g('dTech').split('\n').map(s=>s.trim()).filter(Boolean)};
 }
 function trMoney(n){return (Math.round(n||0)).toLocaleString('tr-TR')+' TL';}
@@ -2946,7 +2950,7 @@ function rowT(k,v){return `<tr><td style="padding:5px 8px;border:1px solid #ddd;
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 // ── SÖZLEŞME KAYDET / YÜKLE ───────────────────────────
-const SZ_FIELDS=['dArtist','dDate','dVenue','dCity','dTime','dSoundcheck','dDur','dFee','dKdv','dAdvance','dPayTerm','dFirmPick','dClient','dClientAuth','dClientPhone','dTech','dSozlesmeText','dDriveLink'];
+const SZ_FIELDS=['dArtist','dDate','dVenue','dCity','dTime','dSoundcheck','dDur','dFee','dKdv','dAdvance','dPayTerm','dFirmPick','dClient','dClientAuth','dClientPhone','dClientMail','dTech','dSozlesmeText','dDriveLink'];
 let szEditId=null;
 function szGather(){
   const o={};
@@ -3010,6 +3014,41 @@ function szRenderKayitli(){
     wrap.appendChild(d);
   });
 }
+// ── MAIL İLE YOLLA (mailto) ───────────────────────────
+function szMailYolla(idOrNull){
+  let d, drive='';
+  if(idOrNull){
+    const e=accEntries.find(x=>x.id===idOrNull);if(!e||!e.szData){toast('Sözleşme bulunamadı');return;}
+    // kayıtlı sözleşmeden geçici olarak docData üret
+    const sd=e.szData;
+    d={artist:sd.dArtist||'',date:sd.dDate||'',venue:sd.dVenue||'',city:sd.dClient||'',
+       client:sd.dClient||'',clientMail:sd.dClientMail||'',fee:+sd.dFee||0,
+       sozText:sd.dSozlesmeText||''};
+    drive=e.driveLink||'';
+  }else{
+    const dd=docData();
+    d={artist:dd.artist,date:dd.date,venue:dd.venue,city:dd.city,client:dd.client,
+       clientMail:dd.clientMail,fee:dd.fee,sozText:document.getElementById('dSozlesmeText').value||''};
+    drive=document.getElementById('dDriveLink').value||'';
+  }
+  const firmaAd=document.getElementById('coName')?document.getElementById('coName').value:'';
+  const konu=`Sözleşme — ${d.artist||d.venue||'Etkinlik'}${d.date?' ('+trDate(d.date)+')':''}`;
+  let govde=`Sayın ${d.client||'Yetkili'},\n\n`;
+  govde+=`${d.artist||'Sanatçı'} için ${d.venue||'mekan'}${d.city?' / '+d.city:''} ${d.date?trDate(d.date)+' tarihli':''} etkinliğe ilişkin sözleşme aşağıdadır.\n\n`;
+  govde+='────────────────────────\n';
+  govde+=(d.sozText&&d.sozText.trim())?d.sozText:'(Sözleşme metni için lütfen ekteki PDF\'e bakınız.)';
+  govde+='\n────────────────────────\n\n';
+  if(drive)govde+=`İmzalı sözleşme / belge: ${drive}\n\n`;
+  govde+='İmzalı sözleşme PDF\'ini bu e-postaya ekleyerek gönderiyorum.\n\n';
+  govde+=`Saygılarımızla,\n${firmaAd||'Hobos Organizasyon'}`;
+  const mailto=`mailto:${encodeURIComponent(d.clientMail||'')}?subject=${encodeURIComponent(konu)}&body=${encodeURIComponent(govde)}`;
+  if(mailto.length>1900){
+    // çok uzun gövde bazı mail istemcilerinde kesilir — uyar
+    toast('Mail açılıyor (uzun metin kısalabilir, PDF ekle)');
+  }
+  window.location.href=mailto;
+}
+
 async function szSil(id){
   if(!confirm('Bu kayıtlı sözleşmeyi silmek istiyor musun?'))return;
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
@@ -3077,6 +3116,7 @@ function szRenderYapilan(){
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         ${drv}
+        <button onclick="szMailYolla('${e.id}');event.stopPropagation()" title="Mail ile yolla" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;padding:4px 6px">📧 Mail</button>
         <select onchange="szDurumDegistir('${e.id}',this.value)" onclick="event.stopPropagation()" style="padding:6px 8px;font-size:12px;width:auto">${opts}</select>
         <button class="del" title="Sil" onclick="szSil('${e.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px 8px">🗑</button>
       </div>`;
