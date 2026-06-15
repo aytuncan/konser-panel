@@ -392,6 +392,9 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabSaved" onclick="showTab(&#39;saved&#39;)">
         <span class="icon">◈</span> Konserler
       </button>
+      <button class="nav-item" id="tabSimulasyon" onclick="showTab('simulasyon')">
+        <span class="icon">⚖</span> Simülasyon
+      </button>
       <button class="nav-item" id="tabSanatci" onclick="showTab(&#39;sanatci&#39;)">
         <span class="icon">★</span> Sanatçı Hesabı
       </button>
@@ -520,6 +523,56 @@ select option{background:var(--surface)}
         <!-- gizli: eski genel bakış kaldırıldı, kasa+menajer birleşti -->
         <div id="dashOzet" style="display:none"></div>
         <div id="kasaMenajer" style="display:none"></div>
+      </div>
+
+      <div id="view-simulasyon" style="display:none">
+        <div class="card">
+          <div class="card-title">⚖ Etkinlik Simülasyonu</div>
+          <div class="hint" style="margin-bottom:20px">Bir işe girmeden önce dene. 2-3 farklı senaryoyu (fiyat/bedel) yan yana karşılaştır. Hiçbir yere kaydedilmez — sadece hesap. Ortak giderleri bir kez gir, senaryoları değiştirerek kârı kıyasla.</div>
+
+          <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Ortak Ayarlar</div>
+          <div class="grid" style="margin-bottom:16px">
+            <div>
+              <label>İş tipi</label>
+              <select id="simTip" onchange="renderSim()">
+                <option value="ORGANIZATOR">Organizatör (sabit bedel)</option>
+                <option value="KAPI">Kapı (bilet satışı)</option>
+              </select>
+            </div>
+            <div><label>KDV oranı (%)</label><input id="simKdv" type="number" value="20" oninput="renderSim()"></div>
+            <div><label>Toplam kaşe (₺)</label><input id="simKase" type="number" placeholder="158000" oninput="renderSim()"></div>
+            <div><label>Diğer giderler (₺)</label><input id="simGider" type="number" placeholder="20000" oninput="renderSim()"></div>
+            <div><label>Sanatçı payı (%)</label><input id="simP1" type="number" value="75" oninput="renderSim()"></div>
+            <div><label>Menajer payı (%)</label><input id="simP2" type="number" value="25" oninput="renderSim()" readonly style="opacity:.7"></div>
+          </div>
+
+          <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:8px 0 12px">Senaryolar</div>
+          <div id="simKapiInputs" style="display:none">
+            <div class="grid" style="margin-bottom:8px">
+              <div><label>Komisyon oranı (%)</label><input id="simKom" type="number" value="0" oninput="renderSim()"></div>
+            </div>
+          </div>
+          <div class="grid">
+            <div>
+              <label>Senaryo A</label>
+              <input id="simA" type="number" placeholder="Bedel veya bilet fiyatı" oninput="renderSim()">
+            </div>
+            <div>
+              <label>Senaryo B</label>
+              <input id="simB" type="number" placeholder="Bedel veya bilet fiyatı" oninput="renderSim()">
+            </div>
+            <div>
+              <label>Senaryo C (opsiyonel)</label>
+              <input id="simC" type="number" placeholder="Bedel veya bilet fiyatı" oninput="renderSim()">
+            </div>
+          </div>
+          <div id="simKapiAdet" style="display:none;margin-top:12px">
+            <label>Bilet adedi (kapı işi için)</label>
+            <input id="simAdet" type="number" placeholder="500" oninput="renderSim()">
+          </div>
+        </div>
+
+        <div id="simSonuc"></div>
       </div>
 
       <div id="view-new" class="cols2" style="display: none;">
@@ -1640,7 +1693,7 @@ function applyXlsx() {
 const PAGE_TITLES={
   dashboard:'Dashboard',new:'Yeni Etkinlik',saved:'Konserler',odeme:'Muhasebe',mgenel:'Muhasebe — Genel',mgg:'Muhasebe — Gelir/Gider',mcari:'Muhasebe — Cari Durum',mkdv:'Muhasebe — KDV',ekipodeme:'Ekip Ödemeleri',sanatci:'Sanatçı Hesabı',
   szhazirla:'Sözleşme Hazırla',szrehber:'Sözleşme Rehberi',szfirmam:'Firma Bilgilerim',szsablon:'Sözleşme Şablonu',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
-  users:'Kullanıcılar',ayarlar:'Ayarlar'
+  users:'Kullanıcılar',ayarlar:'Ayarlar',simulasyon:'Etkinlik Simülasyonu'
 };
 function openSidebar(){
   document.getElementById('sidebar').classList.add('open');
@@ -1683,7 +1736,7 @@ function showTab(t){
   const muhAlt={mgenel:'genel',mgg:'gg',mcari:'cari',mkdv:'kdv'};
   const isMuh=Object.keys(muhAlt).includes(t);
   const activeView=isMuh?'odeme':t;
-  ['dashboard','new','saved','odeme','ekipodeme','sanatci','szhazirla','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users','ayarlar'].forEach(id=>{
+  ['dashboard','new','saved','simulasyon','odeme','ekipodeme','sanatci','szhazirla','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users','ayarlar'].forEach(id=>{
     const v=document.getElementById('view-'+id);
     if(v) v.style.display=(activeView===id)?'':'none';
   });
@@ -1700,6 +1753,7 @@ function showTab(t){
   if(t==='saved')setSavedFilter(savedFilter);
   if(isMuh){refreshAccFirmPicker();renderOdeme();setMtab(muhAlt[t]);}
   if(t==='ekipodeme')renderEkipOdeme();
+  if(t==='simulasyon')renderSim();
   if(t==='sanatci'){refreshSaPicker();renderSanatci();}
   if(t==='szhazirla'){refreshDocPicker();refreshDcPicker();}
   if(t==='szrehber'){renderDcList();}
@@ -3737,6 +3791,87 @@ async function refreshDashboard(){
   await Promise.all([loadEvents(),loadAcc()]);
   renderDashboard();
 }
+// ── ETKİNLİK SİMÜLASYONU ──────────────────────────────
+function simHesapla(deger){
+  const tip=document.getElementById('simTip').value;
+  const kdvRate=+document.getElementById('simKdv').value||0;
+  const kdvDiv=1+kdvRate/100;
+  const kase=+document.getElementById('simKase').value||0;
+  const gider=+document.getElementById('simGider').value||0;
+  const p1=(+document.getElementById('simP1').value||0)/100;
+  const p2=(+document.getElementById('simP2').value||0)/100;
+  let ciroGross=0, komisyon=0;
+  if(tip==='KAPI'){
+    const adet=+document.getElementById('simAdet').value||0;
+    const kom=(+document.getElementById('simKom').value||0)/100;
+    ciroGross=adet*deger; // deger = bilet fiyatı
+    komisyon=ciroGross*kom;
+  }else{
+    ciroGross=deger; // deger = bedel
+  }
+  const ciroNet=kdvRate>0?ciroGross/kdvDiv:ciroGross;
+  const toplamGider=kase+gider;
+  const kar=ciroNet-komisyon-toplamGider;
+  return {ciroGross,ciroNet,komisyon,toplamGider,kar,p1amt:kar*p1,p2amt:kar*p2};
+}
+function renderSim(){
+  const tip=document.getElementById('simTip').value;
+  // KDV/kapı input görünürlüğü
+  document.getElementById('simKapiInputs').style.display=tip==='KAPI'?'block':'none';
+  document.getElementById('simKapiAdet').style.display=tip==='KAPI'?'block':'none';
+  // p2'yi p1'e göre otomatik ayarla
+  const p1=+document.getElementById('simP1').value||0;
+  document.getElementById('simP2').value=Math.max(0,100-p1);
+
+  const senaryolar=[
+    {ad:'Senaryo A',deger:+document.getElementById('simA').value||0},
+    {ad:'Senaryo B',deger:+document.getElementById('simB').value||0},
+    {ad:'Senaryo C',deger:+document.getElementById('simC').value||0},
+  ].filter(s=>s.deger>0);
+
+  const wrap=document.getElementById('simSonuc');
+  if(!senaryolar.length){
+    wrap.innerHTML='<div class="card"><div class="anEmpty">En az bir senaryoya bedel/fiyat gir.</div></div>';
+    return;
+  }
+  const sonuclar=senaryolar.map(s=>({...s,c:simHesapla(s.deger)}));
+  const enIyiKar=Math.max(...sonuclar.map(s=>s.c.kar));
+
+  let h='<div class="card"><div class="card-title">Karşılaştırma</div>';
+  h+='<div class="hint" style="margin-bottom:16px">'+(tip==='KAPI'?'Senaryo değeri = bilet fiyatı. ':'Senaryo değeri = anlaşılan bedel. ')+'En yüksek kâr yeşil çerçeveyle işaretli.</div>';
+  h+='<div class="stat-grid" style="grid-template-columns:repeat('+sonuclar.length+',1fr)">';
+  sonuclar.forEach(s=>{
+    const enIyi=Math.abs(s.c.kar-enIyiKar)<0.5;
+    h+=`<div class="stat" style="${enIyi?'border-color:var(--green);background:rgba(90,209,154,0.07)':''}">
+      <div class="n">${s.ad}${enIyi?' ✓':''}</div>
+      <div class="v ${s.c.kar>=0?'pos':'neg'}">${fmt(s.c.kar)}</div>
+      <div class="hint" style="margin-top:4px">kâr</div>
+    </div>`;
+  });
+  h+='</div>';
+
+  // detay tablosu
+  h+='<table class="atable" style="margin-top:20px"><thead><tr><th>Kalem</th>';
+  sonuclar.forEach(s=>h+=`<th>${s.ad}</th>`);
+  h+='</tr></thead><tbody>';
+  const satir=(label,fn,cls)=>{
+    h+=`<tr><td>${label}</td>`;
+    sonuclar.forEach(s=>{const v=fn(s.c);h+=`<td class="${cls?cls(v):''}">${fmt(v)}</td>`;});
+    h+='</tr>';
+  };
+  satir('Ciro (KDV dahil)',c=>c.ciroGross);
+  satir('Ciro (KDV hariç)',c=>c.ciroNet);
+  if(tip==='KAPI')satir('Komisyon',c=>-c.komisyon);
+  satir('Toplam gider (kaşe+gider)',c=>-c.toplamGider);
+  h+='<tr style="font-weight:700"><td>Kâr / Zarar</td>';
+  sonuclar.forEach(s=>h+=`<td class="${s.c.kar>=0?'pos':'neg'}">${fmt(s.c.kar)}</td>`);
+  h+='</tr>';
+  satir('Sanatçı payı',c=>c.p1amt);
+  satir('Menajer payı (sana)',c=>c.p2amt,()=>'pos');
+  h+='</tbody></table></div>';
+  wrap.innerHTML=h;
+}
+
 function renderDashboard(){
   const bugun=new Date();bugun.setHours(0,0,0,0);
   const ay=new Date().toISOString().slice(0,7); // YYYY-MM
