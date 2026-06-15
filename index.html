@@ -476,26 +476,21 @@ select option{background:var(--surface)}
     <div class="content">
 
       <div id="view-dashboard" style="">
-        <div class="card" style="border-color:var(--accent)">
-          <div class="card-title">💰 Hobos Kasası</div>
-          <div class="hint" style="margin-bottom:20px">Tahsil edilen paradan, o konserlerin tahsil oranına denk kaşeler + sanatçı ödemeleri + giderler düşülür → eldeki net. Henüz parası alınmamış konserin kaşesi düşülmez (o iş yapılınca düşer). Altta menajer (Hobos'a kalan %25) payı.</div>
-          <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Tüm Şirket</div>
-          <div class="stat-grid" id="kasaSirket" style="margin-bottom:24px"></div>
-          <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Menajer Payı (Hobos · %25)</div>
-          <div class="stat-grid" id="kasaMenajer"></div>
+        <!-- GRUP 1: GERÇEK KASA (sıcak para) -->
+        <div class="card">
+          <div class="card-title">💰 Gerçek Kasa</div>
+          <div class="hint" style="margin-bottom:20px">Şu an kasaya giren/çıkan gerçek para. Tahsil edilen paradan, o konserlerin tahsil oranına denk kaşeler, giderler ve sanatçıya yapılan ödemeler düşülür.</div>
+          <div class="stat-grid" id="kasaSirket"></div>
         </div>
 
+        <!-- GRUP 2: KÂR / ZARAR (muhasebe) -->
         <div class="card">
-          <div class="card-title">Genel Bakış</div>
-          <div class="stat-grid" id="dashOzet"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-title" id="dashAyBaslik">Haziran Ayı Muhasebe Özeti</div>
-          <div class="hint" style="margin-bottom:20px">Sadece bu ayın işleri ve işlemleri. Detay için Muhasebe sekmesine git.</div>
+          <div class="card-title" id="dashAyBaslik">Kâr / Zarar — Bu Ay</div>
+          <div class="hint" style="margin-bottom:20px">Bu ayın işlerinden doğan kâr, paylar ve hak edişler. (Kasadaki gerçek paradan farklıdır; bu muhasebe kârıdır.)</div>
           <div class="stat-grid" id="dashAyOzet"></div>
         </div>
 
+        <!-- GRUP 3: OPERASYON -->
         <div class="dashboard-grid">
           <div class="card">
             <div class="card-title">Yaklaşan Etkinlikler</div>
@@ -514,6 +509,10 @@ select option{background:var(--surface)}
           <div class="hint" style="margin-bottom:16px">Ekibe yapılacak açık ödemeler. Detay için "Ekip Ödemeleri" sekmesine git.</div>
           <div id="dashKase"><div class="anEmpty">Ödenmemiş Ekip Kaşesi yok 🎉</div></div>
         </div>
+
+        <!-- gizli: eski genel bakış kaldırıldı, kasa+menajer birleşti -->
+        <div id="dashOzet" style="display:none"></div>
+        <div id="kasaMenajer" style="display:none"></div>
       </div>
 
       <div id="view-new" class="cols2" style="display: none;">
@@ -3786,19 +3785,18 @@ function renderDashboard(){
   const eldekiKdvsiz=eldekiNet-odenecekKdv;
   // Bekleyen alacak (alınmamış)
   const bekleyen=konserBekleyen+sirketGelirBekleyen;
+  // Eldeki net eksiyse sebebi genelde sanatçıya fazla ödeme (avans) — tooltip ile açıkla
+  const netTip=eldekiKdvsiz<0
+    ? ` <span title="Eksi görünmesinin sebebi zarar değil; sanatçıya hak edişinden fazla (avans) ödeme yapılmış olabilir ya da KDV yükü eldeki paradan büyüktür." style="cursor:help;color:var(--muted)">(?)</span>`
+    : '';
   const kasaSirketEl=document.getElementById('kasaSirket');
   if(kasaSirketEl)kasaSirketEl.innerHTML=`
-    <div class="stat"><div class="n">Tahsil Edilen</div><div class="v pos">${fmt(tahsilEdilen)}</div></div>
-    <div class="stat"><div class="n">Kaşe + Sanatçı + Gider</div><div class="v neg">${fmt(odenenToplam)}</div></div>
-    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Eldeki Para (KDV dahil)</div><div class="v ${eldekiNet>=0?'pos':'neg'}">${fmt(eldekiNet)}</div></div>
-    <div class="stat"><div class="n">İçinden Ödenecek KDV</div><div class="v neg">${fmt(odenecekKdv)}</div></div>
-    <div class="stat" style="border-color:var(--green);background:rgba(90,209,154,0.07)"><div class="n">Eldeki Net (KDV hariç)</div><div class="v ${eldekiKdvsiz>=0?'pos':'neg'}">${fmt(eldekiKdvsiz)}</div></div>
+    <div class="stat"><div class="n">Tahsil Edilen</div><div class="v">${fmt(tahsilEdilen)}</div></div>
+    <div class="stat"><div class="n">Ödenen (Kaşe+Sanatçı+Gider)</div><div class="v">${fmt(odenenToplam)}</div></div>
+    <div class="stat"><div class="n">Eldeki Para (KDV dahil)</div><div class="v">${fmt(eldekiNet)}</div></div>
+    <div class="stat"><div class="n">İçinden Ödenecek KDV</div><div class="v">${fmt(odenecekKdv)}</div></div>
+    <div class="stat" style="border-color:${eldekiKdvsiz>=0?'var(--green)':'var(--red)'};background:${eldekiKdvsiz>=0?'rgba(90,209,154,0.07)':'rgba(240,122,122,0.07)'}"><div class="n">Eldeki Net (KDV hariç)${netTip}</div><div class="v ${eldekiKdvsiz>=0?'pos':'neg'}">${fmt(eldekiKdvsiz)}</div></div>
     <div class="stat"><div class="n">Bekleyen Alacak</div><div class="v">${fmt(bekleyen)}</div></div>`;
-  const kasaMenajerEl=document.getElementById('kasaMenajer');
-  if(kasaMenajerEl)kasaMenajerEl.innerHTML=`
-    <div class="stat"><div class="n">Eldeki Menajer Payı</div><div class="v pos">${fmt(menajerAlinan)}</div></div>
-    <div class="stat"><div class="n">Bekleyen Menajer Payı</div><div class="v">${fmt(menajerBekleyen)}</div></div>
-    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Toplam Menajer Payı</div><div class="v pos">${fmt(menajerAlinan+menajerBekleyen)}</div></div>`;
 
   // özet kartları
   let buAyKar=0, acikAlacak=0;
@@ -3838,18 +3836,18 @@ function renderDashboard(){
     <div class="stat"><div class="n">Bu Ay Sabit Ödeme</div><div class="v ${sabitAcikTutar>0.5?'neg':'pos'}">${fmt(sabitAcikTutar)}</div></div>
     <div class="stat"><div class="n">Sanatçılara Kalan</div><div class="v ${sanatciKalan>0.5?'neg':'pos'}">${fmt(sanatciKalan)}</div></div>`;
 
-  // Bu ay muhasebe özeti (Muhasebe'deki 6 kartın aynısı, bu ay filtreli)
+  // Bu ay kâr/zarar özeti
   const aggAy=accAggregate(ay);
   const trAyAdlari=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
   const baslikEl=document.getElementById('dashAyBaslik');
-  if(baslikEl){const mo=+ay.slice(5,7);baslikEl.textContent=trAyAdlari[mo-1]+' Ayı Muhasebe Özeti';}
+  if(baslikEl){const mo=+ay.slice(5,7);baslikEl.textContent='Kâr / Zarar — '+trAyAdlari[mo-1]+' Ayı';}
   document.getElementById('dashAyOzet').innerHTML=`
     <div class="stat"><div class="n">Toplam Gelir (net)</div><div class="v">${fmt(aggAy.toplamGelir)}</div></div>
     <div class="stat"><div class="n">Toplam Gider (net)</div><div class="v">${fmt(aggAy.toplamGider)}</div></div>
-    <div class="stat"><div class="n">Net (gelir−gider)</div><div class="v ${aggAy.netKar>=0?'pos':'neg'}">${fmt(aggAy.netKar)}</div></div>
-    <div class="stat"><div class="n">Net KDV</div><div class="v ${aggAy.netKdv>=0?'neg':'pos'}">${fmt(aggAy.netKdv)}</div></div>
-    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Sanatçı Toplam Payı</div><div class="v">${fmt(aggAy.toplamArtist)}</div></div>
-    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Menajer (Bana Kalan)</div><div class="v pos">${fmt(aggAy.toplamManager)}</div></div>`;
+    <div class="stat" style="border-color:${aggAy.netKar>=0?'var(--green)':'var(--red)'};background:${aggAy.netKar>=0?'rgba(90,209,154,0.07)':'rgba(240,122,122,0.07)'}"><div class="n">Net Kâr (KDV hariç)</div><div class="v ${aggAy.netKar>=0?'pos':'neg'}">${fmt(aggAy.netKar)}</div></div>
+    <div class="stat"><div class="n">Net KDV (devlete)</div><div class="v">${fmt(aggAy.netKdv)}</div></div>
+    <div class="stat"><div class="n">Sanatçı Hak Edişi (%75)</div><div class="v">${fmt(aggAy.toplamArtist)}</div></div>
+    <div class="stat" style="border-color:var(--green);background:rgba(90,209,154,0.07)"><div class="n">Menajer Payı (Hobos %25)</div><div class="v pos">${fmt(aggAy.toplamManager)}</div></div>`;
 
   // yaklaşan etkinlikler
   const etkWrap=document.getElementById('dashEtkinlik');
