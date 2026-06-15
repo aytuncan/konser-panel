@@ -581,7 +581,21 @@ select option{background:var(--surface)}
       <div id="view-simdetay" style="display:none">
         <div class="card">
           <div class="card-title">📊 Detaylı Etkinlik Simülasyonu</div>
-          <div class="hint" style="margin-bottom:0">Excel "Konser Hesap" çalışmasının birebir karşılığı. Bilet firmaları, bilet tipleri, sanatçı/mekan/ulaşım/konaklama/rider giderleri — hepsini gir, net nakit kâr ve ödenecek KDV otomatik hesaplansın. Hiçbir yere kaydedilmez.</div>
+          <div class="hint" style="margin-bottom:16px">Excel "Konser Hesap" çalışmasının birebir karşılığı. Bilet firmaları, bilet tipleri, sanatçı/mekan/ulaşım/konaklama/rider giderleri — hepsini gir, net nakit kâr ve ödenecek KDV otomatik hesaplansın.</div>
+          <div class="grid">
+            <div><label>Proje adı</label><input id="sdProjeAd" placeholder="Örn. CAN OZAN — İstanbul Festivali"></div>
+            <div><label>Proje tarihi</label><input id="sdProjeTarih" type="date"></div>
+          </div>
+          <div class="actions" style="margin-top:14px">
+            <button class="btn primary" onclick="sdKaydet()">💾 Simülasyonu Kaydet</button>
+            <button class="btn ghost" onclick="sdEtkinligeCevir()">→ Etkinliğe Çevir</button>
+            <button class="btn ghost" onclick="sdTemizle()">Temizle</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📁 Kayıtlı Simülasyonlar</div>
+          <div id="sdKayitliList"><div class="anEmpty">Henüz kayıtlı simülasyon yok.</div></div>
         </div>
 
         <!-- BİLET FİRMALARI & KOMİSYON -->
@@ -602,16 +616,19 @@ select option{background:var(--surface)}
           <button class="addbtn" onclick="sdAddBilet()">+ Bilet tipi ekle</button>
         </div>
 
-        <!-- SANATÇI & MEKAN -->
+        <!-- SANATÇILAR -->
         <div class="card">
-          <div class="card-title">📋 Sanatçı & Mekan</div>
+          <div class="card-title">📋 Sanatçılar</div>
+          <div class="hint" style="margin-bottom:14px">Birden çok sanatçı ekleyebilirsin. Her sanatçının kaşesi ve KDV durumu ayrı.</div>
+          <div class="row-head" style="grid-template-columns:1fr 120px 130px 90px 40px"><span>Sanatçı</span><span>Kaşe ₺</span><span>KDV durumu</span><span>KDV %</span><span></span></div>
+          <div id="sdSanatciRows"></div>
+          <button class="addbtn" onclick="sdAddSanatci()">+ Sanatçı ekle</button>
+        </div>
+
+        <!-- MEKAN -->
+        <div class="card">
+          <div class="card-title">🏟️ Mekan</div>
           <div class="grid">
-            <div><label>Sanatçı kaşe (₺)</label><input id="sdKase" type="number" placeholder="300000" oninput="renderSimDetay()"></div>
-            <div>
-              <label>Kaşe KDV durumu</label>
-              <select id="sdKaseKdvDurum" onchange="renderSimDetay()"><option value="haric">KDV Hariç (üstüne ekle)</option><option value="dahil">KDV Dahil (içinden ayır)</option></select>
-            </div>
-            <div><label>Kaşe KDV oranı (%)</label><input id="sdKaseKdv" type="number" value="20" oninput="renderSimDetay()"></div>
             <div><label>Mekan kapasitesi (kişi)</label><input id="sdKapasite" type="number" placeholder="3000" oninput="renderSimDetay()"></div>
             <div><label>Mekan kirası (₺)</label><input id="sdMekan" type="number" placeholder="450000" oninput="renderSimDetay()"></div>
             <div>
@@ -1820,8 +1837,10 @@ function showTab(t){
       sdAddFirma('Biletix',13,20);
       sdAddFirma('Bugece',0,20);
       sdAddBilet('Biletix','standart',850,1000);
+      sdAddSanatci('',300000,'haric',20);
       sdAddGider('Ulaşım (uçuş+transfer)',31000,20);
     }
+    sdRenderKayitli();
     renderSimDetay();
   }
   if(t==='sanatci'){refreshSaPicker();renderSanatci();}
@@ -4014,6 +4033,25 @@ function sdReadGiderler(){
   }).filter(g=>g.tutar>0);
 }
 
+function sdAddSanatci(name='',kase='',durum='haric',kdv=20){
+  const wrap=document.getElementById('sdSanatciRows');
+  const div=document.createElement('div');
+  div.className='row'; div.style.gridTemplateColumns='1fr 120px 130px 90px 40px'; div.style.marginBottom='8px';
+  div.innerHTML=`
+    <input placeholder="CAN OZAN" value="${sdEsc(name)}" oninput="renderSimDetay()">
+    <input type="number" placeholder="300000" value="${kase}" oninput="renderSimDetay()">
+    <select onchange="renderSimDetay()"><option value="haric"${durum==='haric'?' selected':''}>KDV Hariç</option><option value="dahil"${durum==='dahil'?' selected':''}>KDV Dahil</option></select>
+    <input type="number" placeholder="20" value="${kdv}" oninput="renderSimDetay()">
+    <button class="rm" onclick="this.parentElement.remove();renderSimDetay()">×</button>`;
+  wrap.appendChild(div);
+}
+function sdReadSanatcilar(){
+  return [...document.querySelectorAll('#sdSanatciRows .row')].map(r=>{
+    const i=r.querySelectorAll('input'),s=r.querySelector('select');
+    return {name:i[0].value,kase:+i[1].value||0,durum:s.value,kdv:+i[2].value||0};
+  }).filter(a=>a.name||a.kase);
+}
+
 function renderSimDetay(){
   // ── BİLETLEME ──
   const biletler=sdReadBiletler();
@@ -4028,12 +4066,16 @@ function renderSimDetay(){
   const netBiletGeliri=brutGelir-komToplam-komKdvToplam;
 
   // ── GİDERLER ──
-  // kaşe
-  const kaseTutar=+document.getElementById('sdKase').value||0;
-  const kaseKdvOran=(+document.getElementById('sdKaseKdv').value||0)/100;
-  const kaseDahil=document.getElementById('sdKaseKdvDurum').value==='dahil';
-  const kaseKdv=kaseDahil?(kaseTutar/(1+kaseKdvOran)*kaseKdvOran):(kaseTutar*kaseKdvOran);
-  const kaseNet=kaseDahil?(kaseTutar-kaseKdv):kaseTutar;
+  // sanatçılar (çoklu) — her birinin kaşesi ve KDV durumu ayrı
+  const sanatcilar=sdReadSanatcilar();
+  let kaseNet=0, kaseKdv=0;
+  sanatcilar.forEach(a=>{
+    const r=(a.kdv||0)/100;
+    const dahil=a.durum==='dahil';
+    const kdv=dahil?(a.kase/(1+r)*r):(a.kase*r);
+    const net=dahil?(a.kase-kdv):a.kase;
+    kaseNet+=net; kaseKdv+=kdv;
+  });
   const kaseToplam=kaseNet+kaseKdv;
   // mekan
   const mekanTutar=+document.getElementById('sdMekan').value||0;
@@ -4068,7 +4110,7 @@ function renderSimDetay(){
       <table class="atable">
         <thead><tr><th>Kalem</th><th>Net (₺)</th><th>KDV (₺)</th><th>Toplam (₺)</th></tr></thead>
         <tbody>
-          <tr><td>Sanatçı Kaşe</td><td>${fmt(kaseNet)}</td><td>${fmt(kaseKdv)}</td><td>${fmt(kaseToplam)}</td></tr>
+          <tr><td>Sanatçı Kaşe${sanatcilar.length>1?' ('+sanatcilar.length+' sanatçı)':''}</td><td>${fmt(kaseNet)}</td><td>${fmt(kaseKdv)}</td><td>${fmt(kaseToplam)}</td></tr>
           <tr><td>Mekan Kiralama</td><td>${fmt(mekanNet)}</td><td>${fmt(mekanKdv)}</td><td>${fmt(mekanToplam)}</td></tr>
           <tr><td>Ulaşım/Konaklama/Rider</td><td>${fmt(digerNet)}</td><td>${fmt(digerKdv)}</td><td>${fmt(digerToplam)}</td></tr>
           <tr style="font-weight:700"><td>TOPLAM GİDER</td><td>${fmt(kaseNet+mekanNet+digerNet)}</td><td>${fmt(giderKdvToplam)}</td><td>${fmt(toplamGiderKdvDahil)}</td></tr>
@@ -4104,6 +4146,130 @@ function renderSimDetay(){
       </div>
       ${doluluk>0&&amortiBilet>doluluk?'<div class="hint" style="margin-top:12px;color:var(--red)">⚠ Amorti için gereken bilet sayısı mekan kapasitesini aşıyor. Bu fiyatlarla kapasiteyi doldursan bile zarar edebilirsin.</div>':''}
     </div>`;
+}
+
+// ── Detaylı simülasyon: durumu topla / yükle ──
+function sdGather(){
+  return {
+    projeAd:document.getElementById('sdProjeAd').value,
+    projeTarih:document.getElementById('sdProjeTarih').value,
+    firmalar:sdReadFirmalar(),
+    biletler:[...document.querySelectorAll('#sdBiletRows .row')].map(r=>{
+      const sel=r.querySelector('select'),i=r.querySelectorAll('input');
+      return {firma:sel.value,tip:i[0].value,fiyat:+i[1].value||0,adet:+i[2].value||0};
+    }),
+    sanatcilar:sdReadSanatcilar(),
+    kapasite:+document.getElementById('sdKapasite').value||0,
+    mekan:+document.getElementById('sdMekan').value||0,
+    mekanKdvDurum:document.getElementById('sdMekanKdvDurum').value,
+    mekanKdv:+document.getElementById('sdMekanKdv').value||0,
+    giderler:sdReadGiderler()
+  };
+}
+function sdLoad(d){
+  document.getElementById('sdProjeAd').value=d.projeAd||'';
+  document.getElementById('sdProjeTarih').value=d.projeTarih||'';
+  document.getElementById('sdFirmaRows').innerHTML='';
+  (d.firmalar||[]).forEach(f=>sdAddFirma(f.name,f.kom,f.kdv));
+  document.getElementById('sdBiletRows').innerHTML='';
+  (d.biletler||[]).forEach(b=>sdAddBilet(b.firma,b.tip,b.fiyat,b.adet));
+  document.getElementById('sdSanatciRows').innerHTML='';
+  (d.sanatcilar||[]).forEach(a=>sdAddSanatci(a.name,a.kase,a.durum,a.kdv));
+  document.getElementById('sdKapasite').value=d.kapasite||'';
+  document.getElementById('sdMekan').value=d.mekan||'';
+  document.getElementById('sdMekanKdvDurum').value=d.mekanKdvDurum||'haric';
+  document.getElementById('sdMekanKdv').value=d.mekanKdv!=null?d.mekanKdv:20;
+  document.getElementById('sdGiderRows').innerHTML='';
+  (d.giderler||[]).forEach(g=>sdAddGider(g.desc,g.tutar,g.kdv));
+  renderSimDetay();
+}
+let sdEditId=null;
+async function sdKaydet(){
+  const d=sdGather();
+  if(!d.projeAd){toast('Önce proje adı gir');return;}
+  const entry={
+    id:sdEditId||('sim'+Date.now()),
+    type:'cfg', cfg:'sim_'+(sdEditId||Date.now()),
+    desc:d.projeAd, date:d.projeTarih||'', simData:d
+  };
+  try{
+    await apiFetch('/api/acc',{method:'POST',body:JSON.stringify(entry)});
+  }catch(e){toast('Kaydedilemedi');return;}
+  await loadAcc();
+  sdEditId=null;
+  toast('Simülasyon kaydedildi');
+  sdRenderKayitli();
+}
+function sdKayitlilar(){
+  return accEntries.filter(e=>e.type==='cfg'&&typeof e.cfg==='string'&&e.cfg.startsWith('sim_')&&e.simData);
+}
+function sdRenderKayitli(){
+  const wrap=document.getElementById('sdKayitliList');
+  const list=sdKayitlilar();
+  if(!list.length){wrap.innerHTML='<div class="anEmpty">Henüz kayıtlı simülasyon yok.</div>';return;}
+  wrap.innerHTML='';
+  list.forEach(e=>{
+    const d=document.createElement('div');
+    d.className='saved-item';
+    d.onclick=(ev)=>{if(ev.target.classList.contains('del'))return;sdEditId=e.id;sdLoad(e.simData);document.getElementById('view-simdetay').scrollIntoView({behavior:'smooth'});toast('Yüklendi');};
+    d.innerHTML=`
+      <div class="info">
+        <div class="ttl">${esc(e.desc||'(adsız)')}</div>
+        <div class="sub">${e.date||'tarih yok'}</div>
+      </div>
+      <button class="del" title="Sil" onclick="sdSil('${e.id}')">🗑</button>`;
+    wrap.appendChild(d);
+  });
+}
+async function sdSil(id){
+  if(!confirm('Bu kayıtlı simülasyonu silmek istiyor musun?'))return;
+  try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
+  await loadAcc();sdRenderKayitli();toast('Silindi');
+}
+function sdTemizle(){
+  sdEditId=null;
+  ['sdProjeAd','sdProjeTarih','sdKapasite','sdMekan'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sdFirmaRows').innerHTML='';
+  document.getElementById('sdBiletRows').innerHTML='';
+  document.getElementById('sdSanatciRows').innerHTML='';
+  document.getElementById('sdGiderRows').innerHTML='';
+  sdAddSanatci();sdAddBilet();sdAddGider();
+  renderSimDetay();
+}
+// Simülasyonu gerçek bir etkinliğe (Yeni Etkinlik) aktar
+function sdEtkinligeCevir(){
+  const d=sdGather();
+  const biletler=sdReadBiletler();
+  const toplamAdet=biletler.reduce((a,b)=>a+b.adet,0);
+  const brut=biletler.reduce((a,b)=>a+b.fiyat*b.adet,0);
+  // ortalama bilet fiyatı ve toplam komisyon oranı
+  const ortFiyat=toplamAdet>0?Math.round(brut/toplamAdet):0;
+  const kom=biletler.reduce((a,b)=>a+b.fiyat*b.adet*(b.kom/100),0);
+  const komOran=brut>0?(kom/brut*100):0;
+  // Yeni Etkinlik formunu doldur (KAPI işi olarak)
+  setTip('KAPI');
+  document.getElementById('mekan').value='';
+  document.getElementById('sehir').value='';
+  document.getElementById('tarih').value=d.projeTarih||'';
+  document.getElementById('kapasite').value=d.kapasite||'';
+  document.getElementById('satilan').value=toplamAdet||'';
+  document.getElementById('biletAdet').value=toplamAdet||'';
+  document.getElementById('biletFiyat').value=ortFiyat||'';
+  document.getElementById('komOran').value=komOran.toFixed(2);
+  document.getElementById('kdvOran').value=20;
+  // kaşeler: her sanatçı bir kaşe satırı
+  document.getElementById('kaseRows').innerHTML='';
+  (d.sanatcilar||[]).forEach(a=>addRow('kase',a.name,a.kase,a.durum!=='dahil'));
+  if(!(d.sanatcilar||[]).length)addRow('kase');
+  // giderler: mekan + diğer giderler
+  document.getElementById('giderRows').innerHTML='';
+  if(d.mekan)addRow('gider','Mekan kirası',d.mekan,d.mekanKdvDurum!=='dahil');
+  (d.giderler||[]).forEach(g=>addRow('gider',g.desc,g.tutar,true));
+  if(!d.mekan&&!(d.giderler||[]).length)addRow('gider');
+  editingId=null;
+  showTab('new');
+  calc();
+  toast('Etkinliğe çevrildi — kontrol edip kaydet');
 }
 
 function renderDashboard(){
