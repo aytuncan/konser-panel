@@ -393,7 +393,10 @@ select option{background:var(--surface)}
         <span class="icon">◈</span> Konserler
       </button>
       <button class="nav-item" id="tabSimulasyon" onclick="showTab('simulasyon')">
-        <span class="icon">⚖</span> Simülasyon
+        <span class="icon">⚖</span> Hızlı Simülasyon
+      </button>
+      <button class="nav-item" id="tabSimdetay" onclick="showTab('simdetay')">
+        <span class="icon">📊</span> Detaylı Simülasyon
       </button>
       <button class="nav-item" id="tabSanatci" onclick="showTab(&#39;sanatci&#39;)">
         <span class="icon">★</span> Sanatçı Hesabı
@@ -573,6 +576,63 @@ select option{background:var(--surface)}
         </div>
 
         <div id="simSonuc"></div>
+      </div>
+
+      <div id="view-simdetay" style="display:none">
+        <div class="card">
+          <div class="card-title">📊 Detaylı Etkinlik Simülasyonu</div>
+          <div class="hint" style="margin-bottom:0">Excel "Konser Hesap" çalışmasının birebir karşılığı. Bilet firmaları, bilet tipleri, sanatçı/mekan/ulaşım/konaklama/rider giderleri — hepsini gir, net nakit kâr ve ödenecek KDV otomatik hesaplansın. Hiçbir yere kaydedilmez.</div>
+        </div>
+
+        <!-- BİLET FİRMALARI & KOMİSYON -->
+        <div class="card">
+          <div class="card-title">🎫 Bilet Firmaları & Komisyon</div>
+          <div class="hint" style="margin-bottom:14px">Hangi firmadan satış yapacaksan komisyon oranını gir. Bilet tipi eklerken firmayı buradan seçeceksin, komisyon otomatik gelecek.</div>
+          <div class="row-head" style="grid-template-columns:1fr 120px 120px 40px"><span>Firma</span><span>Komisyon %</span><span>KDV %</span><span></span></div>
+          <div id="sdFirmaRows"></div>
+          <button class="addbtn" onclick="sdAddFirma()">+ Bilet firması ekle</button>
+        </div>
+
+        <!-- BİLET TİPLERİ -->
+        <div class="card">
+          <div class="card-title">🎟️ Bilet Tipleri & Kampanyalar</div>
+          <div class="hint" style="margin-bottom:14px">Her bilet tipi için firma seç, fiyat ve adet gir. Brüt gelir, komisyon ve KDV otomatik hesaplanır.</div>
+          <div class="row-head" style="grid-template-columns:1fr 1fr 110px 90px 40px"><span>Firma</span><span>Bilet Tipi</span><span>Fiyat ₺</span><span>Adet</span><span></span></div>
+          <div id="sdBiletRows"></div>
+          <button class="addbtn" onclick="sdAddBilet()">+ Bilet tipi ekle</button>
+        </div>
+
+        <!-- SANATÇI & MEKAN -->
+        <div class="card">
+          <div class="card-title">📋 Sanatçı & Mekan</div>
+          <div class="grid">
+            <div><label>Sanatçı kaşe (₺)</label><input id="sdKase" type="number" placeholder="300000" oninput="renderSimDetay()"></div>
+            <div>
+              <label>Kaşe KDV durumu</label>
+              <select id="sdKaseKdvDurum" onchange="renderSimDetay()"><option value="haric">KDV Hariç (üstüne ekle)</option><option value="dahil">KDV Dahil (içinden ayır)</option></select>
+            </div>
+            <div><label>Kaşe KDV oranı (%)</label><input id="sdKaseKdv" type="number" value="20" oninput="renderSimDetay()"></div>
+            <div><label>Mekan kapasitesi (kişi)</label><input id="sdKapasite" type="number" placeholder="3000" oninput="renderSimDetay()"></div>
+            <div><label>Mekan kirası (₺)</label><input id="sdMekan" type="number" placeholder="450000" oninput="renderSimDetay()"></div>
+            <div>
+              <label>Mekan KDV durumu</label>
+              <select id="sdMekanKdvDurum" onchange="renderSimDetay()"><option value="haric">KDV Hariç (üstüne ekle)</option><option value="dahil">KDV Dahil (içinden ayır)</option></select>
+            </div>
+            <div><label>Mekan KDV oranı (%)</label><input id="sdMekanKdv" type="number" value="20" oninput="renderSimDetay()"></div>
+          </div>
+        </div>
+
+        <!-- DİĞER GİDERLER -->
+        <div class="card">
+          <div class="card-title">🚗 Ulaşım / Konaklama / Rider Giderleri</div>
+          <div class="hint" style="margin-bottom:14px">Uçuş, transfer, otel, catering, teknik rider vb. Maliyet KDV hariç girilir, KDV otomatik eklenir.</div>
+          <div class="row-head" style="grid-template-columns:1fr 110px 90px 40px"><span>Açıklama</span><span>Maliyet ₺</span><span>KDV %</span><span></span></div>
+          <div id="sdGiderRows"></div>
+          <button class="addbtn" onclick="sdAddGider()">+ Gider ekle</button>
+        </div>
+
+        <!-- SONUÇ DASHBOARD -->
+        <div id="sdSonuc"></div>
       </div>
 
       <div id="view-new" class="cols2" style="display: none;">
@@ -1693,7 +1753,7 @@ function applyXlsx() {
 const PAGE_TITLES={
   dashboard:'Dashboard',new:'Yeni Etkinlik',saved:'Konserler',odeme:'Muhasebe',mgenel:'Muhasebe — Genel',mgg:'Muhasebe — Gelir/Gider',mcari:'Muhasebe — Cari Durum',mkdv:'Muhasebe — KDV',ekipodeme:'Ekip Ödemeleri',sanatci:'Sanatçı Hesabı',
   szhazirla:'Sözleşme Hazırla',szrehber:'Sözleşme Rehberi',szfirmam:'Firma Bilgilerim',szsablon:'Sözleşme Şablonu',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
-  users:'Kullanıcılar',ayarlar:'Ayarlar',simulasyon:'Etkinlik Simülasyonu'
+  users:'Kullanıcılar',ayarlar:'Ayarlar',simulasyon:'Hızlı Simülasyon',simdetay:'Detaylı Simülasyon'
 };
 function openSidebar(){
   document.getElementById('sidebar').classList.add('open');
@@ -1736,7 +1796,7 @@ function showTab(t){
   const muhAlt={mgenel:'genel',mgg:'gg',mcari:'cari',mkdv:'kdv'};
   const isMuh=Object.keys(muhAlt).includes(t);
   const activeView=isMuh?'odeme':t;
-  ['dashboard','new','saved','simulasyon','odeme','ekipodeme','sanatci','szhazirla','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users','ayarlar'].forEach(id=>{
+  ['dashboard','new','saved','simulasyon','simdetay','odeme','ekipodeme','sanatci','szhazirla','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users','ayarlar'].forEach(id=>{
     const v=document.getElementById('view-'+id);
     if(v) v.style.display=(activeView===id)?'':'none';
   });
@@ -1754,6 +1814,16 @@ function showTab(t){
   if(isMuh){refreshAccFirmPicker();renderOdeme();setMtab(muhAlt[t]);}
   if(t==='ekipodeme')renderEkipOdeme();
   if(t==='simulasyon')renderSim();
+  if(t==='simdetay'){
+    // ilk açılışta örnek firmalar + birer satır kur
+    if(!document.querySelector('#sdFirmaRows .row')){
+      sdAddFirma('Biletix',13,20);
+      sdAddFirma('Bugece',0,20);
+      sdAddBilet('Biletix','standart',850,1000);
+      sdAddGider('Ulaşım (uçuş+transfer)',31000,20);
+    }
+    renderSimDetay();
+  }
   if(t==='sanatci'){refreshSaPicker();renderSanatci();}
   if(t==='szhazirla'){refreshDocPicker();refreshDcPicker();}
   if(t==='szrehber'){renderDcList();}
@@ -3870,6 +3940,170 @@ function renderSim(){
   satir('Menajer payı (sana)',c=>c.p2amt,()=>'pos');
   h+='</tbody></table></div>';
   wrap.innerHTML=h;
+}
+
+// ── DETAYLI SİMÜLASYON (Excel birebir) ────────────────
+let sdFirmaSayac=0, sdBiletSayac=0, sdGiderSayac=0;
+function sdEsc(s){return (s||'').replace(/"/g,'&quot;');}
+
+function sdAddFirma(name='',kom='',kdv=20){
+  const wrap=document.getElementById('sdFirmaRows');
+  const div=document.createElement('div');
+  div.className='row'; div.style.gridTemplateColumns='1fr 120px 120px 40px'; div.style.marginBottom='8px';
+  div.innerHTML=`
+    <input placeholder="Firma adı" value="${sdEsc(name)}" oninput="sdSyncFirmaSelects();renderSimDetay()" class="sd-firma-name">
+    <input type="number" step="0.01" placeholder="13" value="${kom}" oninput="renderSimDetay()" title="Komisyon yüzdesi">
+    <input type="number" placeholder="20" value="${kdv}" oninput="renderSimDetay()" title="KDV yüzdesi">
+    <button class="rm" onclick="this.parentElement.remove();sdSyncFirmaSelects();renderSimDetay()">×</button>`;
+  wrap.appendChild(div);
+  sdSyncFirmaSelects();
+}
+function sdReadFirmalar(){
+  return [...document.querySelectorAll('#sdFirmaRows .row')].map(r=>{
+    const i=r.querySelectorAll('input');
+    return {name:i[0].value.trim(),kom:+i[1].value||0,kdv:+i[2].value||0};
+  }).filter(f=>f.name);
+}
+// bilet tipi satırlarındaki firma <select>'lerini güncel firma listesine göre yenile
+function sdSyncFirmaSelects(){
+  const firmalar=sdReadFirmalar();
+  document.querySelectorAll('#sdBiletRows .sd-bilet-firma').forEach(sel=>{
+    const cur=sel.value;
+    sel.innerHTML='<option value="">— firma seç —</option>'+firmalar.map(f=>`<option value="${sdEsc(f.name)}">${sdEsc(f.name)} (%${f.kom})</option>`).join('');
+    sel.value=cur;
+  });
+}
+function sdAddBilet(firma='',tip='',fiyat='',adet=''){
+  const wrap=document.getElementById('sdBiletRows');
+  const div=document.createElement('div');
+  div.className='row'; div.style.gridTemplateColumns='1fr 1fr 110px 90px 40px'; div.style.marginBottom='8px';
+  div.innerHTML=`
+    <select class="sd-bilet-firma" onchange="renderSimDetay()"></select>
+    <input placeholder="erken / standart..." value="${sdEsc(tip)}" oninput="renderSimDetay()">
+    <input type="number" placeholder="850" value="${fiyat}" oninput="renderSimDetay()">
+    <input type="number" placeholder="1000" value="${adet}" oninput="renderSimDetay()">
+    <button class="rm" onclick="this.parentElement.remove();renderSimDetay()">×</button>`;
+  wrap.appendChild(div);
+  sdSyncFirmaSelects();
+  if(firma)div.querySelector('.sd-bilet-firma').value=firma;
+}
+function sdReadBiletler(){
+  const firmalar=sdReadFirmalar();
+  return [...document.querySelectorAll('#sdBiletRows .row')].map(r=>{
+    const sel=r.querySelector('select'), i=r.querySelectorAll('input');
+    const firmaAdi=sel.value;
+    const firma=firmalar.find(f=>f.name===firmaAdi)||{kom:0,kdv:0};
+    return {firma:firmaAdi,tip:i[0].value,fiyat:+i[1].value||0,adet:+i[2].value||0,kom:firma.kom,komKdv:firma.kdv};
+  }).filter(b=>b.fiyat>0||b.adet>0);
+}
+function sdAddGider(desc='',tutar='',kdv=20){
+  const wrap=document.getElementById('sdGiderRows');
+  const div=document.createElement('div');
+  div.className='row'; div.style.gridTemplateColumns='1fr 110px 90px 40px'; div.style.marginBottom='8px';
+  div.innerHTML=`
+    <input placeholder="İstanbul-Ankara uçuş..." value="${sdEsc(desc)}" oninput="renderSimDetay()">
+    <input type="number" placeholder="8500" value="${tutar}" oninput="renderSimDetay()">
+    <input type="number" placeholder="20" value="${kdv}" oninput="renderSimDetay()">
+    <button class="rm" onclick="this.parentElement.remove();renderSimDetay()">×</button>`;
+  wrap.appendChild(div);
+}
+function sdReadGiderler(){
+  return [...document.querySelectorAll('#sdGiderRows .row')].map(r=>{
+    const i=r.querySelectorAll('input');
+    return {desc:i[0].value,tutar:+i[1].value||0,kdv:+i[2].value||0};
+  }).filter(g=>g.tutar>0);
+}
+
+function renderSimDetay(){
+  // ── BİLETLEME ──
+  const biletler=sdReadBiletler();
+  let brutGelir=0, komToplam=0, komKdvToplam=0, biletKdvToplam=0, toplamAdet=0;
+  biletler.forEach(b=>{
+    const brut=b.fiyat*b.adet;
+    const kom=brut*(b.kom/100);
+    const komKdv=kom*(b.komKdv/100);
+    const biletKdv=Math.round(brut/(1+0.20)*0.20); // bilet KDV %20 varsayım (Excel'deki L sütunu)
+    brutGelir+=brut; komToplam+=kom; komKdvToplam+=komKdv; biletKdvToplam+=biletKdv; toplamAdet+=b.adet;
+  });
+  const netBiletGeliri=brutGelir-komToplam-komKdvToplam;
+
+  // ── GİDERLER ──
+  // kaşe
+  const kaseTutar=+document.getElementById('sdKase').value||0;
+  const kaseKdvOran=(+document.getElementById('sdKaseKdv').value||0)/100;
+  const kaseDahil=document.getElementById('sdKaseKdvDurum').value==='dahil';
+  const kaseKdv=kaseDahil?(kaseTutar/(1+kaseKdvOran)*kaseKdvOran):(kaseTutar*kaseKdvOran);
+  const kaseNet=kaseDahil?(kaseTutar-kaseKdv):kaseTutar;
+  const kaseToplam=kaseNet+kaseKdv;
+  // mekan
+  const mekanTutar=+document.getElementById('sdMekan').value||0;
+  const mekanKdvOran=(+document.getElementById('sdMekanKdv').value||0)/100;
+  const mekanDahil=document.getElementById('sdMekanKdvDurum').value==='dahil';
+  const mekanKdv=mekanDahil?(mekanTutar/(1+mekanKdvOran)*mekanKdvOran):(mekanTutar*mekanKdvOran);
+  const mekanNet=mekanDahil?(mekanTutar-mekanKdv):mekanTutar;
+  const mekanToplam=mekanNet+mekanKdv;
+  // diğer giderler (hep KDV hariç girilir, üstüne eklenir)
+  const giderler=sdReadGiderler();
+  let digerNet=0, digerKdv=0;
+  giderler.forEach(g=>{digerNet+=g.tutar; digerKdv+=g.tutar*(g.kdv/100);});
+  const digerToplam=digerNet+digerKdv;
+
+  const toplamGiderKdvDahil=kaseToplam+mekanToplam+digerToplam;
+  const giderKdvToplam=kaseKdv+mekanKdv+digerKdv;
+
+  // ── KÂR / KDV ──
+  const netNakitKar=netBiletGeliri-toplamGiderKdvDahil;
+  const indirilecekKdv=giderKdvToplam+komKdvToplam;
+  const odenecekKdv=biletKdvToplam-indirilecekKdv;
+  // amorti için gereken bilet
+  const ortFiyat=toplamAdet>0?brutGelir/toplamAdet:0;
+  const ortKom=brutGelir>0?komToplam/brutGelir:0;
+  const amortiBilet=(ortFiyat>0)?Math.ceil(toplamGiderKdvDahil/(ortFiyat*(1-ortKom))):0;
+  const doluluk=(+document.getElementById('sdKapasite').value||0);
+
+  const wrap=document.getElementById('sdSonuc');
+  wrap.innerHTML=`
+    <div class="card">
+      <div class="card-title">💵 Gelir & Gider Özeti</div>
+      <table class="atable">
+        <thead><tr><th>Kalem</th><th>Net (₺)</th><th>KDV (₺)</th><th>Toplam (₺)</th></tr></thead>
+        <tbody>
+          <tr><td>Sanatçı Kaşe</td><td>${fmt(kaseNet)}</td><td>${fmt(kaseKdv)}</td><td>${fmt(kaseToplam)}</td></tr>
+          <tr><td>Mekan Kiralama</td><td>${fmt(mekanNet)}</td><td>${fmt(mekanKdv)}</td><td>${fmt(mekanToplam)}</td></tr>
+          <tr><td>Ulaşım/Konaklama/Rider</td><td>${fmt(digerNet)}</td><td>${fmt(digerKdv)}</td><td>${fmt(digerToplam)}</td></tr>
+          <tr style="font-weight:700"><td>TOPLAM GİDER</td><td>${fmt(kaseNet+mekanNet+digerNet)}</td><td>${fmt(giderKdvToplam)}</td><td>${fmt(toplamGiderKdvDahil)}</td></tr>
+        </tbody>
+      </table>
+      <table class="atable" style="margin-top:16px">
+        <thead><tr><th>Bilet Geliri</th><th>Tutar (₺)</th></tr></thead>
+        <tbody>
+          <tr><td>Brüt Bilet Satışı (seyirciden)</td><td>${fmt(brutGelir)}</td></tr>
+          <tr><td>Komisyon (bilet firmalarına)</td><td class="neg">${fmt(komToplam)}</td></tr>
+          <tr><td>Komisyon KDV'si (indirilecek)</td><td class="neg">${fmt(komKdvToplam)}</td></tr>
+          <tr style="font-weight:700"><td>Net Bilet Geliri</td><td class="pos">${fmt(netBiletGeliri)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📈 Kâr / Zarar & KDV</div>
+      <div class="stat-grid">
+        <div class="stat" style="border-color:${netNakitKar>=0?'var(--green)':'var(--red)'};background:${netNakitKar>=0?'rgba(90,209,154,0.07)':'rgba(240,122,122,0.07)'}">
+          <div class="n">Net Nakit Kâr</div><div class="v ${netNakitKar>=0?'pos':'neg'}">${fmt(netNakitKar)}</div>
+          <div class="hint" style="margin-top:4px">Net bilet geliri − giderler</div>
+        </div>
+        <div class="stat"><div class="n">Hesaplanan Bilet KDV</div><div class="v">${fmt(biletKdvToplam)}</div></div>
+        <div class="stat"><div class="n">İndirilecek KDV</div><div class="v">${fmt(indirilecekKdv)}</div></div>
+        <div class="stat"><div class="n">${odenecekKdv>=0?'Ödenecek KDV':'Devreden/İade KDV'}</div><div class="v ${odenecekKdv>=0?'neg':'pos'}">${fmt(Math.abs(odenecekKdv))}</div></div>
+      </div>
+      <div class="stat-grid" style="margin-top:14px">
+        <div class="stat"><div class="n">Toplam Satılan Bilet</div><div class="v">${toplamAdet.toLocaleString('tr-TR')}</div></div>
+        <div class="stat"><div class="n">Ortalama Bilet Fiyatı</div><div class="v">${fmt(ortFiyat)}</div></div>
+        <div class="stat"><div class="n">🎫 Amorti İçin Gereken Bilet</div><div class="v">${amortiBilet.toLocaleString('tr-TR')}</div></div>
+        <div class="stat"><div class="n">Mekan Kapasitesi</div><div class="v">${doluluk.toLocaleString('tr-TR')}${doluluk>0&&amortiBilet>0?(amortiBilet<=doluluk?' ✓':' ⚠'):''}</div></div>
+      </div>
+      ${doluluk>0&&amortiBilet>doluluk?'<div class="hint" style="margin-top:12px;color:var(--red)">⚠ Amorti için gereken bilet sayısı mekan kapasitesini aşıyor. Bu fiyatlarla kapasiteyi doldursan bile zarar edebilirsin.</div>':''}
+    </div>`;
 }
 
 function renderDashboard(){
