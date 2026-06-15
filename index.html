@@ -1162,6 +1162,7 @@ select option{background:var(--surface)}
   </select>
 </div>
             <div><label>Sahne saati</label><input id="dTime" placeholder="22:00" autocomplete="off"></div>
+            <div><label>Soundcheck saati</label><input id="dSoundcheck" placeholder="18:00" autocomplete="off"></div>
             <div><label>Program süresi</label><input id="dDur" placeholder="60 dk" autocomplete="off"></div>
             <div><label>Ücret (₺, KDV hariç)</label><input id="dFee" type="number" placeholder="270000"></div>
             <div>
@@ -2734,7 +2735,7 @@ function docData(){
   const dcId=g('dcPick');
   const firm=accEntries.find(x=>x.id===dcId && x.docClient)||null;
   return {co,artist:g('dArtist'),date:g('dDate'),venue:g('dVenue'),city:g('dCity'),
-    time:g('dTime'),dur:g('dDur'),fee,kdvRate,kdv,total,advance,balance:total-advance,
+    time:g('dTime'),soundcheck:g('dSoundcheck'),dur:g('dDur'),fee,kdvRate,kdv,total,advance,balance:total-advance,
     payTerm:g('dPayTerm'),client:g('dClient'),clientAuth:g('dClientAuth'),clientPhone:g('dClientPhone'),
     firm,tech:g('dTech').split('\n').map(s=>s.trim()).filter(Boolean)};
 }
@@ -2742,21 +2743,40 @@ function trMoney(n){return (Math.round(n||0)).toLocaleString('tr-TR')+' TL';}
 function trDate(s){if(!s)return '.../.../......';const [y,m,d]=s.split('-');return `${d}.${m}.${y}`;}
 
 // ── SÖZLEŞME ŞABLONU ─────────────────────────────────────
-const STD_SOZLESME_SABLONU=`İşbu sözleşme; bir tarafta {firma} (bundan sonra "ORGANİZATÖR" olarak anılacaktır) ile diğer tarafta {karsi_taraf} (bundan sonra "MEKAN/İŞVEREN" olarak anılacaktır) arasında aşağıdaki şartlarla akdedilmiştir.
+const STD_SOZLESME_SABLONU=`KONSER SÖZLEŞMESİ
 
-Madde 1. Konu: Yukarıda belirtilen sanatçı/grubun ({sanatci}), {tarih} tarihinde, {mekan} ({sehir}) adresinde sahne performansı sunmasıdır.
+MADDE 1 - TARAFLAR
+• MENAJER: {firma}
+• ORGANİZATÖR: {karsi_taraf}
 
-Madde 2. Ücret ve Ödeme: Hizmet bedeli {ucret} + KDV = {toplam} (KDV dahil)'dir. {odeme}.
+MADDE 2 - SÖZLEŞMENİN KONUSU VE ETKİNLİK DETAYLARI
+• Sanatçı: {sanatci}
+• Mekan: {mekan} ({sehir})
+• Tarih ve Saat: {tarih} / Sahne Saati: {saat} / Soundcheck: {soundcheck}
+• Performans Süresi: Minimum {sure}.
 
-Madde 3. Tarafların Yükümlülükleri: MEKAN/İŞVEREN, performans için uygun sahne, ses ve ışık sistemini çalışır halde temin eder. ORGANİZATÖR, sanatçının belirtilen sürede ve nitelikte sahne almasını sağlar.
+MADDE 3 - FİNANSAL ŞARTLAR
+• Anlaşma Bedeli: {ucret} + KDV ({toplam} KDV dahil)
+• Ödeme Planı: Sözleşme imzasında {avans} kaparo, kalan bakiye ({bakiye}) {odeme}.
+• Banka Bilgileri: {iban}
+• Stopaj ve KDV dahil tüm vergiler organizatör tarafından üstlenilir, menajere yansıtılmadan net ödeme yapılır.
 
-Madde 4. İptal/Mücbir Sebep: MEKAN/İŞVEREN kaynaklı iptallerde ödenen avans iade edilmez. Doğal afet, resmî yasak, sağlık vb. mücbir sebeplerde taraflar yeni bir tarihte uzlaşmaya çalışır; uzlaşılamazsa avans iade edilir.
+MADDE 4 - TEKNİK VE LOJİSTİK ŞARTLAR (RIDER)
+• Organizatör, teknik donanım, sahne kurulumu ve sanatçı konaklama/kulis ihtiyaçlarını eksiksiz sağlamakla yükümlüdür.
+• Teknik Rider ve Sanatçı Ağırlama Şartnamesi EK-1'de yer almaktadır ve sözleşmenin ayrılmaz bir parçasıdır. Organizatör bu ekteki şartlara eksiksiz uymak zorundadır.
+• Teknik şartnamenin sağlanamaması veya eksik kurulmasından kaynaklı performans düşüklükleri ve aksaklıklardan tamamen organizatör sorumludur.
+{teknik}
 
-Madde 5. Telif ve Tanıtım: Etkinliğin tanıtım görsellerinde sanatçı adı/görseli yalnızca bu etkinlik kapsamında kullanılabilir.
+MADDE 5 - İPTAL, MÜCBİR SEBEPLER VE CEZAİ ŞARTLAR
+• Mücbir sebepler (doğal afet, raporlu ağır hastalık, idari yasaklar vb.) durumunda etkinlik ileri bir tarihe ertelenebilir veya cezasız feshedilebilir. Fesih halinde alınan ödemeler 3 gün içinde iade edilir.
+• Organizatörün yükümlülüklerini yerine getirmemesi veya konseri iptal etmesi halinde sözleşme otomatik fesholunur, kaparo iade edilmez ve menajer sözleşme bedeli kadar cezai şart talep edebilir.
 
-Madde 6. Uyuşmazlık: İşbu sözleşmeden doğacak uyuşmazlıklarda {sehir} Mahkemeleri ve İcra Daireleri yetkilidir.
+MADDE 6 - YETKİLİ MAHKEME VE DİĞER HÜKÜMLER
+• Kullanılacak tüm afiş, bilet ve dijital medya görselleri menajerin onayından geçmek zorundadır.
+• İşbu sözleşmeden doğacak uyuşmazlıklarda {sehir} mahkemeleri ve icra daireleri yetkilidir.
+• İki nüsha halinde düzenlenen bu sözleşmenin damga vergisi menajer tarafından ödenir.
 
-Madde 7. İşbu sözleşme taraflarca okunarak imza altına alınmıştır. Tarih: {tarih}`;
+Tarih: {tarih}`;
 
 function sozlesmeSablonGetir(){
   const o=accEntries.find(x=>x.type==='cfg' && x.cfg==='sablon');
@@ -2797,17 +2817,19 @@ function sablonDoldur(metin, d){
     '{tarih}':trDate(d.date),
     '{mekan}':d.venue||'..........',
     '{sehir}':d.city||'..........',
-    '{saat}':d.time||'',
-    '{sure}':d.dur||'',
+    '{saat}':d.time||'..........',
+    '{soundcheck}':d.soundcheck||'..........',
+    '{sure}':d.dur||'60 dakika',
     '{ucret}':trMoney(d.fee),
     '{kdv}':trMoney(d.kdv),
     '{toplam}':trMoney(d.total),
-    '{avans}':trMoney(d.advance),
+    '{avans}':d.advance>0?trMoney(d.advance):'..........',
     '{bakiye}':trMoney(d.balance),
-    '{odeme}':d.payTerm||'etkinlik günü ödenecektir',
-    '{firma}':(d.co.coName||'..........')+((d.co.coTaxOffice||d.co.coTaxNo)?' ('+[d.co.coTaxOffice,d.co.coTaxNo].filter(Boolean).join(' / ')+')':''),
-    '{karsi_taraf}':(d.client||'..........')+((d.firm&&(d.firm.taxOffice||d.firm.taxNo))?' ('+[d.firm.taxOffice,d.firm.taxNo].filter(Boolean).join(' / ')+')':''),
-    '{teknik}':d.tech.length?d.tech.map(t=>'– '+t).join('\n'):''
+    '{odeme}':d.payTerm||'etkinlik tarihinden önce ödenir',
+    '{iban}':[d.co.coIban,d.co.coName].filter(Boolean).join(' - Alıcı: ')||'..........',
+    '{firma}':(d.co.coName||'..........')+((d.co.coTax)?' (Vergi: '+d.co.coTax+')':'')+(d.co.coAddr?' | Adres: '+d.co.coAddr:''),
+    '{karsi_taraf}':(d.client||'[ORGANİZATÖR FİRMA/KİŞİ ADI]')+((d.firm&&(d.firm.taxOffice||d.firm.taxNo))?' (Vergi: '+[d.firm.taxOffice,d.firm.taxNo].filter(Boolean).join(' / ')+')':'')+((d.firm&&d.firm.addr)?' | Adres: '+d.firm.addr:''),
+    '{teknik}':d.tech.length?('• '+d.tech.join('\n• ')):''
   };
   let out=metin;
   for(const [k,v] of Object.entries(map)){out=out.split(k).join(v);}
@@ -2869,15 +2891,14 @@ function docHTML(type){
   // teknik şartlar metinde {teknik} yoksa ve varsa, sona ekle
   const govdeHtml=esc(govde).replace(/\n/g,'<br>');
   return head+title+
-    infoTable+
     `<div style="font-size:11.5px;margin-top:10px;line-height:1.7">${govdeHtml}</div>`+
     `<table style="width:100%;margin-top:34px;font-size:11.5px"><tr>
       <td style="width:50%;text-align:center">
-        <div style="border-top:1px solid #1a1a1a;margin:0 20px;padding-top:6px">ORGANİZATÖR</div>
+        <div style="border-top:1px solid #1a1a1a;margin:0 20px;padding-top:6px">MENAJER</div>
         <div style="margin-top:4px">${esc(d.co.coName)}<br>${esc(d.co.coAuth)}</div>
       </td>
       <td style="width:50%;text-align:center">
-        <div style="border-top:1px solid #1a1a1a;margin:0 20px;padding-top:6px">MEKAN / İŞVEREN</div>
+        <div style="border-top:1px solid #1a1a1a;margin:0 20px;padding-top:6px">ORGANİZATÖR</div>
         <div style="margin-top:4px">${esc(d.client)}<br>${esc(d.clientAuth)}</div>
       </td></tr></table>`;
 }
