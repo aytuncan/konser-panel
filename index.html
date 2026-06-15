@@ -1692,7 +1692,7 @@ function showTab(t){
 
   document.getElementById('pageTitle').textContent=PAGE_TITLES[t]||'';
   closeSidebar();
-  if(t==='dashboard')renderDashboard();
+  if(t==='dashboard'){refreshDashboard();}
   if(t==='new'){refreshEkipGiderPickers();refreshEvFirmPicker();refreshEvArtistPicker();}
   if(t==='saved')setSavedFilter(savedFilter);
   if(isMuh){refreshAccFirmPicker();renderOdeme();setMtab(muhAlt[t]);}
@@ -3712,6 +3712,11 @@ function exportSanatci(){
 }
 
 // ── DASHBOARD ────────────────────────────────────────────
+async function refreshDashboard(){
+  // önce backend'den taze veriyi çek, SONRA render et (eski-veri titreşimini önler)
+  await Promise.all([loadEvents(),loadAcc()]);
+  renderDashboard();
+}
 function renderDashboard(){
   const bugun=new Date();bugun.setHours(0,0,0,0);
   const ay=new Date().toISOString().slice(0,7); // YYYY-MM
