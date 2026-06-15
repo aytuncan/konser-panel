@@ -2195,20 +2195,24 @@ function exportAll(){
 
 const CO_FIELDS=['coName','coAuth','coPhone','coMail','coAddr','coTaxOffice','coTaxNo','coIban','coPrefix'];
 
-// Kendi firma bilgisi — tarayıcıda saklanır, her belgede otomatik gelir
+// Kendi firma bilgisi — backend'de cfg olarak saklanır, her belgede otomatik gelir
 async function saveCompany(){
   try{
-    const o={id:'cfg_company',type:'cfg',cfg:'company'};
+    const ex=accEntries.find(x=>x.type==='cfg' && x.cfg==='company');
+    const o={type:'cfg',cfg:'company'};
+    if(ex&&ex.id)o.id=ex.id;
     CO_FIELDS.forEach(f=>{const e=document.getElementById(f);if(e)o[f]=e.value;});
-    const ex=accEntries.find(x=>x.id==='cfg_company');
-    await apiFetch('/api/acc'+(ex?'/cfg_company':''),{method:ex?'PUT':'POST',body:JSON.stringify(o)});
-    // belleği güncelle
-    if(ex)Object.assign(ex,o); else accEntries.push(o);
+    const res=await apiFetch('/api/acc'+(ex&&ex.id?'/'+ex.id:''),{method:ex&&ex.id?'PUT':'POST',body:JSON.stringify(o)});
+    if(res&&res.ok){
+      let saved=null;try{saved=await res.json();}catch(e){}
+      if(saved&&saved.id)o.id=saved.id;
+      if(ex)Object.assign(ex,o); else accEntries.push(o);
+    }
   }catch(e){}
 }
 function loadCompany(){
   try{
-    const o=accEntries.find(x=>x.id==='cfg_company');
+    const o=accEntries.find(x=>x.type==='cfg' && x.cfg==='company');
     if(!o)return;
     CO_FIELDS.forEach(f=>{const e=document.getElementById(f);if(e&&o[f]!=null)e.value=o[f];});
   }catch(e){}
@@ -2596,7 +2600,7 @@ Madde 6. Uyuşmazlık: İşbu sözleşmeden doğacak uyuşmazlıklarda {sehir} M
 Madde 7. İşbu sözleşme taraflarca okunarak imza altına alınmıştır. Tarih: {tarih}`;
 
 function sozlesmeSablonGetir(){
-  const o=accEntries.find(x=>x.id==='cfg_sablon');
+  const o=accEntries.find(x=>x.type==='cfg' && x.cfg==='sablon');
   return (o&&o.metin)?o.metin:STD_SOZLESME_SABLONU;
 }
 function loadSablon(){
@@ -2605,11 +2609,16 @@ function loadSablon(){
 }
 async function saveSablon(){
   try{
-    const o={id:'cfg_sablon',type:'cfg',cfg:'sablon',metin:document.getElementById('sablonText').value};
-    const ex=accEntries.find(x=>x.id==='cfg_sablon');
-    await apiFetch('/api/acc'+(ex?'/cfg_sablon':''),{method:ex?'PUT':'POST',body:JSON.stringify(o)});
-    if(ex)Object.assign(ex,o); else accEntries.push(o);
-    toast('Şablon kaydedildi');
+    const ex=accEntries.find(x=>x.type==='cfg' && x.cfg==='sablon');
+    const o={type:'cfg',cfg:'sablon',metin:document.getElementById('sablonText').value};
+    if(ex&&ex.id)o.id=ex.id;
+    const res=await apiFetch('/api/acc'+(ex&&ex.id?'/'+ex.id:''),{method:ex&&ex.id?'PUT':'POST',body:JSON.stringify(o)});
+    if(res&&res.ok){
+      let saved=null;try{saved=await res.json();}catch(e){}
+      if(saved&&saved.id)o.id=saved.id;
+      if(ex)Object.assign(ex,o); else accEntries.push(o);
+      toast('Şablon kaydedildi');
+    }else{toast('Kaydedilemedi');}
   }catch(e){toast('Kaydedilemedi');}
 }
 function sablonStandartYukle(){
@@ -3222,36 +3231,42 @@ let editingKaseId=null;
 let editingEkipId=null;
 let editingGiderId=null;
 
+// cfg kaydını kaydet: cfg alanına göre bul (ID'ye güvenme, backend ID atayabilir).
+// POST yanıtının gerçek ID'sini sakla ki sonraki güncellemeler PUT ile gitsin.
+async function saveCfg(cfgName, liste){
+  const ex=accEntries.find(x=>x.type==='cfg' && x.cfg===cfgName);
+  const o={type:'cfg',cfg:cfgName,liste};
+  if(ex&&ex.id)o.id=ex.id;
+  try{
+    const res=await apiFetch('/api/acc'+(ex&&ex.id?'/'+ex.id:''),{method:ex&&ex.id?'PUT':'POST',body:JSON.stringify(o)});
+    if(res&&res.ok){
+      let saved=null;
+      try{saved=await res.json();}catch(e){}
+      const realId=(saved&&saved.id)?saved.id:(o.id||('cfg_'+cfgName));
+      o.id=realId;
+      if(ex)Object.assign(ex,o); else accEntries.push(o);
+    }
+  }catch(e){}
+}
+function getCfg(cfgName){
+  const o=accEntries.find(x=>x.type==='cfg' && x.cfg===cfgName);
+  return (o&&Array.isArray(o.liste))?o.liste:[];
+}
 async function loadKases(){
-  const o=accEntries.find(x=>x.id==='cfg_kases');
-  kases=(o&&Array.isArray(o.liste))?o.liste:[];
+  kases=getCfg('kases');
   kases.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
 }
-async function saveKasesLocal(){
-  const o={id:'cfg_kases',type:'cfg',cfg:'kases',liste:kases};
-  const ex=accEntries.find(x=>x.id==='cfg_kases');
-  try{await apiFetch('/api/acc'+(ex?'/cfg_kases':''),{method:ex?'PUT':'POST',body:JSON.stringify(o)});if(ex)Object.assign(ex,o);else accEntries.push(o);}catch(e){}
-}
+async function saveKasesLocal(){ await saveCfg('kases',kases); }
 async function loadEkipler(){
-  const o=accEntries.find(x=>x.id==='cfg_ekipler');
-  ekipler=(o&&Array.isArray(o.liste))?o.liste:[];
+  ekipler=getCfg('ekipler');
   ekipler.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
 }
-async function saveEkiplerLocal(){
-  const o={id:'cfg_ekipler',type:'cfg',cfg:'ekipler',liste:ekipler};
-  const ex=accEntries.find(x=>x.id==='cfg_ekipler');
-  try{await apiFetch('/api/acc'+(ex?'/cfg_ekipler':''),{method:ex?'PUT':'POST',body:JSON.stringify(o)});if(ex)Object.assign(ex,o);else accEntries.push(o);}catch(e){}
-}
+async function saveEkiplerLocal(){ await saveCfg('ekipler',ekipler); }
 async function loadGiderler(){
-  const o=accEntries.find(x=>x.id==='cfg_giderler');
-  giderler=(o&&Array.isArray(o.liste))?o.liste:[];
+  giderler=getCfg('giderler');
   giderler.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
 }
-async function saveGiderlerLocal(){
-  const o={id:'cfg_giderler',type:'cfg',cfg:'giderler',liste:giderler};
-  const ex=accEntries.find(x=>x.id==='cfg_giderler');
-  try{await apiFetch('/api/acc'+(ex?'/cfg_giderler':''),{method:ex?'PUT':'POST',body:JSON.stringify(o)});if(ex)Object.assign(ex,o);else accEntries.push(o);}catch(e){}
-}
+async function saveGiderlerLocal(){ await saveCfg('giderler',giderler); }
 
 function gatherKase(){
   return {id:editingKaseId||('kas'+Date.now()),name:document.getElementById('kaseName').value,amount:+document.getElementById('kaseAmount').value||0};
