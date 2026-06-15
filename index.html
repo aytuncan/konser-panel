@@ -625,6 +625,7 @@ select option{background:var(--surface)}
               <select id="sdKaseKdvDurum" onchange="renderSimDetay()"><option value="haric">KDV Hariç (üstüne ekle)</option><option value="dahil">KDV Dahil (içinden ayır)</option></select>
             </div>
             <div><label>Kaşe KDV oranı (%)</label><input id="sdKaseKdv" type="number" value="20" oninput="renderSimDetay()"></div>
+            
             <div><label>Mekan Adı</label><input id="sdMekanAdi" placeholder="Örn: Holly Stone" autocomplete="off" oninput="renderSimDetay()"></div>
             <div><label>Mekan kapasitesi (kişi)</label><input id="sdKapasite" type="number" placeholder="3000" oninput="renderSimDetay()"></div>
             <div><label>Mekan kirası (₺)</label><input id="sdMekan" type="number" placeholder="450000" oninput="renderSimDetay()"></div>
@@ -646,12 +647,6 @@ select option{background:var(--surface)}
 
         <div id="sdSonuc"></div>
       </div>
-
-        <!-- SONUÇ DASHBOARD -->
-        <div id="sdSonuc"></div>
-      </div>
-
-      <div id="view-new" class="cols2" style="display: none;">
      
         <div class="card full" style="border-color:var(--accent);background:var(--accent-bg)">
           <div class="card-title" style="color:var(--accent)">Excel'den Aktar</div>
@@ -2908,7 +2903,8 @@ async function makePDF(type){
 let accEntries=[];        
 let editingAccId=null;
 let accYon='gelir';
-
+let editingSimId = null; // O an hangi simülasyonu düzenlediğimizi takip etmek için
+  
 async function loadAcc(){
   try{const res=await apiFetch('/api/acc');if(!res){accEntries=[];return;}accEntries=await res.json();}catch(e){accEntries=[];}
 }
