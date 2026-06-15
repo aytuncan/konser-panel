@@ -4025,6 +4025,13 @@ function sdReadGiderler(){
 }
 
 function renderSimDetay(){
+  // ── YENİ: PROJE VE SANATÇI BİLGİLERİNİ ÇEK ──
+  const projeAdi = document.getElementById('sdProjeAdi')?.value || 'İsimsiz Simülasyon';
+  const projeTarihi = document.getElementById('sdProjeTarihi')?.value;
+  const tarihTxt = projeTarihi ? trDate(projeTarihi) : 'Tarih Belirtilmedi';
+  const artistName = document.getElementById('sdArtistName')?.value || 'Sanatçı';
+  const mekanAdi = document.getElementById('sdMekanAdi')?.value || 'Mekan';
+
   // ── BİLETLEME ──
   const biletler=sdReadBiletler();
   let brutGelir=0, komToplam=0, komKdvToplam=0, biletKdvToplam=0, toplamAdet=0;
@@ -4073,13 +4080,16 @@ function renderSimDetay(){
 
   const wrap=document.getElementById('sdSonuc');
   wrap.innerHTML=`
-    <div class="card">
+    <div class="card" style="border-top: 4px solid var(--accent)">
+      <div style="font-size:18px; font-weight:800; color:var(--ink); margin-bottom:4px; letter-spacing:-0.5px;">${sdEsc(projeAdi)}</div>
+      <div style="font-size:13px; color:var(--muted); margin-bottom:20px; font-weight:500;">📅 ${tarihTxt} &nbsp;·&nbsp; 🎤 ${sdEsc(artistName)} &nbsp;·&nbsp; 📍 ${sdEsc(mekanAdi)}</div>
+      
       <div class="card-title">💵 Gelir & Gider Özeti</div>
       <table class="atable">
         <thead><tr><th>Kalem</th><th>Net (₺)</th><th>KDV (₺)</th><th>Toplam (₺)</th></tr></thead>
         <tbody>
-          <tr><td>Sanatçı Kaşe</td><td>${fmt(kaseNet)}</td><td>${fmt(kaseKdv)}</td><td>${fmt(kaseToplam)}</td></tr>
-          <tr><td>Mekan Kiralama</td><td>${fmt(mekanNet)}</td><td>${fmt(mekanKdv)}</td><td>${fmt(mekanToplam)}</td></tr>
+          <tr><td>${sdEsc(artistName)} Kaşesi</td><td>${fmt(kaseNet)}</td><td>${fmt(kaseKdv)}</td><td>${fmt(kaseToplam)}</td></tr>
+          <tr><td>${sdEsc(mekanAdi)} Kirası</td><td>${fmt(mekanNet)}</td><td>${fmt(mekanKdv)}</td><td>${fmt(mekanToplam)}</td></tr>
           <tr><td>Ulaşım/Konaklama/Rider</td><td>${fmt(digerNet)}</td><td>${fmt(digerKdv)}</td><td>${fmt(digerToplam)}</td></tr>
           <tr style="font-weight:700"><td>TOPLAM GİDER</td><td>${fmt(kaseNet+mekanNet+digerNet)}</td><td>${fmt(giderKdvToplam)}</td><td>${fmt(toplamGiderKdvDahil)}</td></tr>
         </tbody>
