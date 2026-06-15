@@ -863,6 +863,9 @@ select option{background:var(--surface)}
         <div class="card" data-mtab="genel">
           <div class="card-title">Genel Muhasebe Özeti</div>
           <div class="hint" style="margin-bottom:20px">Konser işleri + elle girilen işlemler birlikte. Tutarlar KDV dahildir.</div>
+          <div class="actions" style="margin-bottom:18px">
+            <button class="btn primary" onclick="muhasebeExcelAktar()">📊 Tüm Muhasebeyi Excel'e Aktar</button>
+          </div>
           <div class="stat-grid" id="accOzet"></div>
         </div>
 
@@ -3518,6 +3521,89 @@ function setMtab(t){
     el.style.display=(el.getAttribute('data-mtab')===t)?'':'none';
   });
 }
+// ── TÜM MUHASEBEYİ EXCEL'E AKTAR ──────────────────────
+function muhasebeExcelAktar(){
+  try{
+    const agg=accAggregate();
+    const wb=XLSX.utils.book_new();
+    const R=Math.round;
+
+    // 1) ÖZET
+    const ozet=[
+      ['MUHASEBE ÖZETİ',''],
+      ['Tarih',new Date().toLocaleDateString('tr-TR')],
+      [],
+      ['Kalem','Tutar (₺)'],
+      ['Toplam Gelir (net)',R(agg.toplamGelir)],
+      ['Toplam Gider (net)',R(agg.toplamGider)],
+      ['Net (gelir-gider)',R(agg.netKar)],
+      ['Net KDV (devlete/iade)',R(agg.netKdv)],
+      ['Hesaplanan KDV',R(agg.hesaplananKdv)],
+      ['İndirilecek KDV',R(agg.indirilecekKdv)],
+      ['Sanatçı Toplam Payı',R(agg.toplamArtist)],
+      ['Menajer (Bana Kalan)',R(agg.toplamManager)],
+      ['Toplam Açık Alacak',R(agg.alacak)],
+      ['Toplam Borç',R(agg.borc)],
+    ];
+    const wsOzet=XLSX.utils.aoa_to_sheet(ozet);
+    wsOzet['!cols']=[{wch:30},{wch:18}];
+    XLSX.utils.book_append_sheet(wb,wsOzet,'ÖZET');
+
+    // 2) GELİR / GİDER (ham işlemler — konser dışı, elle girilenler)
+    const gg=[['Tarih','Açıklama','Yön','Tutar (KDV dahil)','KDV %','Net','Durum','Firma']];
+    accEntries.forEach(e=>{
+      if(e.type==='cfg'||e.recurring||e.artistPay||e.docClient)return;
+      const div=1+(e.kdv||0)/100;
+      const net=e.kdv>0?(e.amount||0)/div:(e.amount||0);
+      const firma=(firms.find(f=>f.id===e.firmId)||{}).name||'';
+      gg.push([e.date||'',e.desc||'',e.yon==='gelir'?'Gelir':'Gider',R(e.amount||0),e.kdv||0,R(net),e.status||'',firma]);
+    });
+    const wsGG=XLSX.utils.aoa_to_sheet(gg);
+    wsGG['!cols']=[{wch:12},{wch:30},{wch:8},{wch:16},{wch:8},{wch:14},{wch:12},{wch:20}];
+    XLSX.utils.book_append_sheet(wb,wsGG,'GELİR-GİDER');
+
+    // 3) KONSERLER (özet)
+    const kon=[['Şehir','Mekan','Tarih','Tip','Ciro (net)','Komisyon','Toplam Gider','Kâr/Zarar','Tahsil Edilen','Kalan']];
+    events.forEach(ev=>{
+      const c=computeFor(ev);const t=tahsilatFor(ev);
+      kon.push([ev.sehir||'',ev.mekan||'',ev.tarih||'',ev.tip||'',R(c.ciroNet),R(c.komisyon),R(c.toplamGider),R(c.kar),R(t.al),R(Math.max(0,t.kalan))]);
+    });
+    const wsKon=XLSX.utils.aoa_to_sheet(kon);
+    wsKon['!cols']=[{wch:14},{wch:18},{wch:12},{wch:12},{wch:14},{wch:12},{wch:14},{wch:14},{wch:14},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,wsKon,'KONSERLER');
+
+    // 4) CARİ DURUM
+    const cari=[['Firma','Beklenen','Alınan','Alacak','Borç','Net','Durum']];
+    agg.cari.forEach(c=>{
+      const net=(c.alacak||0)-(c.borc||0);
+      if(!(c.beklenen>0.5||c.alinan>0.5||c.alacak>0.5||c.borc>0.5))return;
+      const durum=c.alacak>0.5?'Bekliyor (alacak)':(c.borc>0.5?'Borç':'Tamamlandı');
+      cari.push([c.name||'',R(c.beklenen||0),R(c.alinan||0),R(c.alacak||0),R(c.borc||0),R(net),durum]);
+    });
+    const wsCari=XLSX.utils.aoa_to_sheet(cari);
+    wsCari['!cols']=[{wch:24},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:18}];
+    XLSX.utils.book_append_sheet(wb,wsCari,'CARİ');
+
+    // 5) EKİP ÖDEMELERİ (kaşeler)
+    const ekip=[['Konser','Tarih','Kişi','Kaşe (₺)','Durum','Ödeme Tarihi']];
+    events.forEach(ev=>{
+      (ev.kase||[]).forEach(k=>{
+        if(!k.name&&!k.amount)return;
+        ekip.push([(ev.sehir||'')+' · '+(ev.mekan||''),ev.tarih||'',k.name||'',R(k.amount||0),k.odendi?'Ödendi':'Ödenmedi',k.odemeTarih||'']);
+      });
+    });
+    const wsEkip=XLSX.utils.aoa_to_sheet(ekip);
+    wsEkip['!cols']=[{wch:24},{wch:12},{wch:18},{wch:14},{wch:12},{wch:14}];
+    XLSX.utils.book_append_sheet(wb,wsEkip,'EKİP ÖDEMELERİ');
+
+    const fn='muhasebe-'+new Date().toISOString().slice(0,10)+'.xlsx';
+    XLSX.writeFile(wb,fn);
+    toast('✓ Excel indirildi ('+fn+')');
+  }catch(e){
+    toast('Excel oluşturulamadı');
+  }
+}
+
 // ── FİRMA CARİLERİ (Genel ekranı, filtreli/aranabilir/sıralanabilir) ──
 let cgFiltre='all', cgSiraAlan='net', cgSiraYon=-1;
 function cariGenelFiltre(f){
