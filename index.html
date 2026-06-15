@@ -3732,6 +3732,7 @@ function renderDashboard(){
   // Konser tarafı: tahsil edilen / bekleyen, ve bunların menajer (%25) payı
   let konserAlinan=0, konserBekleyen=0, menajerAlinan=0, menajerBekleyen=0, tahsilEdilenKdv=0;
   let kaseDusulen=0, kaseBekleyen=0; // tahsil oranına göre düşülecek / bekleyen kaşe
+  let konserGiderDusulen=0; // tahsil oranına göre düşülecek konser gideri
   events.forEach(ev=>{
     const c=computeFor(ev);
     const t=tahsilatFor(ev);
@@ -3744,9 +3745,10 @@ function renderDashboard(){
     menajerBekleyen+=menajerToplam*(1-oran);
     // tahsil edilen kısmın içindeki KDV (net KDV, tahsil oranıyla)
     tahsilEdilenKdv+=c.netKdv*oran;
-    // kaşe: sadece tahsil edilen orana denk kısmı kasadan düşülür, kalanı bekler
+    // kaşe ve konser gideri: tahsil edilen orana denk kısmı kasadan düşülür
     kaseDusulen+=c.sumKase*oran;
     kaseBekleyen+=c.sumKase*(1-oran);
+    konserGiderDusulen+=c.sumGider*oran;
   });
   // Sanatçı Hesabı'ndan yapılan ödemeler + sanatçı adına giderler (kasadan fiilen çıkan para)
   let sanatciOdeme=0;
@@ -3766,8 +3768,8 @@ function renderDashboard(){
   });
   // Tahsil edilen toplam para (konser + şirket geliri)
   const tahsilEdilen=konserAlinan+sirketGelirAlinan;
-  // Çıkan/çıkacak toplam: tahsil edilen orana denk kaşe + sanatçı ödemeleri + şirket giderleri
-  const odenenToplam=kaseDusulen+sanatciOdeme+sirketGiderOdenen;
+  // Çıkan/çıkacak toplam: tahsil edilen orana denk kaşe + konser gideri + sanatçı ödemeleri + şirket giderleri
+  const odenenToplam=kaseDusulen+konserGiderDusulen+sanatciOdeme+sirketGiderOdenen;
   // Eldeki net = tahsil edilen − çıkan (KDV dahil, fiziksel kasa)
   const eldekiNet=tahsilEdilen-odenenToplam;
   // Tahsil edilen şirket gelirinin KDV'si (kdv oranına göre içinden ayrıştır)
