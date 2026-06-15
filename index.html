@@ -1094,13 +1094,14 @@ select option{background:var(--surface)}
           <div class="hint" style="margin-bottom:16px">Sözleşme metnini buradan düzenle ve kaydet. Her yeni sözleşmede bu şablon otomatik gelir, yer tutucular gerçek bilgilerle dolar. "Sözleşme Hazırla"da da üstünde değişiklik yapabilirsin.</div>
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:1.8">
             <b>Kullanabileceğin yer tutucular</b> (otomatik dolar):<br>
-            <code>{sanatci}</code> · <code>{tarih}</code> · <code>{mekan}</code> · <code>{sehir}</code> · <code>{saat}</code> · <code>{sure}</code> · <code>{ucret}</code> · <code>{kdv}</code> · <code>{toplam}</code> · <code>{avans}</code> · <code>{bakiye}</code> · <code>{odeme}</code> · <code>{firma}</code> · <code>{karsi_taraf}</code> · <code>{teknik}</code>
+            <code>{sanatci}</code> · <code>{tarih}</code> · <code>{mekan}</code> · <code>{sehir}</code> · <code>{saat}</code> · <code>{soundcheck}</code> · <code>{sure}</code> · <code>{ucret}</code> · <code>{kdv}</code> · <code>{toplam}</code> · <code>{avans}</code> · <code>{bakiye}</code> · <code>{odeme}</code> · <code>{iban}</code> · <code>{firma}</code> · <code>{karsi_taraf}</code> · <code>{teknik}</code>
           </div>
           <textarea id="sablonText" rows="22" style="font-family:inherit;line-height:1.7" placeholder="Sözleşme metnini buraya yaz..."></textarea>
           <div class="actions" style="margin-top:20px">
-            <button class="btn primary" onclick="saveSablon()">Şablonu kaydet</button>
-            <button class="btn ghost" onclick="sablonStandartYukle()">Standart şablonu yükle</button>
+            <button class="btn primary" style="font-size:15px;padding:14px" onclick="saveSablon()">💾 Şablonu Kaydet</button>
+            <button class="btn ghost" onclick="sablonStandartYukle()">Hobos standart şablonunu yükle</button>
           </div>
+          <div class="hint" style="margin-top:10px">Kaydettiğin şablon buluta yazılır, her cihazdan aynı gelir. Değişiklik yaptıktan sonra "Şablonu Kaydet"e basmayı unutma.</div>
         </div>
       </div>
 
@@ -1194,8 +1195,27 @@ Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
           <div class="actions" style="margin-bottom:14px">
             <button class="btn ghost" onclick="sozlesmeMetniGetir()">Şablonu getir ve doldur</button>
             <button class="btn ghost" onclick="document.getElementById('dSozlesmeText').value=''">Kutuyu temizle</button>
+            <button class="btn ghost" onclick="showTab('szsablon')">⚙ Şablonu düzenle</button>
           </div>
           <textarea id="dSozlesmeText" rows="16" style="font-family:inherit;line-height:1.7" placeholder="Boş bırakırsan kayıtlı şablon otomatik kullanılır. Düzenlemek için 'Şablonu getir ve doldur'a bas."></textarea>
+        </div>
+
+        <div class="card">
+          <div class="card-title">💾 Sözleşmeyi Kaydet</div>
+          <div class="hint" style="margin-bottom:14px">Hazırladığın sözleşmeyi sakla, sonra listeden geri çağırıp düzenle. İmzalı PDF'i Google Drive'a yükleyip linkini buraya ekleyebilirsin.</div>
+          <div style="margin-bottom:14px">
+            <label>İmzalı sözleşme Drive linki (opsiyonel)</label>
+            <input id="dDriveLink" placeholder="https://drive.google.com/..." autocomplete="off">
+          </div>
+          <div class="actions">
+            <button class="btn primary" onclick="szKaydet()">💾 Sözleşmeyi Kaydet</button>
+            <button class="btn ghost" onclick="szYeni()">+ Yeni / Temizle</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📁 Kayıtlı Sözleşmeler</div>
+          <div id="szKayitliList"><div class="anEmpty">Henüz kayıtlı sözleşme yok.</div></div>
         </div>
 
         <div class="actions">
@@ -1846,7 +1866,7 @@ function showTab(t){
     renderSimDetay();
   }
   if(t==='sanatci'){refreshSaPicker();renderSanatci();}
-  if(t==='szhazirla'){refreshDocPicker();refreshDcPicker();}
+  if(t==='szhazirla'){refreshDocPicker();refreshDcPicker();szRenderKayitli();}
   if(t==='szrehber'){renderDcList();}
   if(t==='szsablon'){loadSablon();}
   if(t==='firms')renderFirms();
@@ -2796,8 +2816,8 @@ async function saveSablon(){
       let saved=null;try{saved=await res.json();}catch(e){}
       if(saved&&saved.id)o.id=saved.id;
       if(ex)Object.assign(ex,o); else accEntries.push(o);
-      toast('Şablon kaydedildi');
-    }else{toast('Kaydedilemedi');}
+      toast('✓ Şablon kaydedildi — artık tüm sözleşmelerde bu metin kullanılacak');
+    }else{toast('Kaydedilemedi, tekrar dene');}
   }catch(e){toast('Kaydedilemedi');}
 }
 function sablonStandartYukle(){
@@ -2904,6 +2924,75 @@ function docHTML(type){
 }
 function rowT(k,v){return `<tr><td style="padding:5px 8px;border:1px solid #ddd;background:#f6f6f6;width:38%">${k}</td><td style="padding:5px 8px;border:1px solid #ddd">${v||''}</td></tr>`;}
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── SÖZLEŞME KAYDET / YÜKLE ───────────────────────────
+const SZ_FIELDS=['dArtist','dDate','dVenue','dCity','dTime','dSoundcheck','dDur','dFee','dKdv','dAdvance','dPayTerm','dFirmPick','dClient','dClientAuth','dClientPhone','dTech','dSozlesmeText','dDriveLink'];
+let szEditId=null;
+function szGather(){
+  const o={};
+  SZ_FIELDS.forEach(id=>{const el=document.getElementById(id);if(el)o[id]=el.value;});
+  return o;
+}
+function szLoad(data){
+  SZ_FIELDS.forEach(id=>{const el=document.getElementById(id);if(el&&data[id]!=null)el.value=data[id];});
+  if(data.dFirmPick)fillClientFromFirm&&fillClientFromFirm();
+}
+async function szKaydet(){
+  const data=szGather();
+  const ad=data.dArtist||data.dVenue||'(adsız sözleşme)';
+  if(!data.dArtist&&!data.dVenue){toast('En az sanatçı veya mekan gir');return;}
+  const entry={
+    id:szEditId||('sz'+Date.now()),
+    type:'cfg', cfg:'sozlesme_'+(szEditId||Date.now()),
+    desc:ad, date:data.dDate||'', driveLink:data.dDriveLink||'', szData:data
+  };
+  try{
+    const ex=accEntries.find(x=>x.id===szEditId);
+    const res=await apiFetch('/api/acc'+(ex?'/'+szEditId:''),{method:ex?'PUT':'POST',body:JSON.stringify(entry)});
+    if(res&&res.ok){let s=null;try{s=await res.json();}catch(e){}if(s&&s.id)entry.id=s.id;}
+  }catch(e){toast('Kaydedilemedi');return;}
+  await loadAcc();
+  szEditId=null;
+  toast('✓ Sözleşme kaydedildi');
+  szRenderKayitli();
+}
+function szYeni(){
+  szEditId=null;
+  SZ_FIELDS.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const pt=document.getElementById('dPayTerm');if(pt)pt.value='Bakiye etkinlik günü nakit/havale';
+  toast('Yeni sözleşme — form temizlendi');
+}
+function szKayitlilar(){
+  return accEntries.filter(e=>e.type==='cfg'&&typeof e.cfg==='string'&&e.cfg.startsWith('sozlesme_')&&e.szData);
+}
+function szRenderKayitli(){
+  const wrap=document.getElementById('szKayitliList');
+  if(!wrap)return;
+  const list=szKayitlilar();
+  if(!list.length){wrap.innerHTML='<div class="anEmpty">Henüz kayıtlı sözleşme yok.</div>';return;}
+  wrap.innerHTML='';
+  list.forEach(e=>{
+    const d=document.createElement('div');
+    d.className='saved-item';
+    d.onclick=(ev)=>{if(ev.target.closest('.del')||ev.target.closest('.drv'))return;szEditId=e.id;szLoad(e.szData);document.getElementById('view-szhazirla').scrollIntoView({behavior:'smooth'});toast('Yüklendi');};
+    const drv=e.driveLink?`<a class="drv" href="${esc(e.driveLink)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:none;font-size:12px;margin-right:8px" title="İmzalı PDF (Drive)">📄 İmzalı</a>`:'';
+    d.innerHTML=`
+      <div class="info">
+        <div class="ttl">${esc(e.desc||'(adsız)')}</div>
+        <div class="sub">${e.date||'tarih yok'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px">
+        ${drv}
+        <button class="del" title="Sil" onclick="szSil('${e.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px 8px">🗑</button>
+      </div>`;
+    wrap.appendChild(d);
+  });
+}
+async function szSil(id){
+  if(!confirm('Bu kayıtlı sözleşmeyi silmek istiyor musun?'))return;
+  try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
+  await loadAcc();szRenderKayitli();toast('Silindi');
+}
 
 function previewDoc(type){
   document.getElementById('docPreviewBody').innerHTML=docHTML(type);
