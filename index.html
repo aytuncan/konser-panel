@@ -578,13 +578,20 @@ select option{background:var(--surface)}
         <div id="simSonuc"></div>
       </div>
 
-      <div id="view-simdetay" style="display:none">
+<div id="view-simdetay" style="display:none">
         <div class="card">
           <div class="card-title">📊 Detaylı Etkinlik Simülasyonu</div>
           <div class="hint" style="margin-bottom:0">Excel "Konser Hesap" çalışmasının birebir karşılığı. Bilet firmaları, bilet tipleri, sanatçı/mekan/ulaşım/konaklama/rider giderleri — hepsini gir, net nakit kâr ve ödenecek KDV otomatik hesaplansın. Hiçbir yere kaydedilmez.</div>
         </div>
 
-        <!-- BİLET FİRMALARI & KOMİSYON -->
+        <div class="card">
+          <div class="card-title">📌 Proje Bilgileri</div>
+          <div class="grid">
+            <div><label>Proje / Etkinlik Adı</label><input id="sdProjeAdi" placeholder="Örn: Açıkhava Yaz Konseri" autocomplete="off" oninput="renderSimDetay()"></div>
+            <div><label>Tarih</label><input id="sdProjeTarihi" type="date" oninput="renderSimDetay()"></div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-title">🎫 Bilet Firmaları & Komisyon</div>
           <div class="hint" style="margin-bottom:14px">Hangi firmadan satış yapacaksan komisyon oranını gir. Bilet tipi eklerken firmayı buradan seçeceksin, komisyon otomatik gelecek.</div>
@@ -593,7 +600,6 @@ select option{background:var(--surface)}
           <button class="addbtn" onclick="sdAddFirma()">+ Bilet firması ekle</button>
         </div>
 
-        <!-- BİLET TİPLERİ -->
         <div class="card">
           <div class="card-title">🎟️ Bilet Tipleri & Kampanyalar</div>
           <div class="hint" style="margin-bottom:14px">Her bilet tipi için firma seç, fiyat ve adet gir. Brüt gelir, komisyon ve KDV otomatik hesaplanır.</div>
@@ -602,16 +608,18 @@ select option{background:var(--surface)}
           <button class="addbtn" onclick="sdAddBilet()">+ Bilet tipi ekle</button>
         </div>
 
-        <!-- SANATÇI & MEKAN -->
         <div class="card">
           <div class="card-title">📋 Sanatçı & Mekan</div>
           <div class="grid">
+            <div><label>Sanatçı / Grup Adı</label><input id="sdArtistName" placeholder="Örn: CAN OZAN" autocomplete="off" oninput="renderSimDetay()"></div>
             <div><label>Sanatçı kaşe (₺)</label><input id="sdKase" type="number" placeholder="300000" oninput="renderSimDetay()"></div>
             <div>
               <label>Kaşe KDV durumu</label>
               <select id="sdKaseKdvDurum" onchange="renderSimDetay()"><option value="haric">KDV Hariç (üstüne ekle)</option><option value="dahil">KDV Dahil (içinden ayır)</option></select>
             </div>
             <div><label>Kaşe KDV oranı (%)</label><input id="sdKaseKdv" type="number" value="20" oninput="renderSimDetay()"></div>
+            
+            <div><label>Mekan Adı (Opsiyonel)</label><input id="sdMekanAdi" placeholder="Örn: Holly Stone" autocomplete="off" oninput="renderSimDetay()"></div>
             <div><label>Mekan kapasitesi (kişi)</label><input id="sdKapasite" type="number" placeholder="3000" oninput="renderSimDetay()"></div>
             <div><label>Mekan kirası (₺)</label><input id="sdMekan" type="number" placeholder="450000" oninput="renderSimDetay()"></div>
             <div>
@@ -622,7 +630,6 @@ select option{background:var(--surface)}
           </div>
         </div>
 
-        <!-- DİĞER GİDERLER -->
         <div class="card">
           <div class="card-title">🚗 Ulaşım / Konaklama / Rider Giderleri</div>
           <div class="hint" style="margin-bottom:14px">Uçuş, transfer, otel, catering, teknik rider vb. Maliyet KDV hariç girilir, KDV otomatik eklenir.</div>
@@ -630,6 +637,9 @@ select option{background:var(--surface)}
           <div id="sdGiderRows"></div>
           <button class="addbtn" onclick="sdAddGider()">+ Gider ekle</button>
         </div>
+
+        <div id="sdSonuc"></div>
+      </div>
 
         <!-- SONUÇ DASHBOARD -->
         <div id="sdSonuc"></div>
