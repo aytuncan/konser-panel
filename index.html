@@ -478,7 +478,7 @@ select option{background:var(--surface)}
       <div id="view-dashboard" style="">
         <div class="card" style="border-color:var(--accent)">
           <div class="card-title">💰 Hobos Kasası</div>
-          <div class="hint" style="margin-bottom:20px">Eldeki para (tahsil edilen − ödenen) ve henüz alınmamış alacaklar. Üstte tüm şirket, altta menajer (Hobos'a kalan %25) payı.</div>
+          <div class="hint" style="margin-bottom:20px">Tahsil edilen para, ödenen kaşe/giderler ve eldeki net. Bekleyen alacak henüz alınmamış. Altta menajer (Hobos'a kalan %25) payı.</div>
           <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Tüm Şirket</div>
           <div class="stat-grid" id="kasaSirket" style="margin-bottom:24px"></div>
           <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Menajer Payı (Hobos · %25)</div>
@@ -3742,7 +3742,9 @@ function renderDashboard(){
     menajerAlinan+=menajerToplam*oran;
     menajerBekleyen+=menajerToplam*(1-oran);
   });
-  // Şirket gelir/gider (acc): eldeki = kapanmış (tamam), bekleyen = açık
+  // Ödenen kaşeler (ekibe/sanatçıya fiilen ödenen para)
+  const odenenKase=tumKaseler().filter(k=>k.odendi).reduce((a,k)=>a+k.amount,0);
+  // Şirket gelir/gider (acc): tahsil edilen gelir / ödenen gider, ve bekleyenler
   let sirketGelirAlinan=0, sirketGiderOdenen=0, sirketGelirBekleyen=0, sirketGiderBekleyen=0;
   accEntries.forEach(e=>{
     if(e.type==='cfg'||e.recurring||e.artistPay||e.docClient)return; // sadece normal gelir/gider
@@ -3753,14 +3755,20 @@ function renderDashboard(){
       if(e.status==='tamam')sirketGiderOdenen+=tutar; else sirketGiderBekleyen+=tutar;
     }
   });
-  // Eldeki tüm para: konser tahsilatı + şirket geliri − şirket gideri
-  const eldeki=konserAlinan+sirketGelirAlinan-sirketGiderOdenen;
-  const bekleyen=konserBekleyen+sirketGelirBekleyen-sirketGiderBekleyen;
+  // Tahsil edilen toplam para (konser + şirket geliri)
+  const tahsilEdilen=konserAlinan+sirketGelirAlinan;
+  // Ödenen toplam (kaşeler + şirket giderleri)
+  const odenenToplam=odenenKase+sirketGiderOdenen;
+  // Eldeki net = tahsil edilen − ödenen
+  const eldekiNet=tahsilEdilen-odenenToplam;
+  // Bekleyen alacak (alınmamış)
+  const bekleyen=konserBekleyen+sirketGelirBekleyen;
   const kasaSirketEl=document.getElementById('kasaSirket');
   if(kasaSirketEl)kasaSirketEl.innerHTML=`
-    <div class="stat"><div class="n">Eldeki Para</div><div class="v ${eldeki>=0?'pos':'neg'}">${fmt(eldeki)}</div></div>
-    <div class="stat"><div class="n">Bekleyen (alınmamış)</div><div class="v">${fmt(bekleyen)}</div></div>
-    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Toplam Beklenen</div><div class="v ${(eldeki+bekleyen)>=0?'pos':'neg'}">${fmt(eldeki+bekleyen)}</div></div>`;
+    <div class="stat"><div class="n">Tahsil Edilen</div><div class="v pos">${fmt(tahsilEdilen)}</div></div>
+    <div class="stat"><div class="n">Ödenen Kaşe/Gider</div><div class="v neg">${fmt(odenenToplam)}</div></div>
+    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Eldeki Net Para</div><div class="v ${eldekiNet>=0?'pos':'neg'}">${fmt(eldekiNet)}</div></div>
+    <div class="stat"><div class="n">Bekleyen Alacak</div><div class="v">${fmt(bekleyen)}</div></div>`;
   const kasaMenajerEl=document.getElementById('kasaMenajer');
   if(kasaMenajerEl)kasaMenajerEl.innerHTML=`
     <div class="stat"><div class="n">Eldeki Menajer Payı</div><div class="v pos">${fmt(menajerAlinan)}</div></div>
