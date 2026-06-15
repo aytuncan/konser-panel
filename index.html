@@ -1395,6 +1395,7 @@ async function apiFetch(path,opts={}){
     const res=await fetch(API_URL+path,{
       ...opts,
       signal:ctrl.signal,
+      cache:'no-store', // tarayıcı cache'ini kullanma, hep taze veri çek (eski-veri titreşimini önler)
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+_token,...(opts.headers||{})},
     });
     clearTimeout(timer);
