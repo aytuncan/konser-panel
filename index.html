@@ -3954,668 +3954,75 @@ function renderSim(){
   wrap.innerHTML=h;
 }
 
-// ── DETAYLI SİMÜLASYON (Excel birebir) ────────────────
-let sdFirmaSayac=0, sdBiletSayac=0, sdGiderSayac=0;
-function sdEsc(s){return (s||'').replace(/"/g,'&quot;');}
-
-function sdAddFirma(name='',kom='',kdv=20){
-  const wrap=document.getElementById('sdFirmaRows');
-  const div=document.createElement('div');
-  div.className='row'; div.style.gridTemplateColumns='1fr 120px 120px 40px'; div.style.marginBottom='8px';
-  div.innerHTML=`
-    <input placeholder="Firma adı" value="${sdEsc(name)}" oninput="sdSyncFirmaSelects();renderSimDetay()" class="sd-firma-name">
-    <input type="number" step="0.01" placeholder="13" value="${kom}" oninput="renderSimDetay()" title="Komisyon yüzdesi">
-    <input type="number" placeholder="20" value="${kdv}" oninput="renderSimDetay()" title="KDV yüzdesi">
-    <button class="rm" onclick="this.parentElement.remove();sdSyncFirmaSelects();renderSimDetay()">×</button>`;
-  wrap.appendChild(div);
-  sdSyncFirmaSelects();
-}
-function sdReadFirmalar(){
-  return [...document.querySelectorAll('#sdFirmaRows .row')].map(r=>{
-    const i=r.querySelectorAll('input');
-    return {name:i[0].value.trim(),kom:+i[1].value||0,kdv:+i[2].value||0};
-  }).filter(f=>f.name);
-}
-// bilet tipi satırlarındaki firma <select>'lerini güncel firma listesine göre yenile
-function sdSyncFirmaSelects(){
-  const firmalar=sdReadFirmalar();
-  document.querySelectorAll('#sdBiletRows .sd-bilet-firma').forEach(sel=>{
-    const cur=sel.value;
-    sel.innerHTML='<option value="">— firma seç —</option>'+firmalar.map(f=>`<option value="${sdEsc(f.name)}">${sdEsc(f.name)} (%${f.kom})</option>`).join('');
-    sel.value=cur;
-  });
-}
-function sdAddBilet(firma='',tip='',fiyat='',adet=''){
-  const wrap=document.getElementById('sdBiletRows');
-  const div=document.createElement('div');
-  div.className='row'; div.style.gridTemplateColumns='1fr 1fr 110px 90px 40px'; div.style.marginBottom='8px';
-  div.innerHTML=`
-    <select class="sd-bilet-firma" onchange="renderSimDetay()"></select>
-    <input placeholder="erken / standart..." value="${sdEsc(tip)}" oninput="renderSimDetay()">
-    <input type="number" placeholder="850" value="${fiyat}" oninput="renderSimDetay()">
-    <input type="number" placeholder="1000" value="${adet}" oninput="renderSimDetay()">
-    <button class="rm" onclick="this.parentElement.remove();renderSimDetay()">×</button>`;
-  wrap.appendChild(div);
-  sdSyncFirmaSelects();
-  if(firma)div.querySelector('.sd-bilet-firma').value=firma;
-}
-function sdReadBiletler(){
-  const firmalar=sdReadFirmalar();
-  return [...document.querySelectorAll('#sdBiletRows .row')].map(r=>{
-    const sel=r.querySelector('select'), i=r.querySelectorAll('input');
-    const firmaAdi=sel.value;
-    const firma=firmalar.find(f=>f.name===firmaAdi)||{kom:0,kdv:0};
-    return {firma:firmaAdi,tip:i[0].value,fiyat:+i[1].value||0,adet:+i[2].value||0,kom:firma.kom,komKdv:firma.kdv};
-  }).filter(b=>b.fiyat>0||b.adet>0);
-}
-function sdAddGider(desc='',tutar='',kdv=20){
-  const wrap=document.getElementById('sdGiderRows');
-  const div=document.createElement('div');
-  div.className='row'; div.style.gridTemplateColumns='1fr 110px 90px 40px'; div.style.marginBottom='8px';
-  div.innerHTML=`
-    <input placeholder="İstanbul-Ankara uçuş..." value="${sdEsc(desc)}" oninput="renderSimDetay()">
-    <input type="number" placeholder="8500" value="${tutar}" oninput="renderSimDetay()">
-    <input type="number" placeholder="20" value="${kdv}" oninput="renderSimDetay()">
-    <button class="rm" onclick="this.parentElement.remove();renderSimDetay()">×</button>`;
-  wrap.appendChild(div);
-}
-function sdReadGiderler(){
-  return [...document.querySelectorAll('#sdGiderRows .row')].map(r=>{
-    const i=r.querySelectorAll('input');
-    return {desc:i[0].value,tutar:+i[1].value||0,kdv:+i[2].value||0};
-  }).filter(g=>g.tutar>0);
-}
-
-function renderSimDetay(){
-  // ── YENİ: PROJE VE SANATÇI BİLGİLERİNİ ÇEK ──
-  const projeAdi = document.getElementById('sdProjeAdi')?.value || 'İsimsiz Simülasyon';
-  const projeTarihi = document.getElementById('sdProjeTarihi')?.value;
-  const tarihTxt = projeTarihi ? trDate(projeTarihi) : 'Tarih Belirtilmedi';
-  const artistName = document.getElementById('sdArtistName')?.value || 'Sanatçı';
-  const mekanAdi = document.getElementById('sdMekanAdi')?.value || 'Mekan';
-
-  // ── BİLETLEME ──
-  const biletler=sdReadBiletler();
-  let brutGelir=0, komToplam=0, komKdvToplam=0, biletKdvToplam=0, toplamAdet=0;
-  biletler.forEach(b=>{
-    const brut=b.fiyat*b.adet;
-    const kom=brut*(b.kom/100);
-    const komKdv=kom*(b.komKdv/100);
-    const biletKdv=Math.round(brut/(1+0.20)*0.20); // bilet KDV %20 varsayım (Excel'deki L sütunu)
-    brutGelir+=brut; komToplam+=kom; komKdvToplam+=komKdv; biletKdvToplam+=biletKdv; toplamAdet+=b.adet;
-  });
-  const netBiletGeliri=brutGelir-komToplam-komKdvToplam;
-
-  // ── GİDERLER ──
-  // kaşe
-  const kaseTutar=+document.getElementById('sdKase').value||0;
-  const kaseKdvOran=(+document.getElementById('sdKaseKdv').value||0)/100;
-  const kaseDahil=document.getElementById('sdKaseKdvDurum').value==='dahil';
-  const kaseKdv=kaseDahil?(kaseTutar/(1+kaseKdvOran)*kaseKdvOran):(kaseTutar*kaseKdvOran);
-  const kaseNet=kaseDahil?(kaseTutar-kaseKdv):kaseTutar;
-  const kaseToplam=kaseNet+kaseKdv;
-  // mekan
-  const mekanTutar=+document.getElementById('sdMekan').value||0;
-  const mekanKdvOran=(+document.getElementById('sdMekanKdv').value||0)/100;
-  const mekanDahil=document.getElementById('sdMekanKdvDurum').value==='dahil';
-  const mekanKdv=mekanDahil?(mekanTutar/(1+mekanKdvOran)*mekanKdvOran):(mekanTutar*mekanKdvOran);
-  const mekanNet=mekanDahil?(mekanTutar-mekanKdv):mekanTutar;
-  const mekanToplam=mekanNet+mekanKdv;
-  // diğer giderler (hep KDV hariç girilir, üstüne eklenir)
-  const giderler=sdReadGiderler();
-  let digerNet=0, digerKdv=0;
-  giderler.forEach(g=>{digerNet+=g.tutar; digerKdv+=g.tutar*(g.kdv/100);});
-  const digerToplam=digerNet+digerKdv;
-
-  const toplamGiderKdvDahil=kaseToplam+mekanToplam+digerToplam;
-  const giderKdvToplam=kaseKdv+mekanKdv+digerKdv;
-
-  // ── KÂR / KDV ──
-  const netNakitKar=netBiletGeliri-toplamGiderKdvDahil;
-  const indirilecekKdv=giderKdvToplam+komKdvToplam;
-  const odenecekKdv=biletKdvToplam-indirilecekKdv;
-  // amorti için gereken bilet
-  const ortFiyat=toplamAdet>0?brutGelir/toplamAdet:0;
-  const ortKom=brutGelir>0?komToplam/brutGelir:0;
-  const amortiBilet=(ortFiyat>0)?Math.ceil(toplamGiderKdvDahil/(ortFiyat*(1-ortKom))):0;
-  const doluluk=(+document.getElementById('sdKapasite').value||0);
-
-  const wrap=document.getElementById('sdSonuc');
-  wrap.innerHTML=`
-    <div class="card" style="border-top: 4px solid var(--accent)">
-      <div style="font-size:18px; font-weight:800; color:var(--ink); margin-bottom:4px; letter-spacing:-0.5px;">${sdEsc(projeAdi)}</div>
-      <div style="font-size:13px; color:var(--muted); margin-bottom:20px; font-weight:500;">📅 ${tarihTxt} &nbsp;·&nbsp; 🎤 ${sdEsc(artistName)} &nbsp;·&nbsp; 📍 ${sdEsc(mekanAdi)}</div>
-      
-      <div class="card-title">💵 Gelir & Gider Özeti</div>
-      <table class="atable">
-        <thead><tr><th>Kalem</th><th>Net (₺)</th><th>KDV (₺)</th><th>Toplam (₺)</th></tr></thead>
-        <tbody>
-          <tr><td>${sdEsc(artistName)} Kaşesi</td><td>${fmt(kaseNet)}</td><td>${fmt(kaseKdv)}</td><td>${fmt(kaseToplam)}</td></tr>
-          <tr><td>${sdEsc(mekanAdi)} Kirası</td><td>${fmt(mekanNet)}</td><td>${fmt(mekanKdv)}</td><td>${fmt(mekanToplam)}</td></tr>
-          <tr><td>Ulaşım/Konaklama/Rider</td><td>${fmt(digerNet)}</td><td>${fmt(digerKdv)}</td><td>${fmt(digerToplam)}</td></tr>
-          <tr style="font-weight:700"><td>TOPLAM GİDER</td><td>${fmt(kaseNet+mekanNet+digerNet)}</td><td>${fmt(giderKdvToplam)}</td><td>${fmt(toplamGiderKdvDahil)}</td></tr>
-        </tbody>
-      </table>
-      <table class="atable" style="margin-top:16px">
-        <thead><tr><th>Bilet Geliri</th><th>Tutar (₺)</th></tr></thead>
-        <tbody>
-          <tr><td>Brüt Bilet Satışı (seyirciden)</td><td>${fmt(brutGelir)}</td></tr>
-          <tr><td>Komisyon (bilet firmalarına)</td><td class="neg">${fmt(komToplam)}</td></tr>
-          <tr><td>Komisyon KDV'si (indirilecek)</td><td class="neg">${fmt(komKdvToplam)}</td></tr>
-          <tr style="font-weight:700"><td>Net Bilet Geliri</td><td class="pos">${fmt(netBiletGeliri)}</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <div class="card-title">📈 Kâr / Zarar & KDV</div>
-      <div class="stat-grid">
-        <div class="stat" style="border-color:${netNakitKar>=0?'var(--green)':'var(--red)'};background:${netNakitKar>=0?'rgba(90,209,154,0.07)':'rgba(240,122,122,0.07)'}">
-          <div class="n">Net Nakit Kâr</div><div class="v ${netNakitKar>=0?'pos':'neg'}">${fmt(netNakitKar)}</div>
-          <div class="hint" style="margin-top:4px">Net bilet geliri − giderler</div>
+<div id="view-simdetay" style="display:none">
+        <div class="card">
+          <div class="card-title">📊 Detaylı Etkinlik Simülasyonu</div>
+          <div class="hint" style="margin-bottom:0">Excel "Konser Hesap" çalışmasının birebir karşılığı. Bilet firmaları, bilet tipleri, sanatçı/mekan/ulaşım/konaklama/rider giderleri — hepsini gir, net nakit kâr ve ödenecek KDV otomatik hesaplansın.</div>
         </div>
-        <div class="stat"><div class="n">Hesaplanan Bilet KDV</div><div class="v">${fmt(biletKdvToplam)}</div></div>
-        <div class="stat"><div class="n">İndirilecek KDV</div><div class="v">${fmt(indirilecekKdv)}</div></div>
-        <div class="stat"><div class="n">${odenecekKdv>=0?'Ödenecek KDV':'Devreden/İade KDV'}</div><div class="v ${odenecekKdv>=0?'neg':'pos'}">${fmt(Math.abs(odenecekKdv))}</div></div>
-      </div>
-      <div class="stat-grid" style="margin-top:14px">
-        <div class="stat"><div class="n">Toplam Satılan Bilet</div><div class="v">${toplamAdet.toLocaleString('tr-TR')}</div></div>
-        <div class="stat"><div class="n">Ortalama Bilet Fiyatı</div><div class="v">${fmt(ortFiyat)}</div></div>
-        <div class="stat"><div class="n">🎫 Amorti İçin Gereken Bilet</div><div class="v">${amortiBilet.toLocaleString('tr-TR')}</div></div>
-        <div class="stat"><div class="n">Mekan Kapasitesi</div><div class="v">${doluluk.toLocaleString('tr-TR')}${doluluk>0&&amortiBilet>0?(amortiBilet<=doluluk?' ✓':' ⚠'):''}</div></div>
-      </div>
-      ${doluluk>0&&amortiBilet>doluluk?'<div class="hint" style="margin-top:12px;color:var(--red)">⚠ Amorti için gereken bilet sayısı mekan kapasitesini aşıyor. Bu fiyatlarla kapasiteyi doldursan bile zarar edebilirsin.</div>':''}
-    </div>`;
-}
 
-function renderDashboard(){
-  const bugun=new Date();bugun.setHours(0,0,0,0);
-  const ay=new Date().toISOString().slice(0,7); // YYYY-MM
-
-  // ── HOBOS KASASI ──────────────────────────────────────
-  // Konser tarafı: tahsil edilen / bekleyen, ve bunların menajer (%25) payı
-  let konserAlinan=0, konserBekleyen=0, menajerAlinan=0, menajerBekleyen=0, tahsilEdilenKdv=0;
-  let kaseDusulen=0, kaseBekleyen=0; // tahsil oranına göre düşülecek / bekleyen kaşe
-  let konserGiderDusulen=0; // tahsil oranına göre düşülecek konser gideri
-  events.forEach(ev=>{
-    const c=computeFor(ev);
-    const t=tahsilatFor(ev);
-    konserAlinan+=t.al;
-    konserBekleyen+=Math.max(0,t.kalan);
-    const oran=t.bek>0?(t.al/t.bek):0;
-    // menajer payı = kârın p2 oranı; ciroya göre tahsil oranıyla dağıt
-    const menajerToplam=c.p2amt; // bu işin toplam menajer payı
-    menajerAlinan+=menajerToplam*oran;
-    menajerBekleyen+=menajerToplam*(1-oran);
-    // tahsil edilen kısmın içindeki KDV (net KDV, tahsil oranıyla)
-    tahsilEdilenKdv+=c.netKdv*oran;
-    // kaşe ve konser gideri: tahsil edilen orana denk kısmı kasadan düşülür
-    kaseDusulen+=c.sumKase*oran;
-    kaseBekleyen+=c.sumKase*(1-oran);
-    konserGiderDusulen+=c.sumGider*oran;
-  });
-  // Sanatçı Hesabı'ndan yapılan ödemeler + sanatçı adına giderler (kasadan fiilen çıkan para)
-  let sanatciOdeme=0;
-  accEntries.forEach(e=>{
-    if(e.artistPay && (e.saTur==='odeme'||e.saTur==='gider')) sanatciOdeme+=(e.amount||0);
-  });
-  // Şirket gelir/gider (acc): tahsil edilen gelir / ödenen gider, ve bekleyenler
-  let sirketGelirAlinan=0, sirketGiderOdenen=0, sirketGelirBekleyen=0, sirketGiderBekleyen=0;
-  accEntries.forEach(e=>{
-    if(e.type==='cfg'||e.recurring||e.artistPay||e.docClient)return; // sadece normal gelir/gider
-    const tutar=e.amount||0;
-    if(e.yon==='gelir'){
-      if(e.status==='tamam')sirketGelirAlinan+=tutar; else sirketGelirBekleyen+=tutar;
-    }else{
-      if(e.status==='tamam')sirketGiderOdenen+=tutar; else sirketGiderBekleyen+=tutar;
-    }
-  });
-  // Tahsil edilen toplam para (konser + şirket geliri)
-  const tahsilEdilen=konserAlinan+sirketGelirAlinan;
-  // Çıkan/çıkacak toplam: tahsil edilen orana denk kaşe + konser gideri + sanatçı ödemeleri + şirket giderleri
-  const odenenToplam=kaseDusulen+konserGiderDusulen+sanatciOdeme+sirketGiderOdenen;
-  // Eldeki net = tahsil edilen − çıkan (KDV dahil, fiziksel kasa)
-  const eldekiNet=tahsilEdilen-odenenToplam;
-  // Tahsil edilen şirket gelirinin KDV'si (kdv oranına göre içinden ayrıştır)
-  let sirketKdv=0;
-  accEntries.forEach(e=>{
-    if(e.type==='cfg'||e.recurring||e.artistPay||e.docClient)return;
-    if(e.yon==='gelir'&&e.status==='tamam'){
-      const r=(e.kdv||0)/100; if(r>0)sirketKdv+=(e.amount||0)-(e.amount||0)/(1+r);
-    }
-  });
-  // Toplam ödenecek KDV (kasadaki paranın içinden devlete gidecek)
-  const odenecekKdv=tahsilEdilenKdv+sirketKdv;
-  // KDV hariç gerçekten senin olan
-  const eldekiKdvsiz=eldekiNet-odenecekKdv;
-  // Bekleyen alacak (alınmamış)
-  const bekleyen=konserBekleyen+sirketGelirBekleyen;
-  // Eldeki net eksiyse sebebi genelde sanatçıya fazla ödeme (avans) — tooltip ile açıkla
-  const netTip=eldekiKdvsiz<0
-    ? ` <span title="Eksi görünmesinin sebebi zarar değil; sanatçıya hak edişinden fazla (avans) ödeme yapılmış olabilir ya da KDV yükü eldeki paradan büyüktür." style="cursor:help;color:var(--muted)">(?)</span>`
-    : '';
-  const kasaSirketEl=document.getElementById('kasaSirket');
-  if(kasaSirketEl)kasaSirketEl.innerHTML=`
-    <div class="stat"><div class="n">Tahsil Edilen</div><div class="v">${fmt(tahsilEdilen)}</div></div>
-    <div class="stat"><div class="n">Ödenen (Kaşe+Sanatçı+Gider)</div><div class="v">${fmt(odenenToplam)}</div></div>
-    <div class="stat"><div class="n">Eldeki Para (KDV dahil)</div><div class="v">${fmt(eldekiNet)}</div></div>
-    <div class="stat"><div class="n">İçinden Ödenecek KDV</div><div class="v">${fmt(odenecekKdv)}</div></div>
-    <div class="stat" style="border-color:${eldekiKdvsiz>=0?'var(--green)':'var(--red)'};background:${eldekiKdvsiz>=0?'rgba(90,209,154,0.07)':'rgba(240,122,122,0.07)'}"><div class="n">Eldeki Net (KDV hariç)${netTip}</div><div class="v ${eldekiKdvsiz>=0?'pos':'neg'}">${fmt(eldekiKdvsiz)}</div></div>
-    <div class="stat"><div class="n">Bekleyen Alacak</div><div class="v">${fmt(bekleyen)}</div></div>`;
-
-  // özet kartları
-  let buAyKar=0, acikAlacak=0;
-  events.forEach(ev=>{
-    const c=computeFor(ev);
-    const t=tahsilatFor(ev);
-    if((ev.tarih||'').slice(0,7)===ay) buAyKar+=c.kar;
-    if(t.kalan>0.5) acikAlacak+=t.kalan;
-  });
-  const acikKaseler=tumKaseler().filter(k=>!k.odendi);
-  const acikKaseTutar=acikKaseler.reduce((a,k)=>a+k.amount,0);
-  // bu ay ödenmemiş sabit ödemeler
-  const _ayKey=buAyKey();
-  const sabitAcik=sabitList().filter(e=>!sabitOdendiMi(e,_ayKey));
-  const sabitAcikTutar=sabitAcik.reduce((a,e)=>a+(e.amount||0),0);
-  // sanatçılara toplam kalan (tüm sanatçılar)
-  let sanatciKalan=0;
-  const _artistIds=[...new Set(events.map(ev=>ev.artistId).filter(Boolean))];
-  _artistIds.forEach(aid=>{
-    const pay=saKonserPaylari(aid,'').reduce((a,k)=>a+k.pay,0);
-    const har=saHareketler(aid);
-    const od=har.filter(h=>h.saTur==='odeme').reduce((a,h)=>a+h.amount,0);
-    const gi=har.filter(h=>h.saTur==='gider').reduce((a,h)=>a+h.amount,0);
-    sanatciKalan+=(pay-od-gi);
-  });
-  const yaklasanEtkinlik=events.filter(ev=>{
-    if(!ev.tarih)return false;
-    const d=new Date(ev.tarih+'T00:00:00');
-    return d>=bugun;
-  });
-
-  document.getElementById('dashOzet').innerHTML=`
-    <div class="stat"><div class="n">Toplam İş</div><div class="v">${events.length}</div></div>
-    <div class="stat"><div class="n">Bu Ayki Kâr</div><div class="v ${buAyKar>=0?'pos':'neg'}">${fmt(buAyKar)}</div></div>
-    <div class="stat"><div class="n">Açık Alacak</div><div class="v ${acikAlacak>0.5?'neg':'pos'}">${fmt(acikAlacak)}</div></div>
-    <div class="stat"><div class="n">Ödenmemiş Ekip Kaşesi</div><div class="v ${acikKaseTutar>0.5?'neg':'pos'}">${fmt(acikKaseTutar)}</div></div>
-    <div class="stat"><div class="n">Bu Ay Sabit Ödeme</div><div class="v ${sabitAcikTutar>0.5?'neg':'pos'}">${fmt(sabitAcikTutar)}</div></div>
-    <div class="stat"><div class="n">Sanatçılara Kalan</div><div class="v ${sanatciKalan>0.5?'neg':'pos'}">${fmt(sanatciKalan)}</div></div>`;
-
-  // Bu ay kâr/zarar özeti
-  const aggAy=accAggregate(ay);
-  const trAyAdlari=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
-  const baslikEl=document.getElementById('dashAyBaslik');
-  if(baslikEl){const mo=+ay.slice(5,7);baslikEl.textContent='Kâr / Zarar — '+trAyAdlari[mo-1]+' Ayı';}
-  document.getElementById('dashAyOzet').innerHTML=`
-    <div class="stat"><div class="n">Toplam Gelir (net)</div><div class="v">${fmt(aggAy.toplamGelir)}</div></div>
-    <div class="stat"><div class="n">Toplam Gider (net)</div><div class="v">${fmt(aggAy.toplamGider)}</div></div>
-    <div class="stat" style="border-color:${aggAy.netKar>=0?'var(--green)':'var(--red)'};background:${aggAy.netKar>=0?'rgba(90,209,154,0.07)':'rgba(240,122,122,0.07)'}"><div class="n">Net Kâr (KDV hariç)</div><div class="v ${aggAy.netKar>=0?'pos':'neg'}">${fmt(aggAy.netKar)}</div></div>
-    <div class="stat"><div class="n">Net KDV (devlete)</div><div class="v">${fmt(aggAy.netKdv)}</div></div>
-    <div class="stat"><div class="n">Sanatçı Hak Edişi (%75)</div><div class="v">${fmt(aggAy.toplamArtist)}</div></div>
-    <div class="stat" style="border-color:var(--green);background:rgba(90,209,154,0.07)"><div class="n">Menajer Payı (Hobos %25)</div><div class="v pos">${fmt(aggAy.toplamManager)}</div></div>`;
-
-  // yaklaşan etkinlikler
-  const etkWrap=document.getElementById('dashEtkinlik');
-  const etkSirali=yaklasanEtkinlik.slice().sort((a,b)=>(a.tarih||'9999').localeCompare(b.tarih||'9999')).slice(0,8);
-  if(!etkSirali.length){
-    etkWrap.innerHTML='<div class="anEmpty">Yaklaşan etkinlik yok.</div>';
-  }else{
-    etkWrap.innerHTML='';
-    etkSirali.forEach(ev=>{
-      const c=computeFor(ev);
-      const gf=gunFarki(ev.tarih);
-      const gfTxt=gf===0?'bugün':gf===1?'yarın':gf+' gün sonra';
-      const d=document.createElement('div');
-      d.className='saved-item';
-      d.onclick=()=>restore(ev);
-      d.innerHTML=`
-        <div class="info">
-          <div class="ttl">${esc(ev.sehir||'')} ${ev.mekan?'· '+esc(ev.mekan):''}<span class="badge">${ev.tip==='KAPI'?'KAPI':'ORG'}</span></div>
-          <div class="sub">${trDate(ev.tarih)} · <span class="warn">${gfTxt}</span></div>
+        <div class="card full">
+          <div class="card-title">📌 Proje Bilgileri & Taslak Kayıt</div>
+          <div class="grid" style="margin-bottom: 20px;">
+            <div><label>Proje / Etkinlik Adı *</label><input id="sdProjeAdi" placeholder="Örn: Açıkhava Yaz Konseri" autocomplete="off" oninput="renderSimDetay()"></div>
+            <div><label>Tarih</label><input id="sdProjeTarihi" type="date" oninput="renderSimDetay()"></div>
+          </div>
+          <div class="actions" style="margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
+            <button class="btn primary" onclick="saveSimProject()" id="sdSaveBtn">Projeyi Taslak Olarak Kaydet</button>
+            <button class="btn ghost" onclick="resetSimDetayForm()">Yeni / Ekranı Temizle</button>
+          </div>
+          
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; letter-spacing: .05em;">📂 Kayıtlı Simülasyon Projeleri</div>
+          <div class="saved-list" id="sdSavedList"></div>
         </div>
-        <div class="pnl"><div class="a ${c.kar>=0?'pos':'neg'}">${fmt(c.kar)}</div></div>`;
-      etkWrap.appendChild(d);
-    });
-  }
 
-  // yaklaşan/geciken ödemeler
-  const vadeWrap=document.getElementById('dashVade');
-  const vadeSatir=[];
-  events.forEach(ev=>{
-    const t=tahsilatFor(ev);
-    (t.vadeler||[]).forEach(v=>{
-      if(v.durum==='ödendi')return;
-      if(v.durum==='gecikmiş'||v.durum==='yaklaşıyor'){
-        vadeSatir.push({ev,v,isim:(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')});
-      }
-    });
-  });
-  vadeSatir.sort((a,b)=>{
-    const o={'gecikmiş':0,'yaklaşıyor':1};
-    return (o[a.v.durum]-o[b.v.durum])||((a.v.date||'9999').localeCompare(b.v.date||'9999'));
-  });
-  if(!vadeSatir.length){
-    vadeWrap.innerHTML='<div class="anEmpty">Yaklaşan/geciken ödeme yok.</div>';
-  }else{
-    vadeWrap.innerHTML='';
-    vadeSatir.slice(0,8).forEach(({ev,v,isim})=>{
-      const etiket=v.durum==='gecikmiş'?'Gecikmiş':'Yaklaşıyor';
-      const tarihTxt=v.date?trDate(v.date):'tarihsiz';
-      const gfTxt=(v.durum==='gecikmiş'&&v.gf!=null)?` (${-v.gf}g geçti)`:(v.durum==='yaklaşıyor'&&v.gf!=null)?` (${v.gf}g kaldı)`:'';
-      const d=document.createElement('div');
-      d.className='saved-item';
-      d.onclick=()=>restore(ev);
-      d.innerHTML=`
-        <div class="info">
-          <div class="ttl">${esc(isim)} <span class="vbadge ${v.renk}">${etiket}</span></div>
-          <div class="sub">${esc(v.name||'Taksit')} · ${tarihTxt}${gfTxt}</div>
+        <div class="card">
+          <div class="card-title">🎫 Bilet Firmaları & Komisyon</div>
+          <div class="hint" style="margin-bottom:14px">Hangi firmadan satış yapacaksan komisyon oranını gir. Bilet tipi eklerken firmayı buradan seçeceksin, komisyon otomatik gelecek.</div>
+          <div class="row-head" style="grid-template-columns:1fr 120px 120px 40px"><span>Firma</span><span>Komisyon %</span><span>KDV %</span><span></span></div>
+          <div id="sdFirmaRows"></div>
+          <button class="addbtn" onclick="sdAddFirma()">+ Bilet firması ekle</button>
         </div>
-        <div class="pnl"><div class="a ${v.renk}">${fmt(v.acik)}</div></div>`;
-      vadeWrap.appendChild(d);
-    });
-  }
 
-  // Ödenmemiş Ekip Kaşeleri
-  const kaseWrap=document.getElementById('dashKase');
-  const kaseSirali=acikKaseler.slice().sort((a,b)=>(a.ev.tarih||'9999').localeCompare(b.ev.tarih||'9999')).slice(0,10);
-  if(!kaseSirali.length){
-    kaseWrap.innerHTML='<div class="anEmpty">Ödenmemiş Ekip Kaşesi yok 🎉</div>';
-  }else{
-    let h='<table class="atable"><thead><tr><th>Kişi</th><th>İş</th><th>Tarih</th><th>Tutar</th></tr></thead><tbody>';
-    kaseSirali.forEach(k=>{
-      const isim=(k.ev.sehir||'')+(k.ev.mekan?' · '+k.ev.mekan:'');
-      h+=`<tr><td>${esc(k.name)}</td><td>${esc(isim)}</td><td>${k.ev.tarih?trDate(k.ev.tarih):'—'}</td><td class="neg">${fmt(k.amount)}</td></tr>`;
-    });
-    h+='</tbody></table>';
-    kaseWrap.innerHTML=h;
-  }
+        <div class="card">
+          <div class="card-title">🎟️ Bilet Tipleri & Kampanyalar</div>
+          <div class="hint" style="margin-bottom:14px">Her bilet tipi için firma seç, fiyat ve adet gir. Brüt gelir, komisyon ve KDV otomatik hesaplanır.</div>
+          <div class="row-head" style="grid-template-columns:1fr 1fr 110px 90px 40px"><span>Firma</span><span>Bilet Tipi</span><span>Fiyat ₺</span><span>Adet</span><span></span></div>
+          <div id="sdBiletRows"></div>
+          <button class="addbtn" onclick="sdAddBilet()">+ Bilet tipi ekle</button>
+        </div>
 
-  // ── AYLIK CİRO & KÂR TREND GRAFİĞİ (saf SVG) ──────────
-  const byMonth={};
-  events.forEach(ev=>{
-    if(!ev.tarih)return;
-    const m=ev.tarih.slice(0,7); // YYYY-MM
-    if(!byMonth[m])byMonth[m]={ciro:0,kar:0};
-    const c=computeFor(ev);
-    byMonth[m].ciro+=c.ciroNet;
-    byMonth[m].kar+=c.kar;
-  });
-  const aylar=Object.keys(byMonth).sort().slice(-12); // son 12 ay
-  const trendWrap=document.getElementById('dashTrend');
-  if(!aylar.length){
-    trendWrap.innerHTML='<div class="anEmpty">Tarihli konser yok.</div>';
-  }else{
-    const trAy=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
-    const maxVal=Math.max(...aylar.map(m=>Math.max(byMonth[m].ciro,byMonth[m].kar)),1);
-    const W=Math.max(aylar.length*90,300), H=240, padB=40, padT=20, padL=10;
-    const grafikH=H-padB-padT;
-    const grupGen=W/aylar.length;
-    const barGen=Math.min(28,grupGen/3);
-    let svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;height:auto" xmlns="http://www.w3.org/2000/svg">`;
-    // yatay ızgara çizgileri
-    for(let i=0;i<=4;i++){
-      const y=padT+grafikH*(i/4);
-      svg+=`<line x1="${padL}" y1="${y}" x2="${W-padL}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
-    }
-    aylar.forEach((m,i)=>{
-      const o=byMonth[m];
-      const cx=i*grupGen+grupGen/2;
-      const ciroH=grafikH*(o.ciro/maxVal);
-      const karH=grafikH*(Math.max(0,o.kar)/maxVal);
-      const cy=padT+grafikH-ciroH;
-      const ky=padT+grafikH-karH;
-      // ciro barı (sol)
-      svg+=`<rect x="${cx-barGen-2}" y="${cy}" width="${barGen}" height="${ciroH}" rx="4" fill="var(--accent)"><title>${trAy[+m.slice(5,7)-1]} ${m.slice(0,4)} — Ciro: ${fmt(o.ciro)}</title></rect>`;
-      // kâr barı (sağ)
-      svg+=`<rect x="${cx+2}" y="${ky}" width="${barGen}" height="${karH}" rx="4" fill="var(--green)"><title>${trAy[+m.slice(5,7)-1]} ${m.slice(0,4)} — Kâr: ${fmt(o.kar)}</title></rect>`;
-      // ay etiketi
-      const [yy,mo]=m.split('-');
-      svg+=`<text x="${cx}" y="${H-padB+18}" text-anchor="middle" font-size="12" fill="var(--muted)">${trAy[+mo-1]}</text>`;
-      svg+=`<text x="${cx}" y="${H-padB+32}" text-anchor="middle" font-size="10" fill="var(--muted)">${yy}</text>`;
-    });
-    svg+='</svg>';
-    trendWrap.innerHTML=svg;
-  }
-}
+        <div class="card">
+          <div class="card-title">📋 Sanatçı & Mekan</div>
+          <div class="grid">
+            <div><label>Sanatçı / Grup Adı *</label><input id="sdArtistName" placeholder="Örn: CAN OZAN" autocomplete="off" oninput="renderSimDetay()"></div>
+            <div><label>Sanatçı kaşe (₺)</label><input id="sdKase" type="number" placeholder="300000" oninput="renderSimDetay()"></div>
+            <div>
+              <label>Kaşe KDV durumu</label>
+              <select id="sdKaseKdvDurum" onchange="renderSimDetay()"><option value="haric">KDV Hariç (üstüne ekle)</option><option value="dahil">KDV Dahil (içinden ayır)</option></select>
+            </div>
+            <div><label>Kaşe KDV oranı (%)</label><input id="sdKaseKdv" type="number" value="20" oninput="renderSimDetay()"></div>
+            
+            <div><label>Mekan Adı</label><input id="sdMekanAdi" placeholder="Örn: Holly Stone" autocomplete="off" oninput="renderSimDetay()"></div>
+            <div><label>Mekan kapasitesi (kişi)</label><input id="sdKapasite" type="number" placeholder="3000" oninput="renderSimDetay()"></div>
+            <div><label>Mekan kirası (₺)</label><input id="sdMekan" type="number" placeholder="450000" oninput="renderSimDetay()"></div>
+            <div>
+              <label>Mekan KDV durumu</label>
+              <select id="sdMekanKdvDurum" onchange="renderSimDetay()"><option value="haric">KDV Hariç (üstüne ekle)</option><option value="dahil">KDV Dahil (içinden ayır)</option></select>
+            </div>
+            <div><label>Mekan KDV oranı (%)</label><input id="sdMekanKdv" type="number" value="20" oninput="renderSimDetay()"></div>
+          </div>
+        </div>
 
-function bar(name,numLabel,ratio,neg){
-  const w=Math.max(0,Math.min(100,ratio*100));
-  return `<div class="bar-row"><div class="bl"><span class="name">${esc(name)}</span><span class="num">${numLabel}</span></div>
-    <div class="bar-track"><div class="bar-fill${neg?' neg':''}" style="width:${w}%"></div></div></div>`;
-}
+        <div class="card">
+          <div class="card-title">🚗 Ulaşım / Konaklama / Rider Giderleri</div>
+          <div class="hint" style="margin-bottom:14px">Uçuş, transfer, otel, catering, teknik rider vb. Maliyet KDV hariç girilir, KDV otomatik eklenir.</div>
+          <div class="row-head" style="grid-template-columns:1fr 110px 90px 40px"><span>Açıklama</span><span>Maliyet ₺</span><span>KDV %</span><span></span></div>
+          <div id="sdGiderRows"></div>
+          <button class="addbtn" onclick="sdAddGider()">+ Gider ekle</button>
+        </div>
 
-// ── EKİP ÖDEMELERİ ───────────────────────────────────────
-let eoFilter='acik';
-function setEoFilter(f){
-  eoFilter=f;
-  document.getElementById('eoSegAcik').classList.toggle('on',f==='acik');
-  document.getElementById('eoSegTumu').classList.toggle('on',f==='tumu');
-  renderEkipOdemeListe();
-}
-
-// Tüm işlerdeki kaşeleri düz liste yap: her satır {ev, idx, name, amount, odendi}
-function tumKaseler(){
-  const arr=[];
-  events.forEach(ev=>{
-    (ev.kase||[]).forEach((k,idx)=>{
-      if(!k.name && !k.amount) return;
-      arr.push({ev, idx, name:k.name||'(isimsiz)', amount:k.amount||0, odendi:!!k.odendi});
-    });
-  });
-  return arr;
-}
-
-function renderEkipOdeme(){
-  const all=tumKaseler();
-  // özet
-  const toplam=all.reduce((a,k)=>a+k.amount,0);
-  const odenen=all.filter(k=>k.odendi).reduce((a,k)=>a+k.amount,0);
-  const kalan=toplam-odenen;
-  const acikSayi=all.filter(k=>!k.odendi).length;
-  document.getElementById('eoOzet').innerHTML=`
-    <div class="stat"><div class="n">Toplam Ödenecek</div><div class="v">${fmt(toplam)}</div></div>
-    <div class="stat"><div class="n">Ödenen</div><div class="v pos">${fmt(odenen)}</div></div>
-    <div class="stat"><div class="n">Kalan</div><div class="v ${kalan>0.5?'neg':'pos'}">${fmt(kalan)}</div></div>
-    <div class="stat"><div class="n">Açık Kaşe</div><div class="v">${acikSayi}</div></div>`;
-
-  // kişi bazında
-  const byKisi={};
-  all.forEach(k=>{
-    const ad=(k.name||'(isimsiz)').trim();
-    if(!byKisi[ad])byKisi[ad]={toplam:0,odenen:0,kalan:0,adet:0,odenenAdet:0,acikAdet:0};
-    byKisi[ad].toplam+=k.amount;
-    byKisi[ad].adet++;
-    if(k.odendi){byKisi[ad].odenen+=k.amount;byKisi[ad].odenenAdet++;}
-    else{byKisi[ad].kalan+=k.amount;byKisi[ad].acikAdet++;}
-  });
-  const kisiArr=Object.entries(byKisi).map(([ad,v])=>({ad,...v})).sort((a,b)=>b.kalan-a.kalan||b.toplam-a.toplam);
-  const kisiWrap=document.getElementById('eoKisi');
-  if(!kisiArr.length){
-    kisiWrap.innerHTML='<div class="anEmpty">Henüz kaşe girilmiş iş yok.</div>';
-  }else{
-    let h='<table class="atable"><thead><tr><th>Kişi</th><th>İş</th><th>Ödenmeyen</th><th>Ödenen</th><th>Toplam</th><th>Kalan</th><th>Durum</th></tr></thead><tbody>';
-    kisiArr.forEach(k=>{
-      let durum,renk;
-      if(k.acikAdet===0){durum='Tamamlandı';renk='pos';}
-      else if(k.odenenAdet===0){durum='Hiç ödenmedi';renk='neg';}
-      else{durum='Kısmi';renk='warn';}
-      h+=`<tr>
-        <td>${esc(k.ad)}</td>
-        <td>${k.adet}</td>
-        <td class="${k.acikAdet>0?'neg':''}">${k.acikAdet}</td>
-        <td class="pos">${k.odenenAdet}</td>
-        <td>${fmt(k.toplam)}</td>
-        <td class="${k.kalan>0.5?'neg':'pos'}">${fmt(k.kalan)}</td>
-        <td><span class="vbadge ${renk}">${durum}</span></td>
-      </tr>`;
-    });
-    h+='</tbody></table>';
-    kisiWrap.innerHTML=h;
-  }
-
-  renderEkipOdemeListe();
-}
-
-function renderEkipOdemeListe(){
-  const all=tumKaseler();
-  let liste=all;
-  if(eoFilter==='acik')liste=all.filter(k=>!k.odendi);
-  // sırala: önce ödenmemiş, sonra işe göre tarih
-  liste=liste.slice().sort((a,b)=>{
-    if(a.odendi!==b.odendi)return a.odendi?1:-1;
-    return (a.ev.tarih||'9999').localeCompare(b.ev.tarih||'9999');
-  });
-  const wrap=document.getElementById('eoListe');
-  if(!liste.length){
-    wrap.innerHTML='<div class="anEmpty">'+(eoFilter==='acik'?'Ödenmemiş Ekip Kaşesi yok. Hepsi ödendi 🎉':'Kaşe yok.')+'</div>';
-    return;
-  }
-  wrap.innerHTML='';
-  liste.forEach(k=>{
-    const isim=(k.ev.sehir||'')+(k.ev.mekan?' · '+k.ev.mekan:'');
-    const tarih=k.ev.tarih?trDate(k.ev.tarih):'tarih yok';
-    const kdata=(k.ev.kase||[])[k.idx]||{};
-    const odemeBilgi=k.odendi&&(kdata.odemeTarih||kdata.odemeNot)
-      ? ` · <span class="pos">${kdata.odemeTarih?trDate(kdata.odemeTarih):''}${kdata.odemeNot?' · '+esc(kdata.odemeNot):''}</span>`
-      : '';
-    const d=document.createElement('div');
-    d.className='saved-item';
-    d.style.cursor='default';
-    // ödenmemişlere checkbox
-    const cb=k.odendi?'' :
-      `<input type="checkbox" class="eoCheck" data-eid="${k.ev.id}" data-idx="${k.idx}" data-amount="${k.amount}" onchange="topluGuncelle()" style="width:20px;height:20px;flex:none;cursor:pointer;accent-color:var(--accent)">`;
-    d.innerHTML=`
-      ${cb}
-      <div class="info">
-        <div class="ttl">${esc(k.name)} <span class="vbadge ${k.odendi?'pos':'bekliyor'}">${k.odendi?'Ödendi':'Bekliyor'}</span></div>
-        <div class="sub">${esc(isim)} · ${tarih}${odemeBilgi}</div>
+        <div id="sdSonuc"></div>
       </div>
-      <div class="pnl"><div class="a">${fmt(k.amount)}</div></div>
-      <button class="btn ${k.odendi?'ghost':'primary'}" style="flex:none;min-width:auto;padding:8px 14px;font-size:13px"
-        onclick="toggleKaseOdendi('${k.ev.id}',${k.idx})">${k.odendi?'Geri al':'Ödendi ✓'}</button>`;
-    wrap.appendChild(d);
-  });
-  topluGuncelle();
-}
-
-// toplu seçim: seçili kutucukları say ve toplamı göster
-function topluGuncelle(){
-  const checks=[...document.querySelectorAll('.eoCheck:checked')];
-  const bar=document.getElementById('topluBar');
-  if(!bar)return;
-  if(!checks.length){bar.style.display='none';return;}
-  bar.style.display='block';
-  const toplam=checks.reduce((a,c)=>a+(+c.dataset.amount||0),0);
-  document.getElementById('topluSayi').textContent=checks.length;
-  document.getElementById('topluTutar').textContent=fmt(toplam);
-}
-function topluSecimTemizle(){
-  document.querySelectorAll('.eoCheck:checked').forEach(c=>c.checked=false);
-  topluGuncelle();
-}
-async function topluOde(){
-  const checks=[...document.querySelectorAll('.eoCheck:checked')];
-  if(!checks.length){toast('Önce kaşe seç');return;}
-  const tarih=document.getElementById('topluTarih').value||new Date().toISOString().slice(0,10);
-  const not=document.getElementById('topluNot').value.trim();
-  if(!confirm(checks.length+' kaşe ödendi olarak işaretlenecek. Devam?'))return;
-  // hangi event'ler etkileniyor topla, her birini bir kez kaydet
-  const etkilenen={};
-  checks.forEach(c=>{
-    const eid=c.dataset.eid, idx=+c.dataset.idx;
-    const ev=events.find(e=>e.id===eid);
-    if(!ev||!ev.kase||!ev.kase[idx])return;
-    ev.kase[idx].odendi=true;
-    ev.kase[idx].odemeTarih=tarih;
-    ev.kase[idx].odemeNot=not;
-    etkilenen[eid]=ev;
-  });
-  // backend'e kaydet (her event bir kez)
-  for(const eid in etkilenen){await persist(etkilenen[eid]);}
-  await loadEvents();
-  document.getElementById('topluTarih').value='';
-  document.getElementById('topluNot').value='';
-  renderEkipOdeme();
-  toast(checks.length+' kaşe ödendi olarak işaretlendi');
-}
-
-async function toggleKaseOdendi(eventId, kaseIdx){
-  const ev=events.find(e=>e.id===eventId);
-  if(!ev||!ev.kase||!ev.kase[kaseIdx])return;
-  const yeniDurum=!ev.kase[kaseIdx].odendi;
-  ev.kase[kaseIdx].odendi=yeniDurum;
-  if(yeniDurum){
-    if(!ev.kase[kaseIdx].odemeTarih)ev.kase[kaseIdx].odemeTarih=new Date().toISOString().slice(0,10);
-  }else{
-    ev.kase[kaseIdx].odemeTarih='';
-    ev.kase[kaseIdx].odemeNot='';
-  }
-  // backend'e kaydet
-  await persist(ev);
-  await loadEvents();
-  renderEkipOdeme();
-  toast(yeniDurum?'Ödendi olarak işaretlendi':'Ödeme geri alındı');
-}
-
-function renderAnaliz(){
-  const evs=events.map(ev=>({ev,c:computeFor(ev)}));
-  const oz=document.getElementById('anOzet');
-  if(!evs.length){
-    oz.innerHTML='<div class="anEmpty" style="grid-column:1/-1">Henüz kayıtlı iş yok. Önce birkaç hesap kaydet.</div>';
-    ['anSehir','anDoluluk','anMekan','anTrend'].forEach(id=>document.getElementById(id).innerHTML='<div class="anEmpty">Veri yok.</div>');
-    return;
-  }
-  const totalCiro=evs.reduce((a,x)=>a+x.c.ciroNet,0);
-  const totalKar=evs.reduce((a,x)=>a+x.c.kar,0);
-  const totalBilet=evs.reduce((a,x)=>a+(x.ev.satilan||0),0);
-  oz.innerHTML=`
-    <div class="stat"><div class="n">Toplam İş</div><div class="v">${evs.length}</div></div>
-    <div class="stat"><div class="n">Toplam Ciro (net)</div><div class="v">${fmt(totalCiro)}</div></div>
-    <div class="stat"><div class="n">Toplam Kâr</div><div class="v ${totalKar>=0?'pos':'neg'}">${fmt(totalKar)}</div></div>
-    <div class="stat"><div class="n">Satılan Bilet</div><div class="v">${totalBilet.toLocaleString('tr-TR')}</div></div>`;
-
-  const byCity={};
-  evs.forEach(({ev,c})=>{
-    const k=(ev.sehir||'—').toUpperCase().trim()||'—';
-    if(!byCity[k])byCity[k]={n:0,ciro:0,kar:0,bilet:0,dolSum:0,dolN:0};
-    const o=byCity[k];o.n++;o.ciro+=c.ciroNet;o.kar+=c.kar;o.bilet+=ev.satilan||0;
-    if(ev.kapasite>0&&ev.satilan>0){o.dolSum+=ev.satilan/ev.kapasite;o.dolN++;}
-  });
-  const cityArr=Object.entries(byCity).map(([k,v])=>({k,...v,dol:v.dolN?v.dolSum/v.dolN:0})).sort((a,b)=>b.kar-a.kar);
-  let html='<table class="atable"><thead><tr><th>Şehir</th><th>İş</th><th>Ciro</th><th>Kâr</th><th>Bilet</th><th>Doluluk</th></tr></thead><tbody>';
-  cityArr.forEach(c=>{html+=`<tr><td>${esc(c.k)}</td><td>${c.n}</td><td>${fmt(c.ciro)}</td><td class="${c.kar>=0?'pos':'neg'}">${fmt(c.kar)}</td><td>${c.bilet.toLocaleString('tr-TR')}</td><td>${c.dolN?'%'+Math.round(c.dol*100):'—'}</td></tr>`;});
-  html+='</tbody></table>';
-  const maxKar=Math.max(...cityArr.map(c=>Math.abs(c.kar)),1);
-  html+='<div style="margin-top:24px">'+cityArr.map(c=>bar(c.k,fmt(c.kar),Math.abs(c.kar)/maxKar,c.kar<0)).join('')+'</div>';
-  document.getElementById('anSehir').innerHTML=html;
-
-  const dol=evs.filter(({ev})=>ev.kapasite>0&&ev.satilan>0)
-    .map(({ev})=>({name:(ev.sehir||'')+' · '+(ev.mekan||''),r:ev.satilan/ev.kapasite,sat:ev.satilan,kap:ev.kapasite}))
-    .sort((a,b)=>b.r-a.r);
-  if(dol.length)document.getElementById('anDoluluk').innerHTML=dol.map(d=>bar(d.name,'%'+Math.round(d.r*100)+' ('+d.sat+'/'+d.kap+')',d.r)).join('');
-  else document.getElementById('anDoluluk').innerHTML='<div class="anEmpty">Kapasite ve satılan bilet girilen iş yok.</div>';
-
-  const byVen={};
-  evs.forEach(({ev,c})=>{const k=(ev.mekan||'—').trim()||'—';if(!byVen[k])byVen[k]={n:0,ciro:0,kar:0};byVen[k].n++;byVen[k].ciro+=c.ciroNet;byVen[k].kar+=c.kar;});
-  const venArr=Object.entries(byVen).map(([k,v])=>({k,...v})).sort((a,b)=>b.kar-a.kar);
-  let vh='<table class="atable"><thead><tr><th>Mekan</th><th>İş</th><th>Ciro</th><th>Kâr</th><th>Ort. Kâr</th></tr></thead><tbody>';
-  venArr.forEach(v=>{vh+=`<tr><td>${esc(v.k)}</td><td>${v.n}</td><td>${fmt(v.ciro)}</td><td class="${v.kar>=0?'pos':'neg'}">${fmt(v.kar)}</td><td class="${v.kar>=0?'pos':'neg'}">${fmt(v.kar/v.n)}</td></tr>`;});
-  vh+='</tbody></table>';
-  document.getElementById('anMekan').innerHTML=vh;
-
-  const byMonth={};
-  evs.forEach(({ev,c})=>{if(!ev.tarih)return;const m=ev.tarih.slice(0,7);if(!byMonth[m])byMonth[m]={ciro:0,kar:0,n:0};byMonth[m].ciro+=c.ciroNet;byMonth[m].kar+=c.kar;byMonth[m].n++;});
-  const months=Object.keys(byMonth).sort();
-  if(months.length){
-    const maxC=Math.max(...months.map(m=>byMonth[m].ciro),1);
-    const trNames=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
-    document.getElementById('anTrend').innerHTML=months.map(m=>{
-      const [y,mo]=m.split('-');const lbl=trNames[+mo-1]+' '+y;
-      const o=byMonth[m];
-      return bar(lbl,fmt(o.ciro)+' ciro · '+fmt(o.kar)+' kâr',o.ciro/maxC,o.kar<0);
-    }).join('');
-  }else document.getElementById('anTrend').innerHTML='<div class="anEmpty">Tarihli iş yok.</div>';
-}
 
 async function initApp(){
   applyUserUI();
