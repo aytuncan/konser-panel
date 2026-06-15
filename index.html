@@ -4232,9 +4232,12 @@ function sdRenderNavList(){
   const list=sdKayitlilar();
   if(!list.length){nav.innerHTML='';return;}
   nav.innerHTML=list.map(e=>`
-    <button class="nav-item" style="padding-left:38px;font-size:13px;opacity:.85" onclick="sdAcProje('${e.id}')" title="${esc(e.desc||'')}">
-      <span class="icon" style="font-size:11px">└</span> ${esc((e.desc||'(adsız)').slice(0,22))}
-    </button>`).join('');
+    <div style="display:flex;align-items:center;padding-left:38px;gap:4px">
+      <button class="nav-item" style="flex:1;padding:7px 6px;font-size:13px;opacity:.85;margin:0" onclick="sdAcProje('${e.id}')" title="${esc(e.desc||'')}">
+        <span class="icon" style="font-size:11px">└</span> ${esc((e.desc||'(adsız)').slice(0,18))}
+      </button>
+      <button onclick="sdSil('${e.id}')" title="Sil" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px 8px;flex-shrink:0">🗑</button>
+    </div>`).join('');
 }
 function sdAcProje(id){
   const e=sdKayitlilar().find(x=>x.id===id);
