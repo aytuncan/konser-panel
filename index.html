@@ -490,6 +490,13 @@ select option{background:var(--surface)}
           <div class="stat-grid" id="dashAyOzet"></div>
         </div>
 
+        <!-- AYLIK TREND GRAFİĞİ -->
+        <div class="card">
+          <div class="card-title">Aylık Ciro & Kâr Trendi</div>
+          <div class="hint" style="margin-bottom:16px">Tarihli konserlere göre aylık ciro (KDV hariç) ve net kâr. <span style="display:inline-block;width:12px;height:12px;background:var(--accent);border-radius:3px;vertical-align:middle"></span> Ciro &nbsp; <span style="display:inline-block;width:12px;height:12px;background:var(--green);border-radius:3px;vertical-align:middle"></span> Kâr</div>
+          <div id="dashTrend"><div class="anEmpty">Tarihli konser yok.</div></div>
+        </div>
+
         <!-- GRUP 3: OPERASYON -->
         <div class="dashboard-grid">
           <div class="card">
@@ -3930,6 +3937,53 @@ function renderDashboard(){
     });
     h+='</tbody></table>';
     kaseWrap.innerHTML=h;
+  }
+
+  // ── AYLIK CİRO & KÂR TREND GRAFİĞİ (saf SVG) ──────────
+  const byMonth={};
+  events.forEach(ev=>{
+    if(!ev.tarih)return;
+    const m=ev.tarih.slice(0,7); // YYYY-MM
+    if(!byMonth[m])byMonth[m]={ciro:0,kar:0};
+    const c=computeFor(ev);
+    byMonth[m].ciro+=c.ciroNet;
+    byMonth[m].kar+=c.kar;
+  });
+  const aylar=Object.keys(byMonth).sort().slice(-12); // son 12 ay
+  const trendWrap=document.getElementById('dashTrend');
+  if(!aylar.length){
+    trendWrap.innerHTML='<div class="anEmpty">Tarihli konser yok.</div>';
+  }else{
+    const trAy=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+    const maxVal=Math.max(...aylar.map(m=>Math.max(byMonth[m].ciro,byMonth[m].kar)),1);
+    const W=Math.max(aylar.length*90,300), H=240, padB=40, padT=20, padL=10;
+    const grafikH=H-padB-padT;
+    const grupGen=W/aylar.length;
+    const barGen=Math.min(28,grupGen/3);
+    let svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;height:auto" xmlns="http://www.w3.org/2000/svg">`;
+    // yatay ızgara çizgileri
+    for(let i=0;i<=4;i++){
+      const y=padT+grafikH*(i/4);
+      svg+=`<line x1="${padL}" y1="${y}" x2="${W-padL}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
+    }
+    aylar.forEach((m,i)=>{
+      const o=byMonth[m];
+      const cx=i*grupGen+grupGen/2;
+      const ciroH=grafikH*(o.ciro/maxVal);
+      const karH=grafikH*(Math.max(0,o.kar)/maxVal);
+      const cy=padT+grafikH-ciroH;
+      const ky=padT+grafikH-karH;
+      // ciro barı (sol)
+      svg+=`<rect x="${cx-barGen-2}" y="${cy}" width="${barGen}" height="${ciroH}" rx="4" fill="var(--accent)"><title>${trAy[+m.slice(5,7)-1]} ${m.slice(0,4)} — Ciro: ${fmt(o.ciro)}</title></rect>`;
+      // kâr barı (sağ)
+      svg+=`<rect x="${cx+2}" y="${ky}" width="${barGen}" height="${karH}" rx="4" fill="var(--green)"><title>${trAy[+m.slice(5,7)-1]} ${m.slice(0,4)} — Kâr: ${fmt(o.kar)}</title></rect>`;
+      // ay etiketi
+      const [yy,mo]=m.split('-');
+      svg+=`<text x="${cx}" y="${H-padB+18}" text-anchor="middle" font-size="12" fill="var(--muted)">${trAy[+mo-1]}</text>`;
+      svg+=`<text x="${cx}" y="${H-padB+32}" text-anchor="middle" font-size="10" fill="var(--muted)">${yy}</text>`;
+    });
+    svg+='</svg>';
+    trendWrap.innerHTML=svg;
   }
 }
 
