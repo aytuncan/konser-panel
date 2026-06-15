@@ -478,7 +478,7 @@ select option{background:var(--surface)}
       <div id="view-dashboard" style="">
         <div class="card" style="border-color:var(--accent)">
           <div class="card-title">💰 Hobos Kasası</div>
-          <div class="hint" style="margin-bottom:20px">Tahsil edilen paradan tüm kaşeler (ödenen+ödenmeyen), sanatçı ödemeleri ve giderler düşülür → eldeki net. Bekleyen alacak henüz tahsil edilmemiş. Altta menajer (Hobos'a kalan %25) payı.</div>
+          <div class="hint" style="margin-bottom:20px">Tahsil edilen paradan, o konserlerin tahsil oranına denk kaşeler + sanatçı ödemeleri + giderler düşülür → eldeki net. Henüz parası alınmamış konserin kaşesi düşülmez (o iş yapılınca düşer). Altta menajer (Hobos'a kalan %25) payı.</div>
           <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Tüm Şirket</div>
           <div class="stat-grid" id="kasaSirket" style="margin-bottom:24px"></div>
           <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Menajer Payı (Hobos · %25)</div>
@@ -3731,6 +3731,7 @@ function renderDashboard(){
   // ── HOBOS KASASI ──────────────────────────────────────
   // Konser tarafı: tahsil edilen / bekleyen, ve bunların menajer (%25) payı
   let konserAlinan=0, konserBekleyen=0, menajerAlinan=0, menajerBekleyen=0, tahsilEdilenKdv=0;
+  let kaseDusulen=0, kaseBekleyen=0; // tahsil oranına göre düşülecek / bekleyen kaşe
   events.forEach(ev=>{
     const c=computeFor(ev);
     const t=tahsilatFor(ev);
@@ -3741,12 +3742,13 @@ function renderDashboard(){
     const menajerToplam=c.p2amt; // bu işin toplam menajer payı
     menajerAlinan+=menajerToplam*oran;
     menajerBekleyen+=menajerToplam*(1-oran);
-    // tahsil edilen kısmın içindeki KDV (net KDV = gelir KDV − gider KDV, tahsil oranıyla)
+    // tahsil edilen kısmın içindeki KDV (net KDV, tahsil oranıyla)
     tahsilEdilenKdv+=c.netKdv*oran;
+    // kaşe: sadece tahsil edilen orana denk kısmı kasadan düşülür, kalanı bekler
+    kaseDusulen+=c.sumKase*oran;
+    kaseBekleyen+=c.sumKase*(1-oran);
   });
-  // Tüm kaşeler (ödenen + ödenmeyen — hepsi senin paran değil, çıkacak/çıktı)
-  const tumKaseToplam=tumKaseler().reduce((a,k)=>a+k.amount,0);
-  // Sanatçı Hesabı'ndan yapılan ödemeler + sanatçı adına giderler (kasadan çıkan para)
+  // Sanatçı Hesabı'ndan yapılan ödemeler + sanatçı adına giderler (kasadan fiilen çıkan para)
   let sanatciOdeme=0;
   accEntries.forEach(e=>{
     if(e.artistPay && (e.saTur==='odeme'||e.saTur==='gider')) sanatciOdeme+=(e.amount||0);
@@ -3764,9 +3766,9 @@ function renderDashboard(){
   });
   // Tahsil edilen toplam para (konser + şirket geliri)
   const tahsilEdilen=konserAlinan+sirketGelirAlinan;
-  // Çıkan/çıkacak toplam: TÜM kaşeler + sanatçı ödemeleri + şirket giderleri
-  const odenenToplam=tumKaseToplam+sanatciOdeme+sirketGiderOdenen;
-  // Eldeki net = tahsil edilen − çıkan/çıkacak (KDV dahil, fiziksel kasa)
+  // Çıkan/çıkacak toplam: tahsil edilen orana denk kaşe + sanatçı ödemeleri + şirket giderleri
+  const odenenToplam=kaseDusulen+sanatciOdeme+sirketGiderOdenen;
+  // Eldeki net = tahsil edilen − çıkan (KDV dahil, fiziksel kasa)
   const eldekiNet=tahsilEdilen-odenenToplam;
   // Tahsil edilen şirket gelirinin KDV'si (kdv oranına göre içinden ayrıştır)
   let sirketKdv=0;
