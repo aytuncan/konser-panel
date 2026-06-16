@@ -5254,29 +5254,30 @@ function raporPdfAktar(){
     let rows='';
     evs.forEach(({ev,c})=>{rows+=`<tr><td style="padding:6px;border-bottom:1px solid #eee">${esc(ev.sehir||'')}</td><td style="padding:6px;border-bottom:1px solid #eee">${esc(ev.mekan||'')}</td><td style="padding:6px;border-bottom:1px solid #eee">${ev.tarih||''}</td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${fmt(c.ciroNet)}</td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${fmt(c.kar)}</td></tr>`;});
     const firmaAd=document.getElementById('coName')?document.getElementById('coName').value:'';
-    const html=`
-      <div style="font-family:Helvetica,Arial,sans-serif;color:#1a1a1a;padding:30px;max-width:760px">
-        <div style="display:flex;justify-content:space-between;border-bottom:2px solid #1a1a1a;padding-bottom:12px;margin-bottom:18px">
-          <div><div style="font-size:18px;font-weight:800">${esc(firmaAd)||'KONSER PANEL'}</div><div style="font-size:12px;color:#555">Performans Raporu</div></div>
-          <div style="text-align:right;font-size:11px;color:#555"><div>Dönem: ${esc(rapDonemAd())}</div><div>Tarih: ${new Date().toLocaleDateString('tr-TR')}</div></div>
-        </div>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:18px">
-          <tr><td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Toplam İş</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${evs.length}</b></td>
-              <td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Satılan Bilet</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${totalBilet.toLocaleString('tr-TR')}</b></td></tr>
-          <tr><td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Toplam Ciro (net)</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${fmt(totalCiro)}</b></td>
-              <td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Toplam Kâr</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${fmt(totalKar)}</b></td></tr>
-        </table>
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
-          <thead><tr style="background:#1a1a1a;color:#fff"><th style="padding:7px;text-align:left">Şehir</th><th style="padding:7px;text-align:left">Mekan</th><th style="padding:7px;text-align:left">Tarih</th><th style="padding:7px;text-align:right">Ciro</th><th style="padding:7px;text-align:right">Kâr</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>`;
-    const {jsPDF}=window.jspdf;
-    const tmp=document.createElement('div');
-    tmp.style.cssText='position:fixed;left:-9999px;top:0;width:780px;background:#fff';
-    tmp.innerHTML=html;document.body.appendChild(tmp);
-    const pdf=new jsPDF('p','pt','a4');
-    pdf.html(tmp,{callback:()=>{pdf.save('rapor-'+new Date().toISOString().slice(0,10)+'.pdf');document.body.removeChild(tmp);toast('✓ PDF raporu indirildi');},x:24,y:24,width:547,windowWidth:780});
+    const govde=`
+      <div style="display:flex;justify-content:space-between;border-bottom:2px solid #1a1a1a;padding-bottom:12px;margin-bottom:18px">
+        <div><div style="font-size:18px;font-weight:800">${esc(firmaAd)||'KONSER PANEL'}</div><div style="font-size:12px;color:#555">Performans Raporu</div></div>
+        <div style="text-align:right;font-size:11px;color:#555"><div>Dönem: ${esc(rapDonemAd())}</div><div>Tarih: ${new Date().toLocaleDateString('tr-TR')}</div></div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:18px">
+        <tr><td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Toplam İş</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${evs.length}</b></td>
+            <td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Satılan Bilet</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${totalBilet.toLocaleString('tr-TR')}</b></td></tr>
+        <tr><td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Toplam Ciro (net)</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${fmt(totalCiro)}</b></td>
+            <td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Toplam Kâr</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${fmt(totalKar)}</b></td></tr>
+      </table>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#1a1a1a;color:#fff"><th style="padding:7px;text-align:left">Şehir</th><th style="padding:7px;text-align:left">Mekan</th><th style="padding:7px;text-align:left">Tarih</th><th style="padding:7px;text-align:right">Ciro</th><th style="padding:7px;text-align:right">Kâr</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    const win=window.open('','_blank');
+    if(!win){toast('Açılır pencere engellendi, izin ver');return;}
+    win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+      <title>Rapor - ${esc(rapDonemAd())}</title>
+      <style>@page{size:A4;margin:16mm}*{box-sizing:border-box}body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;margin:0;padding:24px}@media print{body{padding:0}}</style>
+      </head><body>${govde}
+      <script>window.onload=function(){window.print();}<\/script></body></html>`);
+    win.document.close();
+    toast('Yazdırma penceresi açıldı — "PDF olarak kaydet" seç');
   }catch(e){toast('PDF oluşturulamadı');}
 }
 
