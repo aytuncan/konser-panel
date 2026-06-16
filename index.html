@@ -1534,6 +1534,11 @@ Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
               <div id="rapSanatciMekan"></div>
             </div>
           </div>
+          <div class="actions" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+            <button class="btn primary" onclick="sanatciRaporPdf()">🎤 Sanatçı Raporu (PDF)</button>
+            <button class="btn ghost" onclick="sanatciRaporMail()">📧 Sanatçıya Mail Yolla</button>
+          </div>
+          <div class="hint" style="margin-top:8px">Bu rapor sadece sanatçının performansını ve ciroyu gösterir — senin kârın, menajer payı ve gider detayı görünmez.</div>
         </div>
 
         <div class="card">
@@ -5426,6 +5431,72 @@ function renderAnaliz(){
 }
 
 // ── SANATÇI DETAY RAPORU (filtre seçilince) ──
+// ── SANATÇIYA GÖNDERİLECEK PERFORMANS RAPORU (kâr/menajer payı gizli) ──
+function sanatciRaporHTML(){
+  const sec=document.getElementById('rapSanatci')?document.getElementById('rapSanatci').value:'';
+  if(!sec)return null;
+  let evs=events.filter(ev=>rapTarihUyar(ev.tarih)&&evSanatciAd(ev)===sec).map(ev=>({ev,c:computeFor(ev)}));
+  if(!evs.length)return null;
+  const n=evs.length;
+  const ciro=evs.reduce((a,x)=>a+x.c.ciroNet,0);
+  const bilet=evs.reduce((a,x)=>a+(x.ev.satilan||0),0);
+  // doluluk ortalaması
+  let dolSum=0,dolN=0;
+  evs.forEach(({ev})=>{if(ev.kapasite>0&&ev.satilan>0){dolSum+=ev.satilan/ev.kapasite;dolN++;}});
+  const ortDol=dolN?Math.round(dolSum/dolN*100):null;
+  const firmaAd=document.getElementById('coName')?document.getElementById('coName').value:'';
+  let rows='';
+  evs.sort((a,b)=>(b.ev.tarih||'').localeCompare(a.ev.tarih||'')).forEach(({ev})=>{
+    const dol=(ev.kapasite>0&&ev.satilan>0)?'%'+Math.round(ev.satilan/ev.kapasite*100):'—';
+    rows+=`<tr><td style="padding:6px;border-bottom:1px solid #eee">${esc(ev.sehir||'')}</td><td style="padding:6px;border-bottom:1px solid #eee">${esc(ev.mekan||'')}</td><td style="padding:6px;border-bottom:1px solid #eee">${ev.tarih||''}</td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${(ev.satilan||0).toLocaleString('tr-TR')}</td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${dol}</td></tr>`;
+  });
+  const govde=`
+    <div style="display:flex;justify-content:space-between;border-bottom:2px solid #1a1a1a;padding-bottom:12px;margin-bottom:18px">
+      <div><div style="font-size:18px;font-weight:800">🎤 ${esc(sec)}</div><div style="font-size:12px;color:#555">Performans Raporu</div></div>
+      <div style="text-align:right;font-size:11px;color:#555"><div>${esc(firmaAd)||'Hobos Organizasyon'}</div><div>Dönem: ${esc(rapDonemAd())}</div><div>Tarih: ${new Date().toLocaleDateString('tr-TR')}</div></div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:18px">
+      <tr><td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Toplam Etkinlik</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${n}</b></td>
+          <td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Satılan Bilet</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${bilet.toLocaleString('tr-TR')}</b></td></tr>
+      <tr><td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Toplam Ciro</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${fmt(ciro)}</b></td>
+          <td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Ort. Doluluk</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${ortDol!=null?'%'+ortDol:'—'}</b></td></tr>
+    </table>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="background:#1a1a1a;color:#fff"><th style="padding:7px;text-align:left">Şehir</th><th style="padding:7px;text-align:left">Mekan</th><th style="padding:7px;text-align:left">Tarih</th><th style="padding:7px;text-align:right">Bilet</th><th style="padding:7px;text-align:right">Doluluk</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  return {sec,evs,ciro,n,bilet,govde};
+}
+function sanatciRaporPdf(){
+  const r=sanatciRaporHTML();
+  if(!r){toast('Önce sanatçı seç');return;}
+  const win=window.open('','_blank');
+  if(!win){toast('Açılır pencere engellendi, izin ver');return;}
+  win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+    <title>${esc(r.sec)} - Performans Raporu</title>
+    <style>@page{size:A4;margin:16mm}*{box-sizing:border-box}body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;margin:0;padding:24px}@media print{body{padding:0}}</style>
+    </head><body>${r.govde}
+    <script>window.onload=function(){window.print();}<\/script></body></html>`);
+  win.document.close();
+  toast('Yazdırma penceresi açıldı — "PDF olarak kaydet" seç');
+}
+function sanatciRaporMail(){
+  const r=sanatciRaporHTML();
+  if(!r){toast('Önce sanatçı seç');return;}
+  // sanatçı mailini bul (artistId → firma → mail)
+  let mail='';
+  for(const {ev} of r.evs){if(ev.artistId){const f=firms.find(x=>x.id===ev.artistId);if(f&&f.mail){mail=f.mail;break;}}}
+  const firmaAd=document.getElementById('coName')?document.getElementById('coName').value:'';
+  const konu=`${r.sec} — Performans Raporu (${rapDonemAd()})`;
+  let g=`Merhaba,\n\n${r.sec} için ${rapDonemAd()} dönemi performans özeti:\n\n`;
+  g+=`• Toplam etkinlik: ${r.n}\n• Satılan bilet: ${r.bilet.toLocaleString('tr-TR')}\n• Toplam ciro: ${fmt(r.ciro)}\n\n`;
+  g+='Detaylı rapor (şehir/mekan/tarih/bilet) ekteki PDF\'tedir.\n\n';
+  g+=`Saygılarımızla,\n${firmaAd||'Hobos Organizasyon'}`;
+  const mailto=`mailto:${encodeURIComponent(mail)}?subject=${encodeURIComponent(konu)}&body=${encodeURIComponent(g)}`;
+  window.location.href=mailto;
+  toast(mail?'Mail açılıyor — PDF\'i ekle':'Sanatçı maili kayıtlı değil, alıcıyı elle gir');
+}
+
 function renderSanatciDetay(sanatci,evs){
   const kart=document.getElementById('rapSanatciDetayKart');
   if(!kart)return;
