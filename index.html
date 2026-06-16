@@ -1511,7 +1511,29 @@ Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
             <button class="btn primary" onclick="raporExcelAktar()">📊 Excel İndir</button>
             <button class="btn primary" onclick="raporPdfAktar()">📄 PDF İndir</button>
           </div>
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+            <label>Sanatçı filtresi</label>
+            <select id="rapSanatci" onchange="renderAnaliz()">
+              <option value="">Tüm sanatçılar</option>
+            </select>
+            <div class="hint" style="margin-top:6px">Bir sanatçı seçersen tüm rapor o sanatçının işlerine göre filtrelenir ve aşağıda detayı çıkar.</div>
+          </div>
           <div class="hint" id="rapDonemBilgi" style="margin-top:10px"></div>
+        </div>
+
+        <div class="card" id="rapSanatciDetayKart" style="display:none">
+          <div class="card-title" id="rapSanatciDetayBaslik">Sanatçı Detayı</div>
+          <div class="stat-grid" id="rapSanatciDetay" style="margin-bottom:18px"></div>
+          <div class="dashboard-grid">
+            <div>
+              <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Şehir Kırılımı</div>
+              <div id="rapSanatciSehir"></div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Mekan Kırılımı</div>
+              <div id="rapSanatciMekan"></div>
+            </div>
+          </div>
         </div>
 
         <div class="card">
@@ -5188,6 +5210,22 @@ async function toggleKaseOdendi(eventId, kaseIdx){
 
 // ── RAPOR: dönem filtresi ──
 let rapDonem='all';
+// bir işin sanatçısını bul (artistId→firma adı, yoksa p1ad)
+function evSanatciAd(ev){
+  if(ev.artistId){const f=firms.find(x=>x.id===ev.artistId);if(f)return f.name;}
+  if(ev.p1ad&&ev.p1ad!=='MAN FEE')return ev.p1ad;
+  return '';
+}
+// rapor sanatçı dropdown'ını doldur
+function rapDoldurSanatciPicker(){
+  const sel=document.getElementById('rapSanatci');if(!sel)return;
+  const cur=sel.value;
+  const set=new Set();
+  events.forEach(ev=>{const ad=evSanatciAd(ev);if(ad)set.add(ad);});
+  const arr=[...set].sort((a,b)=>a.localeCompare(b,'tr'));
+  sel.innerHTML='<option value="">Tüm sanatçılar</option>'+arr.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
+  sel.value=cur;
+}
 function rapSetDonem(d){
   rapDonem=d;
   ['All','Buay','Gecenay','Buyil','Ozel'].forEach(x=>{const b=document.getElementById('rapDonem'+x);if(b)b.classList.remove('active');});
@@ -5282,10 +5320,16 @@ function raporPdfAktar(){
 }
 
 function renderAnaliz(){
-  // dönem filtresi uygula
-  const evs=events.filter(ev=>rapTarihUyar(ev.tarih)).map(ev=>({ev,c:computeFor(ev)}));
+  rapDoldurSanatciPicker();
+  const secSanatci=document.getElementById('rapSanatci')?document.getElementById('rapSanatci').value:'';
+  // dönem + sanatçı filtresi uygula
+  let evs=events.filter(ev=>rapTarihUyar(ev.tarih));
+  if(secSanatci)evs=evs.filter(ev=>evSanatciAd(ev)===secSanatci);
+  evs=evs.map(ev=>({ev,c:computeFor(ev)}));
   const bilgiEl=document.getElementById('rapDonemBilgi');
-  if(bilgiEl)bilgiEl.textContent='Dönem: '+rapDonemAd()+' · '+evs.length+' iş';
+  if(bilgiEl)bilgiEl.textContent='Dönem: '+rapDonemAd()+(secSanatci?' · Sanatçı: '+secSanatci:'')+' · '+evs.length+' iş';
+  // sanatçı detay kartı
+  renderSanatciDetay(secSanatci,evs);
   const oz=document.getElementById('anOzet');
   if(!evs.length){
     oz.innerHTML='<div class="anEmpty" style="grid-column:1/-1">Bu dönemde kayıtlı iş yok.</div>';
@@ -5379,6 +5423,47 @@ function renderAnaliz(){
       return bar(lbl,fmt(o.ciro)+' ciro · '+fmt(o.kar)+' kâr',o.ciro/maxC,o.kar<0);
     }).join('');
   }else document.getElementById('anTrend').innerHTML='<div class="anEmpty">Tarihli iş yok.</div>';
+}
+
+// ── SANATÇI DETAY RAPORU (filtre seçilince) ──
+function renderSanatciDetay(sanatci,evs){
+  const kart=document.getElementById('rapSanatciDetayKart');
+  if(!kart)return;
+  if(!sanatci){kart.style.display='none';return;}
+  kart.style.display='block';
+  document.getElementById('rapSanatciDetayBaslik').textContent='🎤 '+sanatci+' — Detaylı Rapor';
+  // bu sanatçının işlerinden hesap
+  const n=evs.length;
+  const ciro=evs.reduce((a,x)=>a+x.c.ciroNet,0);
+  const kar=evs.reduce((a,x)=>a+x.c.kar,0);
+  const bilet=evs.reduce((a,x)=>a+(x.ev.satilan||0),0);
+  // sanatçının kaşesi / hak edişi: kâr paylaşımı p1amt (sanatçı payı) toplamı
+  const sanatciPay=evs.reduce((a,x)=>a+x.c.p1amt,0);
+  // sanatçıya fiilen ödenen (Sanatçı Hesabı'ndan, eşleşen artistId varsa)
+  let odenen=0;
+  const artistIds=new Set(evs.map(x=>x.ev.artistId).filter(Boolean));
+  accEntries.forEach(e=>{
+    if(e.artistPay&&(e.saTur==='odeme'||e.saTur==='gider')&&artistIds.has(e.artistId))odenen+=(e.amount||0);
+  });
+  document.getElementById('rapSanatciDetay').innerHTML=`
+    <div class="stat"><div class="n">İş Sayısı</div><div class="v">${n}</div></div>
+    <div class="stat"><div class="n">Toplam Ciro (net)</div><div class="v">${fmt(ciro)}</div></div>
+    <div class="stat" style="border-color:${kar>=0?'var(--green)':'var(--red)'};background:${kar>=0?'rgba(90,209,154,0.07)':'rgba(240,122,122,0.07)'}"><div class="n">Toplam Kâr</div><div class="v ${kar>=0?'pos':'neg'}">${fmt(kar)}</div></div>
+    <div class="stat"><div class="n">Satılan Bilet</div><div class="v">${bilet.toLocaleString('tr-TR')}</div></div>
+    <div class="stat"><div class="n">Sanatçı Hak Edişi (pay)</div><div class="v">${fmt(sanatciPay)}</div></div>
+    <div class="stat"><div class="n">Fiilen Ödenen</div><div class="v">${fmt(odenen)}</div></div>`;
+  // şehir kırılımı
+  const byCity={};
+  evs.forEach(({ev,c})=>{const k=(ev.sehir||'—').toUpperCase().trim()||'—';if(!byCity[k])byCity[k]={n:0,kar:0};byCity[k].n++;byCity[k].kar+=c.kar;});
+  const cityArr=Object.entries(byCity).map(([k,v])=>({k,...v})).sort((a,b)=>b.kar-a.kar);
+  const maxC=Math.max(...cityArr.map(c=>Math.abs(c.kar)),1);
+  document.getElementById('rapSanatciSehir').innerHTML=cityArr.length?cityArr.map(c=>bar(c.k+' ('+c.n+')',fmt(c.kar),Math.abs(c.kar)/maxC,c.kar<0)).join(''):'<div class="anEmpty">Veri yok.</div>';
+  // mekan kırılımı
+  const byVen={};
+  evs.forEach(({ev,c})=>{const k=(ev.mekan||'—').trim()||'—';if(!byVen[k])byVen[k]={n:0,kar:0};byVen[k].n++;byVen[k].kar+=c.kar;});
+  const venArr=Object.entries(byVen).map(([k,v])=>({k,...v})).sort((a,b)=>b.kar-a.kar);
+  const maxV=Math.max(...venArr.map(v=>Math.abs(v.kar)),1);
+  document.getElementById('rapSanatciMekan').innerHTML=venArr.length?venArr.map(v=>bar(v.k+' ('+v.n+')',fmt(v.kar),Math.abs(v.kar)/maxV,v.kar<0)).join(''):'<div class="anEmpty">Veri yok.</div>';
 }
 
 async function initApp(){
