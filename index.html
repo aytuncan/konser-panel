@@ -450,7 +450,7 @@ select option{background:var(--surface)}
 
       <div class="nav-section">Raporlar</div>
       <button class="nav-item" id="tabAnaliz" onclick="showTab(&#39;analiz&#39;)">
-        <span class="icon">◉</span> Analiz
+        <span class="icon">◉</span> Rapor
       </button>
 
       <div class="nav-section" id="navSecYonetim" style="display: block;">Yönetim</div>
@@ -1489,24 +1489,66 @@ Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
         </div>
       </div>
 
-      <div id="view-analiz" style="display:none" class="dashboard-grid">
-        <div class="card full-w">
+      <div id="view-analiz" style="display:none">
+        <div class="card">
+          <div class="card-title">📊 Rapor Merkezi</div>
+          <div class="hint" style="margin-bottom:16px">Seçtiğin döneme göre tüm performans, ciro, kâr ve dağılım raporları. PDF veya Excel olarak indirebilirsin.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+            <label style="margin:0;align-self:center">Dönem:</label>
+            <button class="btn ghost active" id="rapDonemAll" onclick="rapSetDonem('all')">Tümü</button>
+            <button class="btn ghost" id="rapDonemBuay" onclick="rapSetDonem('buay')">Bu Ay</button>
+            <button class="btn ghost" id="rapDonemGecenay" onclick="rapSetDonem('gecenay')">Geçen Ay</button>
+            <button class="btn ghost" id="rapDonemBuyil" onclick="rapSetDonem('buyil')">Bu Yıl</button>
+            <button class="btn ghost" id="rapDonemOzel" onclick="rapSetDonem('ozel')">Özel</button>
+          </div>
+          <div id="rapOzelTarih" style="display:none;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <div><label>Başlangıç</label><input id="rapBas" type="date" onchange="renderAnaliz()"></div>
+              <div><label>Bitiş</label><input id="rapBit" type="date" onchange="renderAnaliz()"></div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn primary" onclick="raporExcelAktar()">📊 Excel İndir</button>
+            <button class="btn primary" onclick="raporPdfAktar()">📄 PDF İndir</button>
+          </div>
+          <div class="hint" id="rapDonemBilgi" style="margin-top:10px"></div>
+        </div>
+
+        <div class="card">
           <div class="card-title">Genel Özet</div>
           <div class="stat-grid" id="anOzet"></div>
         </div>
-        <div class="card">
-          <div class="card-title">Şehir Performansı</div>
-          <div class="hint" style="margin-bottom:16px">Şehir bazında iş sayısı, toplam ciro, kâr, satılan bilet ve ortalama doluluk.</div>
-          <div id="anSehir"></div>
+
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-title">Gelir / Gider / Kâr Dağılımı</div>
+            <div class="hint" style="margin-bottom:12px">Dönemin toplam ciro, gider ve kârının oransal görünümü.</div>
+            <div id="anDagilim"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Şehir Performansı</div>
+            <div class="hint" style="margin-bottom:16px">Şehir bazında iş sayısı, ciro, kâr, bilet ve doluluk.</div>
+            <div id="anSehir"></div>
+          </div>
         </div>
-        <div class="card">
-          <div class="card-title">Mekan Karşılaştırma</div>
-          <div id="anMekan"></div>
+
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-title">Mekan Karşılaştırma</div>
+            <div id="anMekan"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Sanatçı Bazında</div>
+            <div class="hint" style="margin-bottom:12px">Hangi sanatçı kaç iş, ne kadar ciro/kâr getirdi.</div>
+            <div id="anSanatci"></div>
+          </div>
         </div>
+
         <div class="card">
           <div class="card-title">Bilet &amp; Doluluk</div>
           <div id="anDoluluk"></div>
         </div>
+
         <div class="card">
           <div class="card-title">Zaman Trendi (aylık)</div>
           <div id="anTrend"></div>
@@ -1831,7 +1873,7 @@ function applyXlsx() {
 
 const PAGE_TITLES={
   dashboard:'Dashboard',new:'Yeni Etkinlik',saved:'Konserler',odeme:'Muhasebe',mgenel:'Muhasebe — Genel',mgg:'Muhasebe — Gelir/Gider',mcari:'Muhasebe — Cari Durum',mkdv:'Muhasebe — KDV',ekipodeme:'Ekip Ödemeleri',sanatci:'Sanatçı Hesabı',
-  szhazirla:'Sözleşme Hazırla',szyapilan:'Yapılan Sözleşmeler',szrehber:'Sözleşme Rehberi',szfirmam:'Firma Bilgilerim',szsablon:'Sözleşme Şablonu',firms:'Firmalar',venues:'Mekanlar',analiz:'Analiz',
+  szhazirla:'Sözleşme Hazırla',szyapilan:'Yapılan Sözleşmeler',szrehber:'Sözleşme Rehberi',szfirmam:'Firma Bilgilerim',szsablon:'Sözleşme Şablonu',firms:'Firmalar',venues:'Mekanlar',analiz:'Rapor',
   users:'Kullanıcılar',ayarlar:'Ayarlar',simulasyon:'Hızlı Simülasyon',simdetay:'Detaylı Simülasyon'
 };
 function openSidebar(){
@@ -5144,23 +5186,134 @@ async function toggleKaseOdendi(eventId, kaseIdx){
   toast(yeniDurum?'Ödendi olarak işaretlendi':'Ödeme geri alındı');
 }
 
+// ── RAPOR: dönem filtresi ──
+let rapDonem='all';
+function rapSetDonem(d){
+  rapDonem=d;
+  ['All','Buay','Gecenay','Buyil','Ozel'].forEach(x=>{const b=document.getElementById('rapDonem'+x);if(b)b.classList.remove('active');});
+  const map={all:'All',buay:'Buay',gecenay:'Gecenay',buyil:'Buyil',ozel:'Ozel'};
+  const btn=document.getElementById('rapDonem'+map[d]);if(btn)btn.classList.add('active');
+  document.getElementById('rapOzelTarih').style.display=d==='ozel'?'flex':'none';
+  renderAnaliz();
+}
+// dönem aralığını {bas,bit} olarak döndür (ISO yyyy-mm-dd) — null = sınır yok
+function rapAralik(){
+  const now=new Date();
+  const iso=dt=>dt.toISOString().slice(0,10);
+  if(rapDonem==='buay'){const b=new Date(now.getFullYear(),now.getMonth(),1);const s=new Date(now.getFullYear(),now.getMonth()+1,0);return {bas:iso(b),bit:iso(s)};}
+  if(rapDonem==='gecenay'){const b=new Date(now.getFullYear(),now.getMonth()-1,1);const s=new Date(now.getFullYear(),now.getMonth(),0);return {bas:iso(b),bit:iso(s)};}
+  if(rapDonem==='buyil'){return {bas:now.getFullYear()+'-01-01',bit:now.getFullYear()+'-12-31'};}
+  if(rapDonem==='ozel'){return {bas:document.getElementById('rapBas').value||'',bit:document.getElementById('rapBit').value||''};}
+  return {bas:'',bit:''}; // tümü
+}
+function rapTarihUyar(tarih){
+  const {bas,bit}=rapAralik();
+  if(!tarih)return (!bas&&!bit); // tarihsiz iş sadece "tümü"de görünür
+  if(bas&&tarih<bas)return false;
+  if(bit&&tarih>bit)return false;
+  return true;
+}
+function rapDonemAd(){
+  const map={all:'Tüm Zamanlar',buay:'Bu Ay',gecenay:'Geçen Ay',buyil:'Bu Yıl',ozel:'Özel Aralık'};
+  let s=map[rapDonem]||'Tüm Zamanlar';
+  if(rapDonem==='ozel'){const {bas,bit}=rapAralik();s+=' ('+(bas||'...')+' → '+(bit||'...')+')';}
+  return s;
+}
+
+function raporVeri(){
+  return events.filter(ev=>rapTarihUyar(ev.tarih)).map(ev=>({ev,c:computeFor(ev)}));
+}
+function raporExcelAktar(){
+  try{
+    const evs=raporVeri();
+    if(!evs.length){toast('Bu dönemde veri yok');return;}
+    const wb=XLSX.utils.book_new();const R=Math.round;
+    const totalCiro=evs.reduce((a,x)=>a+x.c.ciroNet,0);
+    const totalKar=evs.reduce((a,x)=>a+x.c.kar,0);
+    const totalBilet=evs.reduce((a,x)=>a+(x.ev.satilan||0),0);
+    const ozet=[['RAPOR — '+rapDonemAd(),''],['Tarih',new Date().toLocaleDateString('tr-TR')],[],
+      ['Toplam İş',evs.length],['Toplam Ciro (net)',R(totalCiro)],['Toplam Kâr',R(totalKar)],
+      ['İş Başı Ort. Kâr',R(evs.length?totalKar/evs.length:0)],['Satılan Bilet',totalBilet]];
+    const ws1=XLSX.utils.aoa_to_sheet(ozet);ws1['!cols']=[{wch:24},{wch:18}];
+    XLSX.utils.book_append_sheet(wb,ws1,'ÖZET');
+    const tablo=[['Şehir','Mekan','Tarih','Tip','Ciro (net)','Komisyon','Gider','Kâr','Bilet']];
+    evs.forEach(({ev,c})=>tablo.push([ev.sehir||'',ev.mekan||'',ev.tarih||'',ev.tip||'',R(c.ciroNet),R(c.komisyon),R(c.toplamGider),R(c.kar),ev.satilan||0]));
+    const ws2=XLSX.utils.aoa_to_sheet(tablo);ws2['!cols']=[{wch:14},{wch:18},{wch:12},{wch:12},{wch:14},{wch:12},{wch:12},{wch:14},{wch:10}];
+    XLSX.utils.book_append_sheet(wb,ws2,'İŞLER');
+    XLSX.writeFile(wb,'rapor-'+rapDonem+'-'+new Date().toISOString().slice(0,10)+'.xlsx');
+    toast('✓ Excel raporu indirildi');
+  }catch(e){toast('Excel oluşturulamadı');}
+}
+function raporPdfAktar(){
+  try{
+    const evs=raporVeri();
+    if(!evs.length){toast('Bu dönemde veri yok');return;}
+    const totalCiro=evs.reduce((a,x)=>a+x.c.ciroNet,0);
+    const totalKar=evs.reduce((a,x)=>a+x.c.kar,0);
+    const totalBilet=evs.reduce((a,x)=>a+(x.ev.satilan||0),0);
+    let rows='';
+    evs.forEach(({ev,c})=>{rows+=`<tr><td style="padding:6px;border-bottom:1px solid #eee">${esc(ev.sehir||'')}</td><td style="padding:6px;border-bottom:1px solid #eee">${esc(ev.mekan||'')}</td><td style="padding:6px;border-bottom:1px solid #eee">${ev.tarih||''}</td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${fmt(c.ciroNet)}</td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${fmt(c.kar)}</td></tr>`;});
+    const firmaAd=document.getElementById('coName')?document.getElementById('coName').value:'';
+    const html=`
+      <div style="font-family:Helvetica,Arial,sans-serif;color:#1a1a1a;padding:30px;max-width:760px">
+        <div style="display:flex;justify-content:space-between;border-bottom:2px solid #1a1a1a;padding-bottom:12px;margin-bottom:18px">
+          <div><div style="font-size:18px;font-weight:800">${esc(firmaAd)||'KONSER PANEL'}</div><div style="font-size:12px;color:#555">Performans Raporu</div></div>
+          <div style="text-align:right;font-size:11px;color:#555"><div>Dönem: ${esc(rapDonemAd())}</div><div>Tarih: ${new Date().toLocaleDateString('tr-TR')}</div></div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:18px">
+          <tr><td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Toplam İş</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${evs.length}</b></td>
+              <td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Satılan Bilet</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${totalBilet.toLocaleString('tr-TR')}</b></td></tr>
+          <tr><td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Toplam Ciro (net)</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${fmt(totalCiro)}</b></td>
+              <td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Toplam Kâr</td><td style="padding:6px 8px;border:1px solid #ddd"><b>${fmt(totalKar)}</b></td></tr>
+        </table>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="background:#1a1a1a;color:#fff"><th style="padding:7px;text-align:left">Şehir</th><th style="padding:7px;text-align:left">Mekan</th><th style="padding:7px;text-align:left">Tarih</th><th style="padding:7px;text-align:right">Ciro</th><th style="padding:7px;text-align:right">Kâr</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+    const {jsPDF}=window.jspdf;
+    const tmp=document.createElement('div');
+    tmp.style.cssText='position:fixed;left:-9999px;top:0;width:780px;background:#fff';
+    tmp.innerHTML=html;document.body.appendChild(tmp);
+    const pdf=new jsPDF('p','pt','a4');
+    pdf.html(tmp,{callback:()=>{pdf.save('rapor-'+new Date().toISOString().slice(0,10)+'.pdf');document.body.removeChild(tmp);toast('✓ PDF raporu indirildi');},x:24,y:24,width:547,windowWidth:780});
+  }catch(e){toast('PDF oluşturulamadı');}
+}
+
 function renderAnaliz(){
-  const evs=events.map(ev=>({ev,c:computeFor(ev)}));
+  // dönem filtresi uygula
+  const evs=events.filter(ev=>rapTarihUyar(ev.tarih)).map(ev=>({ev,c:computeFor(ev)}));
+  const bilgiEl=document.getElementById('rapDonemBilgi');
+  if(bilgiEl)bilgiEl.textContent='Dönem: '+rapDonemAd()+' · '+evs.length+' iş';
   const oz=document.getElementById('anOzet');
   if(!evs.length){
-    oz.innerHTML='<div class="anEmpty" style="grid-column:1/-1">Henüz kayıtlı iş yok. Önce birkaç hesap kaydet.</div>';
-    ['anSehir','anDoluluk','anMekan','anTrend'].forEach(id=>document.getElementById(id).innerHTML='<div class="anEmpty">Veri yok.</div>');
+    oz.innerHTML='<div class="anEmpty" style="grid-column:1/-1">Bu dönemde kayıtlı iş yok.</div>';
+    ['anSehir','anDoluluk','anMekan','anTrend','anDagilim','anSanatci'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML='<div class="anEmpty">Veri yok.</div>';});
     return;
   }
   const totalCiro=evs.reduce((a,x)=>a+x.c.ciroNet,0);
   const totalKar=evs.reduce((a,x)=>a+x.c.kar,0);
+  const totalGider=evs.reduce((a,x)=>a+x.c.toplamGider+x.c.komisyon,0);
   const totalBilet=evs.reduce((a,x)=>a+(x.ev.satilan||0),0);
+  const ortKar=evs.length?totalKar/evs.length:0;
   oz.innerHTML=`
     <div class="stat"><div class="n">Toplam İş</div><div class="v">${evs.length}</div></div>
     <div class="stat"><div class="n">Toplam Ciro (net)</div><div class="v">${fmt(totalCiro)}</div></div>
-    <div class="stat"><div class="n">Toplam Kâr</div><div class="v ${totalKar>=0?'pos':'neg'}">${fmt(totalKar)}</div></div>
+    <div class="stat" style="border-color:${totalKar>=0?'var(--green)':'var(--red)'};background:${totalKar>=0?'rgba(90,209,154,0.07)':'rgba(240,122,122,0.07)'}"><div class="n">Toplam Kâr</div><div class="v ${totalKar>=0?'pos':'neg'}">${fmt(totalKar)}</div></div>
+    <div class="stat"><div class="n">İş Başı Ort. Kâr</div><div class="v ${ortKar>=0?'pos':'neg'}">${fmt(ortKar)}</div></div>
     <div class="stat"><div class="n">Satılan Bilet</div><div class="v">${totalBilet.toLocaleString('tr-TR')}</div></div>`;
 
+  // ── Gelir/Gider/Kâr dağılımı (yatay oran barları) ──
+  const dagilimEl=document.getElementById('anDagilim');
+  if(dagilimEl){
+    const maxD=Math.max(totalCiro,totalGider,Math.abs(totalKar),1);
+    dagilimEl.innerHTML=
+      bar('Ciro (net)',fmt(totalCiro),totalCiro/maxD)+
+      bar('Gider + Komisyon',fmt(totalGider),totalGider/maxD,true)+
+      bar('Net Kâr',fmt(totalKar),Math.abs(totalKar)/maxD,totalKar<0);
+  }
+
+  // ── Şehir ──
   const byCity={};
   evs.forEach(({ev,c})=>{
     const k=(ev.sehir||'—').toUpperCase().trim()||'—';
@@ -5173,15 +5326,17 @@ function renderAnaliz(){
   cityArr.forEach(c=>{html+=`<tr><td>${esc(c.k)}</td><td>${c.n}</td><td>${fmt(c.ciro)}</td><td class="${c.kar>=0?'pos':'neg'}">${fmt(c.kar)}</td><td>${c.bilet.toLocaleString('tr-TR')}</td><td>${c.dolN?'%'+Math.round(c.dol*100):'—'}</td></tr>`;});
   html+='</tbody></table>';
   const maxKar=Math.max(...cityArr.map(c=>Math.abs(c.kar)),1);
-  html+='<div style="margin-top:24px">'+cityArr.map(c=>bar(c.k,fmt(c.kar),Math.abs(c.kar)/maxKar,c.kar<0)).join('')+'</div>';
+  html+='<div style="margin-top:20px">'+cityArr.map(c=>bar(c.k,fmt(c.kar),Math.abs(c.kar)/maxKar,c.kar<0)).join('')+'</div>';
   document.getElementById('anSehir').innerHTML=html;
 
+  // ── Doluluk ──
   const dol=evs.filter(({ev})=>ev.kapasite>0&&ev.satilan>0)
     .map(({ev})=>({name:(ev.sehir||'')+' · '+(ev.mekan||''),r:ev.satilan/ev.kapasite,sat:ev.satilan,kap:ev.kapasite}))
     .sort((a,b)=>b.r-a.r);
   if(dol.length)document.getElementById('anDoluluk').innerHTML=dol.map(d=>bar(d.name,'%'+Math.round(d.r*100)+' ('+d.sat+'/'+d.kap+')',d.r)).join('');
   else document.getElementById('anDoluluk').innerHTML='<div class="anEmpty">Kapasite ve satılan bilet girilen iş yok.</div>';
 
+  // ── Mekan ──
   const byVen={};
   evs.forEach(({ev,c})=>{const k=(ev.mekan||'—').trim()||'—';if(!byVen[k])byVen[k]={n:0,ciro:0,kar:0};byVen[k].n++;byVen[k].ciro+=c.ciroNet;byVen[k].kar+=c.kar;});
   const venArr=Object.entries(byVen).map(([k,v])=>({k,...v})).sort((a,b)=>b.kar-a.kar);
@@ -5190,6 +5345,27 @@ function renderAnaliz(){
   vh+='</tbody></table>';
   document.getElementById('anMekan').innerHTML=vh;
 
+  // ── Sanatçı bazında (artistId → firma adı, yoksa p1ad) ──
+  const bySan={};
+  evs.forEach(({ev,c})=>{
+    let ad='—';
+    if(ev.artistId){const f=firms.find(x=>x.id===ev.artistId);if(f)ad=f.name;}
+    else if(ev.p1ad&&ev.p1ad!=='MAN FEE')ad=ev.p1ad;
+    if(!bySan[ad])bySan[ad]={n:0,ciro:0,kar:0};
+    bySan[ad].n++;bySan[ad].ciro+=c.ciroNet;bySan[ad].kar+=c.kar;
+  });
+  const sanArr=Object.entries(bySan).map(([k,v])=>({k,...v})).sort((a,b)=>b.kar-a.kar);
+  const sanEl=document.getElementById('anSanatci');
+  if(sanEl){
+    if(sanArr.length&&!(sanArr.length===1&&sanArr[0].k==='—')){
+      let sh='<table class="atable"><thead><tr><th>Sanatçı</th><th>İş</th><th>Ciro</th><th>Kâr</th></tr></thead><tbody>';
+      sanArr.forEach(s=>{sh+=`<tr><td>${esc(s.k)}</td><td>${s.n}</td><td>${fmt(s.ciro)}</td><td class="${s.kar>=0?'pos':'neg'}">${fmt(s.kar)}</td></tr>`;});
+      sh+='</tbody></table>';
+      sanEl.innerHTML=sh;
+    }else sanEl.innerHTML='<div class="anEmpty">İşlere sanatçı atanmamış. Yeni Etkinlik\'te sanatçı seçersen burada görünür.</div>';
+  }
+
+  // ── Zaman trendi ──
   const byMonth={};
   evs.forEach(({ev,c})=>{if(!ev.tarih)return;const m=ev.tarih.slice(0,7);if(!byMonth[m])byMonth[m]={ciro:0,kar:0,n:0};byMonth[m].ciro+=c.ciroNet;byMonth[m].kar+=c.kar;byMonth[m].n++;});
   const months=Object.keys(byMonth).sort();
