@@ -1580,6 +1580,19 @@ Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
           <div class="card-title">Zaman Trendi (aylık)</div>
           <div id="anTrend"></div>
         </div>
+
+        <div class="card">
+          <div class="card-title">🏆 En Yüksek Cirolu Konserler</div>
+          <div class="hint" style="margin-bottom:12px">Dönemin en çok ciro getiren ilk 5 konseri.</div>
+          <div id="anTop5"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🇹🇷 Türkiye Kapsama</div>
+          <div class="hint" style="margin-bottom:16px">81 ilden kaçına gidildi. Yeşil = konser yapıldı, gri = henüz gidilmedi.</div>
+          <div class="stat-grid" id="anKapsamaOzet" style="margin-bottom:18px"></div>
+          <div id="anKapsamaListe"></div>
+        </div>
       </div>
 
       <div id="view-users" style="display:none">
@@ -5324,6 +5337,9 @@ function raporPdfAktar(){
   }catch(e){toast('PDF oluşturulamadı');}
 }
 
+// Türkiye'nin 81 ili (kapsama raporu için)
+const TR_ILLER=['Adana','Adıyaman','Afyonkarahisar','Ağrı','Amasya','Ankara','Antalya','Artvin','Aydın','Balıkesir','Bilecik','Bingöl','Bitlis','Bolu','Burdur','Bursa','Çanakkale','Çankırı','Çorum','Denizli','Diyarbakır','Edirne','Elazığ','Erzincan','Erzurum','Eskişehir','Gaziantep','Giresun','Gümüşhane','Hakkari','Hatay','Isparta','Mersin','İstanbul','İzmir','Kars','Kastamonu','Kayseri','Kırklareli','Kırşehir','Kocaeli','Konya','Kütahya','Malatya','Manisa','Kahramanmaraş','Mardin','Muğla','Muş','Nevşehir','Niğde','Ordu','Rize','Sakarya','Samsun','Siirt','Sinop','Sivas','Tekirdağ','Tokat','Trabzon','Tunceli','Şanlıurfa','Uşak','Van','Yozgat','Zonguldak','Aksaray','Bayburt','Karaman','Kırıkkale','Batman','Şırnak','Bartın','Ardahan','Iğdır','Yalova','Karabük','Kilis','Osmaniye','Düzce'];
+
 function renderAnaliz(){
   rapDoldurSanatciPicker();
   const secSanatci=document.getElementById('rapSanatci')?document.getElementById('rapSanatci').value:'';
@@ -5338,7 +5354,8 @@ function renderAnaliz(){
   const oz=document.getElementById('anOzet');
   if(!evs.length){
     oz.innerHTML='<div class="anEmpty" style="grid-column:1/-1">Bu dönemde kayıtlı iş yok.</div>';
-    ['anSehir','anDoluluk','anMekan','anTrend','anDagilim','anSanatci'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML='<div class="anEmpty">Veri yok.</div>';});
+    ['anSehir','anDoluluk','anMekan','anTrend','anDagilim','anSanatci','anTop5','anKapsamaListe'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML='<div class="anEmpty">Veri yok.</div>';});
+    const ko=document.getElementById('anKapsamaOzet');if(ko)ko.innerHTML='';
     return;
   }
   const totalCiro=evs.reduce((a,x)=>a+x.c.ciroNet,0);
@@ -5428,6 +5445,56 @@ function renderAnaliz(){
       return bar(lbl,fmt(o.ciro)+' ciro · '+fmt(o.kar)+' kâr',o.ciro/maxC,o.kar<0);
     }).join('');
   }else document.getElementById('anTrend').innerHTML='<div class="anEmpty">Tarihli iş yok.</div>';
+
+  // ── En yüksek cirolu 5 konser ──
+  const top5=[...evs].sort((a,b)=>b.c.ciroNet-a.c.ciroNet).slice(0,5);
+  const top5El=document.getElementById('anTop5');
+  if(top5El){
+    if(top5.length){
+      let th='<table class="atable"><thead><tr><th>#</th><th>Şehir</th><th>Mekan</th><th>Tarih</th><th>Ciro</th><th>Kâr</th></tr></thead><tbody>';
+      top5.forEach((x,i)=>{th+=`<tr><td>${i+1}</td><td>${esc(x.ev.sehir||'')}</td><td>${esc(x.ev.mekan||'')}</td><td>${x.ev.tarih||''}</td><td>${fmt(x.c.ciroNet)}</td><td class="${x.c.kar>=0?'pos':'neg'}">${fmt(x.c.kar)}</td></tr>`;});
+      th+='</tbody></table>';
+      top5El.innerHTML=th;
+    }else top5El.innerHTML='<div class="anEmpty">Veri yok.</div>';
+  }
+
+  // ── 81 il kapsama ──
+  const gidilenSet=new Set();
+  evs.forEach(({ev})=>{
+    const s=(ev.sehir||'').trim();
+    if(!s)return;
+    // il adını normalize et (büyük/küçük harf duyarsız eşleştir)
+    const norm=TR_ILLER.find(il=>il.toLocaleLowerCase('tr')===s.toLocaleLowerCase('tr'));
+    if(norm)gidilenSet.add(norm); else gidilenSet.add(s); // listede yoksa da gidilmiş say
+  });
+  const gidilenSayi=gidilenSet.size;
+  const gidilmeyenSayi=Math.max(0,81-gidilenSayi);
+  const kapsamaOzet=document.getElementById('anKapsamaOzet');
+  if(kapsamaOzet)kapsamaOzet.innerHTML=`
+    <div class="stat" style="border-color:var(--green);background:rgba(90,209,154,0.07)"><div class="n">Gidilen İl</div><div class="v pos">${gidilenSayi}</div></div>
+    <div class="stat"><div class="n">Gidilmeyen İl</div><div class="v">${gidilmeyenSayi}</div></div>
+    <div class="stat"><div class="n">Kapsama Oranı</div><div class="v">%${Math.round(gidilenSayi/81*100)}</div></div>
+    <div class="stat"><div class="n">Toplam İl</div><div class="v">81</div></div>`;
+  const kapsamaListe=document.getElementById('anKapsamaListe');
+  if(kapsamaListe){
+    // gidilen şehirlerin ciro/iş bilgisi
+    const cityData={};
+    evs.forEach(({ev,c})=>{
+      const s=(ev.sehir||'').trim();if(!s)return;
+      const norm=TR_ILLER.find(il=>il.toLocaleLowerCase('tr')===s.toLocaleLowerCase('tr'))||s;
+      if(!cityData[norm])cityData[norm]={n:0,ciro:0};
+      cityData[norm].n++;cityData[norm].ciro+=c.ciroNet;
+    });
+    let lh='<div style="display:flex;flex-wrap:wrap;gap:8px">';
+    TR_ILLER.forEach(il=>{
+      const gidildi=gidilenSet.has(il);
+      const d=cityData[il];
+      const baslik=gidildi&&d?`${il}: ${d.n} konser · ${fmt(d.ciro)}`:il+' (gidilmedi)';
+      lh+=`<span title="${esc(baslik)}" style="padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;${gidildi?'background:rgba(90,209,154,0.15);color:var(--green);border:1px solid var(--green)':'background:var(--surface2);color:var(--muted);border:1px solid var(--border)'}">${il}${gidildi&&d?' ('+d.n+')':''}</span>`;
+    });
+    lh+='</div>';
+    kapsamaListe.innerHTML=lh;
+  }
 }
 
 // ── SANATÇI DETAY RAPORU (filtre seçilince) ──
