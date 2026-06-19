@@ -2248,6 +2248,12 @@ function calc(){
 }
 
 function gather(){
+  let kR = parseFloat(document.getElementById('kdvOran').value)||0;
+  if(String(document.getElementById('kdvOran').value||'').endsWith('x')) kR = -Math.abs(kR);
+
+  let kROrg = parseFloat(document.getElementById('kdvOranOrg').value)||0;
+  if(String(document.getElementById('kdvOranOrg').value||'').endsWith('x')) kROrg = -Math.abs(kROrg);
+
   return {
     id:editingId||('e'+Date.now()),
     savedAt:Date.now(),
@@ -2263,11 +2269,11 @@ function gather(){
     biletAdet:+document.getElementById('biletAdet').value||0,
     biletFiyat:+document.getElementById('biletFiyat').value||0,
     komOran:+document.getElementById('komOran').value||0,
-    kdvOran:parseFloat(document.getElementById('kdvOran').value)||0,
-    kdvHaricKapi:String(document.getElementById('kdvOran').value||'').endsWith('x'),
+    kdvOran: kR,
+    kdvHaricKapi: kR < 0,
     orgBedel:+document.getElementById('orgBedel').value||0,
-    kdvOranOrg:parseFloat(document.getElementById('kdvOranOrg').value)||0,
-    kdvHaricOrg:String(document.getElementById('kdvOranOrg').value||'').endsWith('x'),
+    kdvOranOrg: kROrg,
+    kdvHaricOrg: kROrg < 0,
     p1ad:document.getElementById('p1ad').value,p1pay:+document.getElementById('p1pay').value||0,
     p2ad:document.getElementById('p2ad').value,p2pay:+document.getElementById('p2pay').value||0,
     kase:readRows('kase'),gider:readRows('gider'),
@@ -2275,6 +2281,7 @@ function gather(){
     vadeler:readVadeler()
   };
 }
+  
 function restore(ev){
   editingId=ev.id;
   document.getElementById('sehir').value=ev.sehir||'';
