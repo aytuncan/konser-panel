@@ -2258,9 +2258,11 @@ function gather(){
     biletAdet:+document.getElementById('biletAdet').value||0,
     biletFiyat:+document.getElementById('biletFiyat').value||0,
     komOran:+document.getElementById('komOran').value||0,
-    kdvOran:document.getElementById('kdvOran').value||'20',
+    kdvOran:parseFloat(document.getElementById('kdvOran').value)||0,
+    kdvHaricKapi:String(document.getElementById('kdvOran').value||'').endsWith('x'),
     orgBedel:+document.getElementById('orgBedel').value||0,
-    kdvOranOrg:document.getElementById('kdvOranOrg').value||'20',
+    kdvOranOrg:parseFloat(document.getElementById('kdvOranOrg').value)||0,
+    kdvHaricOrg:String(document.getElementById('kdvOranOrg').value||'').endsWith('x'),
     p1ad:document.getElementById('p1ad').value,p1pay:+document.getElementById('p1pay').value||0,
     p2ad:document.getElementById('p2ad').value,p2pay:+document.getElementById('p2pay').value||0,
     kase:readRows('kase'),gider:readRows('gider'),
@@ -2286,9 +2288,12 @@ function restore(ev){
   document.getElementById('biletAdet').value=ev.biletAdet||'';
   document.getElementById('biletFiyat').value=ev.biletFiyat||'';
   document.getElementById('komOran').value=ev.komOran!=null?ev.komOran:15.75;
-  document.getElementById('kdvOran').value=ev.kdvOran!=null?ev.kdvOran:0;
+  // KDV dropdown değeri: hariç ise "20x", değilse "20"
+  const kdvKapiVal=(ev.kdvOran!=null?ev.kdvOran:20)+((ev.kdvHaricKapi||String(ev.kdvOran||'').endsWith('x'))?'x':'');
+  document.getElementById('kdvOran').value=String(ev.kdvOran||'').endsWith('x')?ev.kdvOran:kdvKapiVal;
   document.getElementById('orgBedel').value=ev.orgBedel||'';
-  document.getElementById('kdvOranOrg').value=ev.kdvOranOrg!=null?ev.kdvOranOrg:20;
+  const kdvOrgVal=(ev.kdvOranOrg!=null?ev.kdvOranOrg:20)+((ev.kdvHaricOrg||String(ev.kdvOranOrg||'').endsWith('x'))?'x':'');
+  document.getElementById('kdvOranOrg').value=String(ev.kdvOranOrg||'').endsWith('x')?ev.kdvOranOrg:kdvOrgVal;
   document.getElementById('p1ad').value=ev.p1ad||'';document.getElementById('p1pay').value=ev.p1pay;
   document.getElementById('p2ad').value=ev.p2ad||'';document.getElementById('p2pay').value=ev.p2pay;
   document.getElementById('kaseRows').innerHTML='';document.getElementById('giderRows').innerHTML='';
@@ -2404,9 +2409,11 @@ async function delEvent(id){
 }
 
 function computeFor(ev){
-  const kdvRaw=ev.tip==='KAPI'?ev.kdvOran:ev.kdvOranOrg;
-  const kdvHaric=String(kdvRaw||'').endsWith('x'); // hariç ise tutar net, üstüne KDV
-  const kdvRate=parseFloat(kdvRaw)||0;
+  const kdvRate=(ev.tip==='KAPI'?ev.kdvOran:ev.kdvOranOrg)||0;
+  // hariç mi? yeni kayıtlarda kdvHaricKapi/kdvHaricOrg alanı; eski kayıtlarda "20x" string olabilir
+  const kdvHaric=ev.tip==='KAPI'
+    ?(ev.kdvHaricKapi===true||String(ev.kdvOran||'').endsWith('x'))
+    :(ev.kdvHaricOrg===true||String(ev.kdvOranOrg||'').endsWith('x'));
   const kdvDiv=1+kdvRate/100;
   let ciroGross=0,komisyon=0;
   if(ev.tip==='KAPI'){
