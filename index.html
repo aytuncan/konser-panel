@@ -2204,7 +2204,7 @@ function compute(){
   const p1=(+document.getElementById('p1pay').value||0)/100;
   const p2=(+document.getElementById('p2pay').value||0)/100;
   return {kdvRate,ciroGross,ciroNet,komisyon,sumKase,sumGider,toplamGider,giderKdv,gelirKdv,netKdv,
-          giderNet,kar,p1amt:kar*p1,p2amt:kar*p2,kase,gider};
+          giderNet,kar,p1amt:kar*p1,p2amt:kar*p2,kase,gider,_haric:kdvHaric,_raw:kdvRaw};
 }
 
 function calc(){
@@ -2229,6 +2229,7 @@ function calc(){
   L.forEach(([k,v])=>{html+=`<div class="line"><span class="k">${k}</span><span class="v">${fmt(v)}</span></div>`;});
   html+=`<div class="line strong"><span class="k">Kâr / Zarar (KDV hariç)</span><span class="v">${fmt(c.kar)}</span></div>`;
   html+=`<div class="line sub"><span class="k">Net KDV (devlete/iade) — kâra dahil değil</span><span class="v">${fmt(c.netKdv)}</span></div>`;
+  html+=`<div class="line sub" style="color:#f5b13d"><span class="k">🔧 KDV modu (teşhis)</span><span class="v">oran=${c.kdvRate} · ${c._haric?'HARİÇ(+ekle)':'DAHİL'} · raw="${c._raw}"</span></div>`;
   document.getElementById('rLines').innerHTML=html;
   document.getElementById('rP1n').textContent=document.getElementById('p1ad').value||'1. Taraf';
   document.getElementById('rP2n').textContent=document.getElementById('p2ad').value||'2. Taraf';
