@@ -1958,8 +1958,12 @@ async function persist(ev){
   try{
     const exists=events.find(x=>x.id===ev.id);
     const res=await apiFetch('/api/events'+(exists?'/'+ev.id:''),{method:exists?'PUT':'POST',body:JSON.stringify(ev)});
-    if(!res||!res.ok){toast('Kaydedilemedi');}
-  }catch(e){toast('Kaydedilemedi');}
+    if(!res||!res.ok){
+      let detay='';
+      try{ if(res){ const t=await res.text(); detay=' ['+res.status+'] '+t.slice(0,120); } else detay=' [yanıt yok]'; }catch(e){}
+      toast('Kaydedilemedi'+detay);
+    }
+  }catch(e){toast('Kaydedilemedi: '+(e&&e.message?e.message.slice(0,120):'bilinmeyen hata'));}
 }
 async function removeStored(id){
   try{await apiFetch('/api/events/'+id,{method:'DELETE'});}catch(e){}
