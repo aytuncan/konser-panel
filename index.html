@@ -2170,8 +2170,11 @@ function calcTahsilat(){
 
 function compute(){
   // KDV oranı + mod: "20"=dahil, "20x"=hariç (üstüne ekle), "0"=yok
-  const kdvRawOrg=document.getElementById('kdvOranOrg').value||'20';
-  const kdvRawKapi=document.getElementById('kdvOran').value||'20';
+  const elOrg=document.getElementById('kdvOranOrg');
+  const elKapi=document.getElementById('kdvOran');
+  // seçili option'ı doğrudan oku (en sağlam yöntem)
+  const kdvRawOrg=(elOrg&&elOrg.options[elOrg.selectedIndex]?elOrg.options[elOrg.selectedIndex].value:elOrg.value)||'20';
+  const kdvRawKapi=(elKapi&&elKapi.options[elKapi.selectedIndex]?elKapi.options[elKapi.selectedIndex].value:elKapi.value)||'20';
   const kdvRaw=tip==='KAPI'?kdvRawKapi:kdvRawOrg;
   const kdvHaric=String(kdvRaw).endsWith('x'); // true ise girilen tutar KDV hariç
   const kdvRate=parseFloat(kdvRaw)||0;
