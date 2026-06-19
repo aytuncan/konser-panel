@@ -1057,6 +1057,7 @@ select option{background:var(--surface)}
           <div class="card">
             <div class="card-title">Cari Özet</div>
             <div class="stat-grid" id="saOzet"></div>
+            <div id="saAvansUyari" style="display:none;margin-top:16px;padding:12px 16px;border-radius:10px;background:rgba(99,102,241,0.08);border:1px solid var(--accent);font-size:13px;line-height:1.5"></div>
           </div>
 
           <div class="card">
@@ -4339,12 +4340,27 @@ function renderSanatci(){
   const odenen=hareketler.filter(h=>h.saTur==='odeme').reduce((a,h)=>a+h.amount,0);
   const giderler=hareketler.filter(h=>h.saTur==='gider').reduce((a,h)=>a+h.amount,0);
   const kalan=toplamPay-odenen-giderler;                       // sanatçıya hâlâ ödenecek
+  const fazla=kalan<-0.5?-kalan:0;                             // hak edişinden fazla ödenen (avans)
+
+  // durum kartı: kalan pozitifse "ödenecek", negatifse "fazla/avans"
+  const durumKart=fazla>0.5
+    ? `<div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.07)"><div class="n">💸 Fazla Ödenen (Avans)</div><div class="v" style="color:var(--accent)">${fmt(fazla)}</div></div>`
+    : `<div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Kalan (Ödenecek)</div><div class="v ${kalan>0.5?'neg':'pos'}">${fmt(kalan)}</div></div>`;
 
   document.getElementById('saOzet').innerHTML=`
     <div class="stat"><div class="n">Hak Ettiği Pay (%75)</div><div class="v">${fmt(toplamPay)}</div></div>
     <div class="stat"><div class="n">Ödenen</div><div class="v pos">${fmt(odenen)}</div></div>
     <div class="stat"><div class="n">Adına Gider</div><div class="v">${fmt(giderler)}</div></div>
-    <div class="stat" style="border-color:var(--accent);background:rgba(99,102,241,0.05)"><div class="n">Kalan (Ödenecek)</div><div class="v ${kalan>0.5?'neg':'pos'}">${fmt(kalan)}</div></div>`;
+    ${durumKart}`;
+
+  // fazla ödeme varsa açıklayıcı uyarı
+  const uyariEl=document.getElementById('saAvansUyari');
+  if(uyariEl){
+    if(fazla>0.5){
+      uyariEl.style.display='block';
+      uyariEl.innerHTML=`⚠️ Bu sanatçıya hak edişinden <b>${fmt(fazla)}</b> fazla (avans) ödeme yapılmış. Bu tutar sonraki konserlerin payından mahsup edilecek; sanatçı sana bu kadar "alacaklı görünmüyor", tersine avans almış durumda.`;
+    }else uyariEl.style.display='none';
+  }
 
   // konserler tablosu
   const kWrap=document.getElementById('saKonserler');
