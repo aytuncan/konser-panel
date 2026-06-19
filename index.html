@@ -731,13 +731,15 @@ select option{background:var(--surface)}
             <div>
   <label>KDV Durumu</label>
   <select id="kdvOran" onchange="calc()">
-    <option value="20">%20 Dahil</option>
-    <option value="10">%10 Dahil</option>
+    <option value="20">%20 Dahil (içinden ayrış)</option>
+    <option value="20x">%20 + Ekle (üstüne)</option>
+    <option value="10">%10 Dahil (içinden ayrış)</option>
+    <option value="10x">%10 + Ekle (üstüne)</option>
     <option value="0">KDV Yok</option>
   </select>
 </div>
           </div>
-          <div class="hint">Ciro = adet × fiyat. Komisyon ve KDV bu tutardan ayrıştırılır.</div>
+          <div class="hint">Ciro = adet × fiyat. "Dahil" = bu tutarın içinden KDV ayrışır. "+ Ekle" = tutar KDV hariç, üstüne KDV eklenir.</div>
         </div>
 
         <div class="card" id="orgBox" style="display:none">
@@ -747,13 +749,15 @@ select option{background:var(--surface)}
             <div>
   <label>KDV Durumu</label>
   <select id="kdvOranOrg" onchange="calc()">
-    <option value="20">%20 Dahil</option>
-    <option value="10">%10 Dahil</option>
+    <option value="20">%20 Dahil (içinden ayrış)</option>
+    <option value="20x">%20 + Ekle (üstüne)</option>
+    <option value="10">%10 Dahil (içinden ayrış)</option>
+    <option value="10x">%10 + Ekle (üstüne)</option>
     <option value="0">KDV Yok</option>
   </select>
 </div>
           </div>
-          <div class="hint">Komisyon yok. Bedel KDV dahil kabul edilir, içinden KDV ayrıştırılır.</div>
+          <div class="hint" id="orgKdvHint">"Dahil" = girdiğin bedelin içinden KDV ayrışır. "+ Ekle" = girdiğin bedel KDV hariç, üstüne KDV eklenir.</div>
         </div>
 
         <div class="card full" style="border-color:var(--border2)">
@@ -2161,17 +2165,25 @@ function calcTahsilat(){
 }
 
 function compute(){
-  const kdvRate=(tip==='KAPI'?+document.getElementById('kdvOran').value:+document.getElementById('kdvOranOrg').value)||0;
+  // KDV oranı + mod: "20"=dahil, "20x"=hariç (üstüne ekle), "0"=yok
+  const kdvRawOrg=document.getElementById('kdvOranOrg').value||'20';
+  const kdvRawKapi=document.getElementById('kdvOran').value||'20';
+  const kdvRaw=tip==='KAPI'?kdvRawKapi:kdvRawOrg;
+  const kdvHaric=String(kdvRaw).endsWith('x'); // true ise girilen tutar KDV hariç
+  const kdvRate=parseFloat(kdvRaw)||0;
   const kdvDiv=1+kdvRate/100;
   let ciroGross=0, komisyon=0;
   if(tip==='KAPI'){
     const adet=+document.getElementById('biletAdet').value||0;
     const fiyat=+document.getElementById('biletFiyat').value||0;
     const kom=(+document.getElementById('komOran').value||0)/100;
-    ciroGross=adet*fiyat;
+    const girilen=adet*fiyat;
+    // hariç ise girilen net kabul, gross = net × (1+oran); dahil ise girilen gross
+    ciroGross=(kdvRate>0&&kdvHaric)?girilen*kdvDiv:girilen;
     komisyon=ciroGross*kom;
   }else{
-    ciroGross=+document.getElementById('orgBedel').value||0;
+    const girilen=+document.getElementById('orgBedel').value||0;
+    ciroGross=(kdvRate>0&&kdvHaric)?girilen*kdvDiv:girilen;
   }
   const kase=readRows('kase'), gider=readRows('gider');
   const sumKase=kase.reduce((a,b)=>a+b.amount,0);
@@ -2246,9 +2258,9 @@ function gather(){
     biletAdet:+document.getElementById('biletAdet').value||0,
     biletFiyat:+document.getElementById('biletFiyat').value||0,
     komOran:+document.getElementById('komOran').value||0,
-    kdvOran:+document.getElementById('kdvOran').value||0,
+    kdvOran:document.getElementById('kdvOran').value||'20',
     orgBedel:+document.getElementById('orgBedel').value||0,
-    kdvOranOrg:+document.getElementById('kdvOranOrg').value||0,
+    kdvOranOrg:document.getElementById('kdvOranOrg').value||'20',
     p1ad:document.getElementById('p1ad').value,p1pay:+document.getElementById('p1pay').value||0,
     p2ad:document.getElementById('p2ad').value,p2pay:+document.getElementById('p2pay').value||0,
     kase:readRows('kase'),gider:readRows('gider'),
@@ -2392,11 +2404,19 @@ async function delEvent(id){
 }
 
 function computeFor(ev){
-  const kdvRate=(ev.tip==='KAPI'?ev.kdvOran:ev.kdvOranOrg)||0;
+  const kdvRaw=ev.tip==='KAPI'?ev.kdvOran:ev.kdvOranOrg;
+  const kdvHaric=String(kdvRaw||'').endsWith('x'); // hariç ise tutar net, üstüne KDV
+  const kdvRate=parseFloat(kdvRaw)||0;
   const kdvDiv=1+kdvRate/100;
   let ciroGross=0,komisyon=0;
-  if(ev.tip==='KAPI'){ciroGross=ev.biletAdet*ev.biletFiyat;komisyon=ciroGross*(ev.komOran/100);}
-  else ciroGross=ev.orgBedel;
+  if(ev.tip==='KAPI'){
+    const girilen=(ev.biletAdet||0)*(ev.biletFiyat||0);
+    ciroGross=(kdvRate>0&&kdvHaric)?girilen*kdvDiv:girilen;
+    komisyon=ciroGross*((ev.komOran||0)/100);
+  }else{
+    const girilen=ev.orgBedel||0;
+    ciroGross=(kdvRate>0&&kdvHaric)?girilen*kdvDiv:girilen;
+  }
   const all=[...(ev.kase||[]),...(ev.gider||[])];
   const sumKase=(ev.kase||[]).reduce((a,b)=>a+b.amount,0);
   const sumGider=(ev.gider||[]).reduce((a,b)=>a+b.amount,0);
