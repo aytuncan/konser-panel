@@ -936,8 +936,17 @@ select option{background:var(--surface)}
               </div>
             </div>
             <div><label>Açıklama</label><input id="accDesc" placeholder="Ofis kirası / fatura no vb." autocomplete="off"></div>
-            <div><label>Tutar (₺, KDV dahil)</label><input id="accAmount" type="number" min="0" placeholder="0"></div>
-            <div><label>KDV oranı (%)</label><input id="accKdv" type="number" min="0" value="20"></div>
+            <div><label>Tutar (₺)</label><input id="accAmount" type="number" min="0" placeholder="0"></div>
+            <div>
+              <label>KDV Durumu</label>
+              <select id="accKdv">
+                <option value="20">%20 Dahil (içinden ayrış)</option>
+                <option value="20x">%20 + Ekle (üstüne)</option>
+                <option value="10">%10 Dahil (içinden ayrış)</option>
+                <option value="10x">%10 + Ekle (üstüne)</option>
+                <option value="0">KDV Yok</option>
+              </select>
+            </div>
             <div>
               <label>Firma (rehberden)</label>
               <select id="accFirm"><option value="">— firma yok / seç —</option></select>
@@ -1224,7 +1233,7 @@ select option{background:var(--surface)}
             <div><label>Ücret (₺, KDV hariç)</label><input id="dFee" type="number" placeholder="270000"></div>
             <div>
               <label>KDV</label>
-              <select id="dKdv"><option value="20">%20 ekle</option><option value="0">KDV yok / dahil</option></select>
+              <select id="dKdv"><option value="20x">%20 + Ekle (üstüne)</option><option value="20">%20 Dahil (içinden)</option><option value="10x">%10 + Ekle (üstüne)</option><option value="10">%10 Dahil (içinden)</option><option value="0">KDV yok</option></select>
             </div>
             <div><label>Avans / kapora (₺)</label><input id="dAdvance" type="number" placeholder="0"></div>
             <div><label>Ödeme şekli</label><input id="dPayTerm" value="Bakiye etkinlik günü nakit/havale" autocomplete="off"></div>
@@ -2968,14 +2977,19 @@ function docData(){
   const co={};CO_FIELDS.forEach(f=>co[f]=document.getElementById(f).value);
   const g=id=>document.getElementById(id).value;
   const fee=+g('dFee')||0;
-  const kdvRate=+g('dKdv')||0;
-  const kdv=fee*kdvRate/100;
-  const total=fee+kdv;
+  const kdvRaw=g('dKdv')||'20x';
+  const kdvRate=parseFloat(kdvRaw)||0;
+  const kdvHaric=String(kdvRaw).endsWith('x'); // + Ekle modu
+  let net, kdv, total;
+  if(kdvRate>0){
+    if(kdvHaric){ net=fee; kdv=fee*kdvRate/100; total=fee+kdv; }      // ücret KDV hariç, üstüne ekle
+    else { total=fee; net=fee/(1+kdvRate/100); kdv=total-net; }        // ücret KDV dahil, içinden ayrış
+  }else{ net=fee; kdv=0; total=fee; }
   const advance=+g('dAdvance')||0;
   const dcId=g('dcPick');
   const firm=accEntries.find(x=>x.id===dcId && x.docClient)||null;
   return {co,artist:g('dArtist'),date:g('dDate'),venue:g('dVenue'),city:g('dCity'),
-    time:g('dTime'),soundcheck:g('dSoundcheck'),dur:g('dDur'),fee,kdvRate,kdv,total,advance,balance:total-advance,
+    time:g('dTime'),soundcheck:g('dSoundcheck'),dur:g('dDur'),fee:net,kdvRate,kdv,total,advance,balance:total-advance,
     payTerm:g('dPayTerm'),client:g('dClient'),clientAuth:g('dClientAuth'),clientPhone:g('dClientPhone'),clientMail:g('dClientMail'),
     firm,tech:g('dTech').split('\n').map(s=>s.trim()).filter(Boolean)};
 }
@@ -3533,7 +3547,7 @@ async function saveAcc(){
     desc,
     amount,
     yon:accYon,
-    kdv:+document.getElementById('accKdv').value||0,
+    kdv:(function(){const v=document.getElementById('accKdv').value||'20';const r=parseFloat(v)||0;return String(v).endsWith('x')?-r:r;})(),
     firmId:document.getElementById('accFirm').value||'',
     status:document.getElementById('accStatus').value||'bekliyor',
     fisLink:document.getElementById('accFisLink').value.trim()||'',
@@ -3551,7 +3565,8 @@ function editAcc(id){
   document.getElementById('accDate').value=e.date||'';
   document.getElementById('accDesc').value=e.desc||'';
   document.getElementById('accAmount').value=e.amount||'';
-  document.getElementById('accKdv').value=e.kdv!=null?e.kdv:0;
+  const accRaw=e.kdv!=null?e.kdv:20;
+  document.getElementById('accKdv').value=String(Math.abs(parseFloat(accRaw))||0)+((accRaw<0)?'x':'');
   refreshAccFirmPicker();
   document.getElementById('accFirm').value=e.firmId||'';
   document.getElementById('accStatus').value=e.status||'bekliyor';
@@ -3622,17 +3637,21 @@ function accAggregate(ayFilter){
     if(e.docClient)return; // karşı taraf rehberi ayrı
     if(e.type==='cfg'||e.type==='kdvodeme')return; // ayar/rehber + kdv ödeme kayıtları
     if(!ayUyar(e.date))return;
-    const div=1+(e.kdv||0)/100;
-    const net=e.kdv>0?e.amount/div:e.amount;
-    const kdvTutar=e.amount-net;
+    const oran=Math.abs(e.kdv||0);
+    const haric=(e.kdv||0)<0;            // negatif = "+ Ekle" (tutar KDV hariç)
+    let net, kdvTutar, brut;
+    if(oran>0){
+      if(haric){ net=e.amount; kdvTutar=e.amount*oran/100; brut=net+kdvTutar; }
+      else { brut=e.amount; net=e.amount/(1+oran/100); kdvTutar=brut-net; }
+    }else { net=e.amount; kdvTutar=0; brut=e.amount; }
     if(e.yon==='gelir'){
       hesaplananKdv+=kdvTutar;toplamGelir+=net;
       addAy(e.date,kdvTutar,0);
-      if(e.status!=='tamam'){alacak+=e.amount;ensureCari(e.firmId,firmName(e.firmId)).alacak+=e.amount;}
+      if(e.status!=='tamam'){alacak+=brut;ensureCari(e.firmId,firmName(e.firmId)).alacak+=brut;}
     }else{
       indirilecekKdv+=kdvTutar;toplamGider+=net;
       addAy(e.date,0,kdvTutar);
-      if(e.status!=='tamam'){borc+=e.amount;ensureCari(e.firmId,firmName(e.firmId)).borc+=e.amount;}
+      if(e.status!=='tamam'){borc+=brut;ensureCari(e.firmId,firmName(e.firmId)).borc+=brut;}
     }
   });
 
@@ -3730,10 +3749,12 @@ function muhasebeExcelAktar(){
     const gg=[['Tarih','Açıklama','Yön','Tutar (KDV dahil)','KDV %','Net','Durum','Firma']];
     accEntries.forEach(e=>{
       if(e.type==='cfg'||e.type==='kdvodeme'||e.recurring||e.artistPay||e.docClient)return;
-      const div=1+(e.kdv||0)/100;
-      const net=e.kdv>0?(e.amount||0)/div:(e.amount||0);
+      const oran=Math.abs(e.kdv||0);
+      const haric=(e.kdv||0)<0;
+      const net=oran>0?(haric?(e.amount||0):(e.amount||0)/(1+oran/100)):(e.amount||0);
+      const brut=oran>0&&haric?(e.amount||0)*(1+oran/100):(e.amount||0);
       const firma=(firms.find(f=>f.id===e.firmId)||{}).name||'';
-      gg.push([e.date||'',e.desc||'',e.yon==='gelir'?'Gelir':'Gider',R(e.amount||0),e.kdv||0,R(net),e.status||'',firma]);
+      gg.push([e.date||'',e.desc||'',e.yon==='gelir'?'Gelir':'Gider',R(brut),oran+(haric?' (+ekle)':' (dahil)'),R(net),e.status||'',firma]);
     });
     const wsGG=XLSX.utils.aoa_to_sheet(gg);
     wsGG['!cols']=[{wch:12},{wch:30},{wch:8},{wch:16},{wch:8},{wch:14},{wch:12},{wch:20}];
@@ -4943,7 +4964,8 @@ function renderDashboard(){
   let sirketGelirAlinan=0, sirketGiderOdenen=0, sirketGelirBekleyen=0, sirketGiderBekleyen=0;
   accEntries.forEach(e=>{
     if(e.type==='cfg'||e.type==='kdvodeme'||e.recurring||e.artistPay||e.docClient)return; // sadece normal gelir/gider
-    const tutar=e.amount||0;
+    const oran=Math.abs(e.kdv||0); const haric=(e.kdv||0)<0;
+    const tutar=(oran>0&&haric)?(e.amount||0)*(1+oran/100):(e.amount||0); // hariç ise kasaya brüt girer
     if(e.yon==='gelir'){
       if(e.status==='tamam')sirketGelirAlinan+=tutar; else sirketGelirBekleyen+=tutar;
     }else{
@@ -4961,7 +4983,8 @@ function renderDashboard(){
   accEntries.forEach(e=>{
     if(e.type==='cfg'||e.type==='kdvodeme'||e.recurring||e.artistPay||e.docClient)return;
     if(e.yon==='gelir'&&e.status==='tamam'){
-      const r=(e.kdv||0)/100; if(r>0)sirketKdv+=(e.amount||0)-(e.amount||0)/(1+r);
+      const oran=Math.abs(e.kdv||0); const haric=(e.kdv||0)<0;
+      if(oran>0){ sirketKdv+= haric ? (e.amount||0)*oran/100 : (e.amount||0)-(e.amount||0)/(1+oran/100); }
     }
   });
   // Toplam ödenecek KDV (kasadaki paranın içinden devlete gidecek)
