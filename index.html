@@ -1958,12 +1958,8 @@ async function persist(ev){
   try{
     const exists=events.find(x=>x.id===ev.id);
     const res=await apiFetch('/api/events'+(exists?'/'+ev.id:''),{method:exists?'PUT':'POST',body:JSON.stringify(ev)});
-    if(!res||!res.ok){
-      let detay='';
-      try{ if(res){ const t=await res.text(); detay=' ['+res.status+'] '+t.slice(0,120); } else detay=' [yanıt yok]'; }catch(e){}
-      toast('Kaydedilemedi'+detay);
-    }
-  }catch(e){toast('Kaydedilemedi: '+(e&&e.message?e.message.slice(0,120):'bilinmeyen hata'));}
+    if(!res||!res.ok){toast('Kaydedilemedi');}
+  }catch(e){toast('Kaydedilemedi');}
 }
 async function removeStored(id){
   try{await apiFetch('/api/events/'+id,{method:'DELETE'});}catch(e){}
@@ -2232,7 +2228,6 @@ function calc(){
   L.forEach(([k,v])=>{html+=`<div class="line"><span class="k">${k}</span><span class="v">${fmt(v)}</span></div>`;});
   html+=`<div class="line strong"><span class="k">Kâr / Zarar (KDV hariç)</span><span class="v">${fmt(c.kar)}</span></div>`;
   html+=`<div class="line sub"><span class="k">Net KDV (devlete/iade) — kâra dahil değil</span><span class="v">${fmt(c.netKdv)}</span></div>`;
-  html+=`<div class="line sub" style="color:#f5b13d"><span class="k">🔧 KDV modu (teşhis)</span><span class="v">oran=${c.kdvRate} · ${c._haric?'HARİÇ(+ekle)':'DAHİL'} · raw="${c._raw}"</span></div>`;
   document.getElementById('rLines').innerHTML=html;
   document.getElementById('rP1n').textContent=document.getElementById('p1ad').value||'1. Taraf';
   document.getElementById('rP2n').textContent=document.getElementById('p2ad').value||'2. Taraf';
@@ -2296,12 +2291,14 @@ function restore(ev){
   document.getElementById('biletAdet').value=ev.biletAdet||'';
   document.getElementById('biletFiyat').value=ev.biletFiyat||'';
   document.getElementById('komOran').value=ev.komOran!=null?ev.komOran:15.75;
-  // KDV dropdown değeri: hariç ise "20x", değilse "20"
-  const kdvKapiVal=(ev.kdvOran!=null?ev.kdvOran:20)+((ev.kdvHaricKapi||String(ev.kdvOran||'').endsWith('x'))?'x':'');
-  document.getElementById('kdvOran').value=String(ev.kdvOran||'').endsWith('x')?ev.kdvOran:kdvKapiVal;
+  // KDV dropdown değeri: oran + (hariç ise "x"). Örn: 20 + hariç → "20x"
+  const kapiRate=(ev.kdvOran!=null?ev.kdvOran:20);
+  const kapiHaric=(ev.kdvHaricKapi===true)||String(ev.kdvOran||'').endsWith('x');
+  document.getElementById('kdvOran').value=String(parseFloat(kapiRate)||0)+(kapiHaric?'x':'');
   document.getElementById('orgBedel').value=ev.orgBedel||'';
-  const kdvOrgVal=(ev.kdvOranOrg!=null?ev.kdvOranOrg:20)+((ev.kdvHaricOrg||String(ev.kdvOranOrg||'').endsWith('x'))?'x':'');
-  document.getElementById('kdvOranOrg').value=String(ev.kdvOranOrg||'').endsWith('x')?ev.kdvOranOrg:kdvOrgVal;
+  const orgRate=(ev.kdvOranOrg!=null?ev.kdvOranOrg:20);
+  const orgHaric=(ev.kdvHaricOrg===true)||String(ev.kdvOranOrg||'').endsWith('x');
+  document.getElementById('kdvOranOrg').value=String(parseFloat(orgRate)||0)+(orgHaric?'x':'');
   document.getElementById('p1ad').value=ev.p1ad||'';document.getElementById('p1pay').value=ev.p1pay;
   document.getElementById('p2ad').value=ev.p2ad||'';document.getElementById('p2pay').value=ev.p2pay;
   document.getElementById('kaseRows').innerHTML='';document.getElementById('giderRows').innerHTML='';
