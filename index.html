@@ -2248,12 +2248,6 @@ function calc(){
 }
 
 function gather(){
-  let kR = parseFloat(document.getElementById('kdvOran').value)||0;
-  if(String(document.getElementById('kdvOran').value||'').endsWith('x')) kR = -Math.abs(kR);
-
-  let kROrg = parseFloat(document.getElementById('kdvOranOrg').value)||0;
-  if(String(document.getElementById('kdvOranOrg').value||'').endsWith('x')) kROrg = -Math.abs(kROrg);
-
   return {
     id:editingId||('e'+Date.now()),
     savedAt:Date.now(),
@@ -2269,11 +2263,11 @@ function gather(){
     biletAdet:+document.getElementById('biletAdet').value||0,
     biletFiyat:+document.getElementById('biletFiyat').value||0,
     komOran:+document.getElementById('komOran').value||0,
-    kdvOran: kR,
-    kdvHaricKapi: kR < 0,
+    kdvOran:parseFloat(document.getElementById('kdvOran').value)||0,
+    kdvHaricKapi:String(document.getElementById('kdvOran').value||'').endsWith('x'),
     orgBedel:+document.getElementById('orgBedel').value||0,
-    kdvOranOrg: kROrg,
-    kdvHaricOrg: kROrg < 0,
+    kdvOranOrg:parseFloat(document.getElementById('kdvOranOrg').value)||0,
+    kdvHaricOrg:String(document.getElementById('kdvOranOrg').value||'').endsWith('x'),
     p1ad:document.getElementById('p1ad').value,p1pay:+document.getElementById('p1pay').value||0,
     p2ad:document.getElementById('p2ad').value,p2pay:+document.getElementById('p2pay').value||0,
     kase:readRows('kase'),gider:readRows('gider'),
@@ -2281,7 +2275,6 @@ function gather(){
     vadeler:readVadeler()
   };
 }
-  
 function restore(ev){
   editingId=ev.id;
   document.getElementById('sehir').value=ev.sehir||'';
@@ -2300,17 +2293,12 @@ function restore(ev){
   document.getElementById('biletAdet').value=ev.biletAdet||'';
   document.getElementById('biletFiyat').value=ev.biletFiyat||'';
   document.getElementById('komOran').value=ev.komOran!=null?ev.komOran:15.75;
-
-  const rKapi = ev.kdvOran||0;
-  const hKapi = rKapi < 0 || ev.kdvHaricKapi === true || String(rKapi).endsWith('x');
-  document.getElementById('kdvOran').value = Math.abs(parseFloat(rKapi)) + (hKapi ? 'x' : '');
-
+  // KDV dropdown değeri: hariç ise "20x", değilse "20"
+  const kdvKapiVal=(ev.kdvOran!=null?ev.kdvOran:20)+((ev.kdvHaricKapi||String(ev.kdvOran||'').endsWith('x'))?'x':'');
+  document.getElementById('kdvOran').value=String(ev.kdvOran||'').endsWith('x')?ev.kdvOran:kdvKapiVal;
   document.getElementById('orgBedel').value=ev.orgBedel||'';
-
-  const rOrg = ev.kdvOranOrg||0;
-  const hOrg = rOrg < 0 || ev.kdvHaricOrg === true || String(rOrg).endsWith('x');
-  document.getElementById('kdvOranOrg').value = Math.abs(parseFloat(rOrg)) + (hOrg ? 'x' : '');
-
+  const kdvOrgVal=(ev.kdvOranOrg!=null?ev.kdvOranOrg:20)+((ev.kdvHaricOrg||String(ev.kdvOranOrg||'').endsWith('x'))?'x':'');
+  document.getElementById('kdvOranOrg').value=String(ev.kdvOranOrg||'').endsWith('x')?ev.kdvOranOrg:kdvOrgVal;
   document.getElementById('p1ad').value=ev.p1ad||'';document.getElementById('p1pay').value=ev.p1pay;
   document.getElementById('p2ad').value=ev.p2ad||'';document.getElementById('p2pay').value=ev.p2pay;
   document.getElementById('kaseRows').innerHTML='';document.getElementById('giderRows').innerHTML='';
