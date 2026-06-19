@@ -2261,10 +2261,10 @@ function gather(){
     biletAdet:+document.getElementById('biletAdet').value||0,
     biletFiyat:+document.getElementById('biletFiyat').value||0,
     komOran:+document.getElementById('komOran').value||0,
-    kdvOran:parseFloat(document.getElementById('kdvOran').value)||0,
+    kdvOran:(function(){const v=document.getElementById('kdvOran').value||'20';const r=parseFloat(v)||0;return String(v).endsWith('x')?-r:r;})(),
     kdvHaricKapi:String(document.getElementById('kdvOran').value||'').endsWith('x'),
     orgBedel:+document.getElementById('orgBedel').value||0,
-    kdvOranOrg:parseFloat(document.getElementById('kdvOranOrg').value)||0,
+    kdvOranOrg:(function(){const v=document.getElementById('kdvOranOrg').value||'20';const r=parseFloat(v)||0;return String(v).endsWith('x')?-r:r;})(),
     kdvHaricOrg:String(document.getElementById('kdvOranOrg').value||'').endsWith('x'),
     p1ad:document.getElementById('p1ad').value,p1pay:+document.getElementById('p1pay').value||0,
     p2ad:document.getElementById('p2ad').value,p2pay:+document.getElementById('p2pay').value||0,
@@ -2291,14 +2291,14 @@ function restore(ev){
   document.getElementById('biletAdet').value=ev.biletAdet||'';
   document.getElementById('biletFiyat').value=ev.biletFiyat||'';
   document.getElementById('komOran').value=ev.komOran!=null?ev.komOran:15.75;
-  // KDV dropdown değeri: oran + (hariç ise "x"). Örn: 20 + hariç → "20x"
-  const kapiRate=(ev.kdvOran!=null?ev.kdvOran:20);
-  const kapiHaric=(ev.kdvHaricKapi===true)||String(ev.kdvOran||'').endsWith('x');
-  document.getElementById('kdvOran').value=String(parseFloat(kapiRate)||0)+(kapiHaric?'x':'');
+  // KDV dropdown: negatif oran = "+ Ekle (hariç)". Örn: -20 → "20x", 20 → "20"
+  const kapiRaw=(ev.kdvOran!=null?ev.kdvOran:20);
+  const kapiHaric=(kapiRaw<0)||(ev.kdvHaricKapi===true);
+  document.getElementById('kdvOran').value=String(Math.abs(parseFloat(kapiRaw))||0)+(kapiHaric?'x':'');
   document.getElementById('orgBedel').value=ev.orgBedel||'';
-  const orgRate=(ev.kdvOranOrg!=null?ev.kdvOranOrg:20);
-  const orgHaric=(ev.kdvHaricOrg===true)||String(ev.kdvOranOrg||'').endsWith('x');
-  document.getElementById('kdvOranOrg').value=String(parseFloat(orgRate)||0)+(orgHaric?'x':'');
+  const orgRaw=(ev.kdvOranOrg!=null?ev.kdvOranOrg:20);
+  const orgHaric=(orgRaw<0)||(ev.kdvHaricOrg===true);
+  document.getElementById('kdvOranOrg').value=String(Math.abs(parseFloat(orgRaw))||0)+(orgHaric?'x':'');
   document.getElementById('p1ad').value=ev.p1ad||'';document.getElementById('p1pay').value=ev.p1pay;
   document.getElementById('p2ad').value=ev.p2ad||'';document.getElementById('p2pay').value=ev.p2pay;
   document.getElementById('kaseRows').innerHTML='';document.getElementById('giderRows').innerHTML='';
@@ -2414,11 +2414,10 @@ async function delEvent(id){
 }
 
 function computeFor(ev){
-  const kdvRate=(ev.tip==='KAPI'?ev.kdvOran:ev.kdvOranOrg)||0;
-  // hariç mi? yeni kayıtlarda kdvHaricKapi/kdvHaricOrg alanı; eski kayıtlarda "20x" string olabilir
-  const kdvHaric=ev.tip==='KAPI'
-    ?(ev.kdvHaricKapi===true||String(ev.kdvOran||'').endsWith('x'))
-    :(ev.kdvHaricOrg===true||String(ev.kdvOranOrg||'').endsWith('x'));
+  const rawRate=(ev.tip==='KAPI'?ev.kdvOran:ev.kdvOranOrg)||0;
+  // negatif oran = "+ Ekle (hariç)" işareti; eski kayıtlarda kdvHaric alanı da olabilir
+  const kdvHaric=(rawRate<0)||(ev.tip==='KAPI'?ev.kdvHaricKapi===true:ev.kdvHaricOrg===true);
+  const kdvRate=Math.abs(rawRate);
   const kdvDiv=1+kdvRate/100;
   let ciroGross=0,komisyon=0;
   if(ev.tip==='KAPI'){
@@ -2470,9 +2469,9 @@ function eventToRows(ev){
   ];
   if(ev.tip==='KAPI'){
     rows.push(['Bilet adedi',ev.biletAdet],['Bilet fiyatı',ev.biletFiyat],
-      ['Komisyon oranı',ev.komOran/100],['KDV oranı',ev.kdvOran/100],[]);
+      ['Komisyon oranı',ev.komOran/100],['KDV oranı',Math.abs(ev.kdvOran)/100],[]);
   }else{
-    rows.push(['Organizatör bedeli',ev.orgBedel],['KDV oranı',ev.kdvOranOrg/100],[]);
+    rows.push(['Organizatör bedeli',ev.orgBedel],['KDV oranı',Math.abs(ev.kdvOranOrg)/100],[]);
   }
   rows.push(['KAŞE GİDERLERİ','Tutar','KDV?']);
   (ev.kase||[]).forEach(k=>rows.push([k.name,k.amount,k.kdv?'VAR':'YOK']));
