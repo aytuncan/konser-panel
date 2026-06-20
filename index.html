@@ -1033,7 +1033,8 @@ select option{background:var(--surface)}
 
         <div class="card">
           <div class="card-title">Kişi Bazında Toplam</div>
-          <div class="hint" style="margin-bottom:16px">Her kişi için: kaç işte kaşesi var, kaçı ödenmemiş, kaçı ödenmiş, toplam/kalan tutar ve genel durum.</div>
+          <div class="hint" style="margin-bottom:16px">Her kişi için: kaç işte kaşesi var, kaçı ödenmemiş, kaçı ödenmiş, toplam/kalan tutar ve genel durum. Bir kişiye tıkla → hangi konserlerde kaşesi var aşağıda açılır.</div>
+          <input id="eoKisiOzetArama" placeholder="🔍 Kişi ara..." autocomplete="off" oninput="renderEkipOdeme()" style="margin-bottom:14px">
           <div id="eoKisi"></div>
         </div>
 
@@ -5357,6 +5358,12 @@ function tumKaseler(){
   return arr;
 }
 
+// kişi satırını aç/kapa (konser detayı)
+function eoKisiAc(kid){
+  const row=document.getElementById(kid);
+  if(row)row.style.display=row.style.display==='none'?'table-row':'none';
+}
+
 function renderEkipOdeme(){
   const all=tumKaseler();
   // konser filtre dropdown'unu doldur (kaşesi olan konserler)
@@ -5385,25 +5392,33 @@ function renderEkipOdeme(){
   const byKisi={};
   all.forEach(k=>{
     const ad=(k.name||'(isimsiz)').trim();
-    if(!byKisi[ad])byKisi[ad]={toplam:0,odenen:0,kalan:0,adet:0,odenenAdet:0,acikAdet:0};
+    if(!byKisi[ad])byKisi[ad]={toplam:0,odenen:0,kalan:0,adet:0,odenenAdet:0,acikAdet:0,konserler:[]};
     byKisi[ad].toplam+=k.amount;
     byKisi[ad].adet++;
     if(k.odendi){byKisi[ad].odenen+=k.amount;byKisi[ad].odenenAdet++;}
     else{byKisi[ad].kalan+=k.amount;byKisi[ad].acikAdet++;}
+    byKisi[ad].konserler.push({
+      ad:(k.ev.sehir||'')+(k.ev.mekan?' · '+k.ev.mekan:''),
+      tarih:k.ev.tarih||'', amount:k.amount, odendi:!!k.odendi
+    });
   });
-  const kisiArr=Object.entries(byKisi).map(([ad,v])=>({ad,...v})).sort((a,b)=>b.kalan-a.kalan||b.toplam-a.toplam);
+  let kisiArr=Object.entries(byKisi).map(([ad,v])=>({ad,...v})).sort((a,b)=>b.kalan-a.kalan||b.toplam-a.toplam);
+  // arama filtresi
+  const kq=(document.getElementById('eoKisiOzetArama')?document.getElementById('eoKisiOzetArama').value:'').toLocaleLowerCase('tr').trim();
+  if(kq)kisiArr=kisiArr.filter(k=>k.ad.toLocaleLowerCase('tr').includes(kq));
   const kisiWrap=document.getElementById('eoKisi');
   if(!kisiArr.length){
-    kisiWrap.innerHTML='<div class="anEmpty">Henüz kaşe girilmiş iş yok.</div>';
+    kisiWrap.innerHTML='<div class="anEmpty">'+(kq?'Eşleşen kişi yok.':'Henüz kaşe girilmiş iş yok.')+'</div>';
   }else{
     let h='<table class="atable"><thead><tr><th>Kişi</th><th>İş</th><th>Ödenmeyen</th><th>Ödenen</th><th>Toplam</th><th>Kalan</th><th>Durum</th></tr></thead><tbody>';
-    kisiArr.forEach(k=>{
+    kisiArr.forEach((k,ki)=>{
       let durum,renk;
       if(k.acikAdet===0){durum='Tamamlandı';renk='pos';}
       else if(k.odenenAdet===0){durum='Hiç ödenmedi';renk='neg';}
       else{durum='Kısmi';renk='warn';}
-      h+=`<tr>
-        <td>${esc(k.ad)}</td>
+      const kid='eokisi_'+ki;
+      h+=`<tr style="cursor:pointer" onclick="eoKisiAc('${kid}')">
+        <td>▸ ${esc(k.ad)}</td>
         <td>${k.adet}</td>
         <td class="${k.acikAdet>0?'neg':''}">${k.acikAdet}</td>
         <td class="pos">${k.odenenAdet}</td>
@@ -5411,6 +5426,17 @@ function renderEkipOdeme(){
         <td class="${k.kalan>0.5?'neg':'pos'}">${fmt(k.kalan)}</td>
         <td><span class="vbadge ${renk}">${durum}</span></td>
       </tr>`;
+      // açılır detay satırı: konserler
+      const konserSatir=k.konserler
+        .slice().sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''))
+        .map(c=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+          <span>${esc(c.ad)||'(konser)'} ${c.tarih?'· '+trDate(c.tarih):''}</span>
+          <span>${fmt(c.amount)} <span class="vbadge ${c.odendi?'pos':'bekliyor'}" style="margin-left:8px">${c.odendi?'Ödendi':'Bekliyor'}</span></span>
+        </div>`).join('');
+      h+=`<tr id="${kid}" style="display:none"><td colspan="7" style="background:var(--surface2);padding:12px 16px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600">${esc(k.ad)} — konser bazında kaşeler:</div>
+        ${konserSatir}
+      </td></tr>`;
     });
     h+='</tbody></table>';
     kisiWrap.innerHTML=h;
