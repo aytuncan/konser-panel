@@ -2099,7 +2099,7 @@ function showTab(t){
   const muhAlt={mgenel:'genel',mgg:'gg',mcari:'cari',mkdv:'kdv'};
   const isMuh=Object.keys(muhAlt).includes(t);
   const activeView=isMuh?'odeme':t;
-  ['dashboard','new','saved','simulasyon','simdetay','odeme','ekipodeme','sanatci','szhazirla','szyapilan','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users','ayarlar'].forEach(id=>{
+  ['dashboard','new','saved','simulasyon','simdetay','odeme','ekipodeme','finansman','sanatci','szhazirla','szyapilan','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users','ayarlar'].forEach(id=>{
     const v=document.getElementById('view-'+id);
     if(v) v.style.display=(activeView===id)?'':'none';
   });
