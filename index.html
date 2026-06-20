@@ -1040,9 +1040,21 @@ select option{background:var(--surface)}
         <div class="card">
           <div class="card-title">İş Bazında Kaşeler</div>
           <div class="hint" style="margin-bottom:16px">Açık (ödenmemiş) kaşeler önce gösterilir. Tek tek "Ödendi" yapabilir ya da kutucukları seçip toplu ödeme işaretleyebilirsin.</div>
-          <div class="seg" style="margin-bottom:20px;max-width:340px">
+          <div class="seg" style="margin-bottom:16px;max-width:340px">
             <button id="eoSegAcik" class="on" onclick="setEoFilter(&#39;acik&#39;)">Ödenmemiş</button>
             <button id="eoSegTumu" onclick="setEoFilter(&#39;tumu&#39;)">Tümü</button>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+            <div style="flex:1;min-width:200px">
+              <label>Konsere göre filtrele</label>
+              <select id="eoKonserFiltre" onchange="renderEkipOdemeListe()">
+                <option value="">— Tüm konserler —</option>
+              </select>
+            </div>
+            <div style="flex:1;min-width:200px">
+              <label>Kişi ara</label>
+              <input id="eoKisiArama" placeholder="İsim ara..." autocomplete="off" oninput="renderEkipOdemeListe()">
+            </div>
           </div>
 
           <div id="topluBar" style="display:none;background:var(--accent-bg);border:1px solid var(--accent);border-radius:var(--radius);padding:16px;margin-bottom:16px">
@@ -5347,6 +5359,17 @@ function tumKaseler(){
 
 function renderEkipOdeme(){
   const all=tumKaseler();
+  // konser filtre dropdown'unu doldur (kaşesi olan konserler)
+  const kfSel=document.getElementById('eoKonserFiltre');
+  if(kfSel){
+    const cur=kfSel.value;
+    const konserMap={};
+    all.forEach(k=>{if(!konserMap[k.ev.id])konserMap[k.ev.id]={id:k.ev.id,ad:(k.ev.sehir||'')+(k.ev.mekan?' · '+k.ev.mekan:''),tarih:k.ev.tarih||''};});
+    const konserler=Object.values(konserMap).sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+    kfSel.innerHTML='<option value="">— Tüm konserler —</option>'+
+      konserler.map(k=>`<option value="${k.id}">${esc(k.ad)}${k.tarih?' ('+trDate(k.tarih)+')':''}</option>`).join('');
+    kfSel.value=cur;
+  }
   // özet
   const toplam=all.reduce((a,k)=>a+k.amount,0);
   const odenen=all.filter(k=>k.odendi).reduce((a,k)=>a+k.amount,0);
@@ -5400,6 +5423,12 @@ function renderEkipOdemeListe(){
   const all=tumKaseler();
   let liste=all;
   if(eoFilter==='acik')liste=all.filter(k=>!k.odendi);
+  // konser filtresi
+  const konserId=document.getElementById('eoKonserFiltre')?document.getElementById('eoKonserFiltre').value:'';
+  if(konserId)liste=liste.filter(k=>k.ev.id===konserId);
+  // kişi arama
+  const q=(document.getElementById('eoKisiArama')?document.getElementById('eoKisiArama').value:'').toLocaleLowerCase('tr').trim();
+  if(q)liste=liste.filter(k=>(k.name||'').toLocaleLowerCase('tr').includes(q));
   // sırala: önce ödenmemiş, sonra işe göre tarih
   liste=liste.slice().sort((a,b)=>{
     if(a.odendi!==b.odendi)return a.odendi?1:-1;
@@ -5407,7 +5436,7 @@ function renderEkipOdemeListe(){
   });
   const wrap=document.getElementById('eoListe');
   if(!liste.length){
-    wrap.innerHTML='<div class="anEmpty">'+(eoFilter==='acik'?'Ödenmemiş Ekip Kaşesi yok. Hepsi ödendi 🎉':'Kaşe yok.')+'</div>';
+    wrap.innerHTML='<div class="anEmpty">'+(q||konserId?'Eşleşen kaşe yok.':(eoFilter==='acik'?'Ödenmemiş Ekip Kaşesi yok. Hepsi ödendi 🎉':'Kaşe yok.'))+'</div>';
     return;
   }
   wrap.innerHTML='';
