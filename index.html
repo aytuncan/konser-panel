@@ -4982,9 +4982,16 @@ function renderDashboard(){
     menajerBekleyen+=menajerToplam*(1-oran);
     // tahsil edilen kısmın içindeki KDV (net KDV, tahsil oranıyla)
     tahsilEdilenKdv+=c.netKdv*oran;
-    // kaşe ve konser gideri: tahsil edilen orana denk kısmı kasadan düşülür
-    kaseDusulen+=c.sumKase*oran;
-    kaseBekleyen+=c.sumKase*(1-oran);
+    // KAŞE: sadece FİİLEN ÖDENEN kaşeler kasadan düşer (ödediysen para cebinden gitti, tam düşer).
+    // Ödenmemiş kaşe kasada durmaya devam eder.
+    let kaseOdenenBuIs=0, kaseAcikBuIs=0;
+    (ev.kase||[]).forEach(k=>{
+      const tutar=k.amount||0;
+      if(k.odendi)kaseOdenenBuIs+=tutar; else kaseAcikBuIs+=tutar;
+    });
+    kaseDusulen+=kaseOdenenBuIs;        // ödenen kaşeler tam düşer
+    kaseBekleyen+=kaseAcikBuIs;         // ödenmemiş kaşeler (kasada duruyor)
+    // konser gideri: tahsil edilen orana denk kısmı kasadan düşülür (eskisi gibi)
     konserGiderDusulen+=c.sumGider*oran;
   });
   // Sanatçı Hesabı'ndan yapılan ödemeler + sanatçı adına giderler (kasadan fiilen çıkan para)
