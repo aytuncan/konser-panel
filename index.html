@@ -1041,8 +1041,9 @@ select option{background:var(--surface)}
         <div class="card">
           <div class="card-title">İş Bazında Kaşeler</div>
           <div class="hint" style="margin-bottom:16px">Açık (ödenmemiş) kaşeler önce gösterilir. Tek tek "Ödendi" yapabilir ya da kutucukları seçip toplu ödeme işaretleyebilirsin.</div>
-          <div class="seg" style="margin-bottom:16px;max-width:340px">
+          <div class="seg" style="margin-bottom:16px;max-width:460px">
             <button id="eoSegAcik" class="on" onclick="setEoFilter(&#39;acik&#39;)">Ödenmemiş</button>
+            <button id="eoSegOdendi" onclick="setEoFilter(&#39;odendi&#39;)">Ödenmiş</button>
             <button id="eoSegTumu" onclick="setEoFilter(&#39;tumu&#39;)">Tümü</button>
           </div>
           <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">
@@ -5342,6 +5343,7 @@ let eoFilter='acik';
 function setEoFilter(f){
   eoFilter=f;
   document.getElementById('eoSegAcik').classList.toggle('on',f==='acik');
+  document.getElementById('eoSegOdendi').classList.toggle('on',f==='odendi');
   document.getElementById('eoSegTumu').classList.toggle('on',f==='tumu');
   renderEkipOdemeListe();
 }
@@ -5449,6 +5451,7 @@ function renderEkipOdemeListe(){
   const all=tumKaseler();
   let liste=all;
   if(eoFilter==='acik')liste=all.filter(k=>!k.odendi);
+  else if(eoFilter==='odendi')liste=all.filter(k=>k.odendi);
   // konser filtresi
   const konserId=document.getElementById('eoKonserFiltre')?document.getElementById('eoKonserFiltre').value:'';
   if(konserId)liste=liste.filter(k=>k.ev.id===konserId);
@@ -5462,7 +5465,7 @@ function renderEkipOdemeListe(){
   });
   const wrap=document.getElementById('eoListe');
   if(!liste.length){
-    wrap.innerHTML='<div class="anEmpty">'+(q||konserId?'Eşleşen kaşe yok.':(eoFilter==='acik'?'Ödenmemiş Ekip Kaşesi yok. Hepsi ödendi 🎉':'Kaşe yok.'))+'</div>';
+    wrap.innerHTML='<div class="anEmpty">'+(q||konserId?'Eşleşen kaşe yok.':(eoFilter==='acik'?'Ödenmemiş Ekip Kaşesi yok. Hepsi ödendi 🎉':(eoFilter==='odendi'?'Henüz ödenmiş kaşe yok.':'Kaşe yok.')))+'</div>';
     return;
   }
   wrap.innerHTML='';
