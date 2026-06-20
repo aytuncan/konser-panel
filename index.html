@@ -1003,6 +1003,13 @@ select option{background:var(--surface)}
         </div>
 
         <div class="card" data-mtab="gg">
+          <div class="card-title">📄 Banka Ekstresi Yükle</div>
+          <div class="hint" style="margin-bottom:16px">Bankadan indirdiğin Excel (.xlsx/.xls) veya CSV ekstreyi yükle. Sistem hareketleri okuyup tablo halinde gösterir. (Şimdilik sadece görüntüleme — işleme/kaydetme sonraki adımda eklenecek.)</div>
+          <input type="file" id="bankaFile" accept=".xlsx,.xls,.csv" onchange="bankaEkstreOku(event)" style="margin-bottom:14px">
+          <div id="bankaSonuc"></div>
+        </div>
+
+        <div class="card" data-mtab="gg">
           <div class="card-title">Tüm İşlemler</div>
           <div class="seg" style="margin-bottom:16px">
             <button id="accFltAll" class="on" onclick="setAccFilter('all')">Tümü</button>
@@ -3555,6 +3562,80 @@ function resetAccForm(){
   document.getElementById('accFormTitle').textContent='Yeni İşlem (konser dışı)';
   document.getElementById('accSaveBtn').textContent='İşlemi kaydet';
 }
+// ── BANKA EKSTRESİ OKUMA (şimdilik sadece görüntüleme) ──
+let bankaSatirlar=[];
+function bankaEkstreOku(event){
+  const file=event.target.files[0];
+  if(!file){return;}
+  const sonuc=document.getElementById('bankaSonuc');
+  sonuc.innerHTML='<div class="hint">Okunuyor...</div>';
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=new Uint8Array(e.target.result);
+      const wb=XLSX.read(data,{type:'array',cellDates:true});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+      if(!rows.length){sonuc.innerHTML='<div class="anEmpty">Dosya boş veya okunamadı.</div>';return;}
+      bankaIsle(rows);
+    }catch(err){
+      sonuc.innerHTML='<div class="anEmpty">Dosya okunamadı. Excel (.xlsx/.xls) veya CSV olduğundan emin ol.</div>';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function bankaIsle(rows){
+  const sonuc=document.getElementById('bankaSonuc');
+  // başlık satırını bul: "tarih" geçen ilk satır
+  let baslikIdx=-1;
+  for(let i=0;i<Math.min(rows.length,15);i++){
+    const satir=rows[i].map(c=>String(c).toLocaleLowerCase('tr'));
+    if(satir.some(c=>c.includes('tarih'))&&satir.some(c=>c.includes('tutar')||c.includes('işlem')||c.includes('aç')||c.includes('borç')||c.includes('alacak'))){
+      baslikIdx=i;break;
+    }
+  }
+  let basliklar, veriler;
+  if(baslikIdx>=0){
+    basliklar=rows[baslikIdx].map(c=>String(c).trim());
+    veriler=rows.slice(baslikIdx+1).filter(r=>r.some(c=>String(c).trim()!==''));
+  }else{
+    // başlık bulunamadı: ilk satırı başlık say
+    basliklar=rows[0].map((c,i)=>String(c).trim()||('Sütun '+(i+1)));
+    veriler=rows.slice(1).filter(r=>r.some(c=>String(c).trim()!==''));
+  }
+  bankaSatirlar=veriler;
+  // sütun indekslerini tahmin et
+  const lc=basliklar.map(b=>String(b).toLocaleLowerCase('tr'));
+  const bul=(...anahtarlar)=>lc.findIndex(b=>anahtarlar.some(a=>b.includes(a)));
+  const iTarih=bul('tarih','date');
+  const iAcik=bul('açıklama','aciklama','description','detay','işlem açık');
+  const iTutar=bul('tutar','amount','işlem tutar');
+  const iBorc=bul('borç','borc','çıkış','cikis');
+  const iAlacak=bul('alacak','giriş','giris');
+
+  let html=`<div class="hint" style="margin-bottom:12px">✓ ${veriler.length} hareket okundu. ${baslikIdx>=0?'Başlık otomatik bulundu.':'Başlık bulunamadı, ilk satır başlık kabul edildi.'}</div>`;
+  html+='<div style="overflow-x:auto"><table class="atable"><thead><tr><th>#</th>';
+  basliklar.forEach(b=>{html+=`<th>${esc(String(b))}</th>`;});
+  html+='</tr></thead><tbody>';
+  veriler.slice(0,100).forEach((r,idx)=>{
+    html+=`<tr><td>${idx+1}</td>`;
+    basliklar.forEach((b,ci)=>{html+=`<td>${esc(String(r[ci]!=null?r[ci]:''))}</td>`;});
+    html+='</tr>';
+  });
+  html+='</tbody></table></div>';
+  if(veriler.length>100)html+=`<div class="hint" style="margin-top:8px">İlk 100 satır gösteriliyor (toplam ${veriler.length}).</div>`;
+  // algılanan sütunlar bilgisi
+  html+='<div class="hint" style="margin-top:12px">🔍 Algılanan sütunlar: '+
+    [iTarih>=0?'Tarih ('+basliklar[iTarih]+')':null,
+     iAcik>=0?'Açıklama ('+basliklar[iAcik]+')':null,
+     iTutar>=0?'Tutar ('+basliklar[iTutar]+')':null,
+     iBorc>=0?'Borç/Çıkış ('+basliklar[iBorc]+')':null,
+     iAlacak>=0?'Alacak/Giriş ('+basliklar[iAlacak]+')':null
+    ].filter(Boolean).join(' · ')+'</div>';
+  html+='<div class="hint" style="margin-top:8px;font-style:italic">Not: Bu hareketleri muhasebeye işleme (Gelir/Gider/Finansman olarak kaydetme) bir sonraki adımda eklenecek. Şimdilik sadece görüntüleme.</div>';
+  sonuc.innerHTML=html;
+}
+
 async function saveAcc(){
   const amount=+document.getElementById('accAmount').value||0;
   const desc=document.getElementById('accDesc').value.trim();
