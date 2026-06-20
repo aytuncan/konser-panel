@@ -938,10 +938,13 @@ select option{background:var(--surface)}
             </div>
             <div id="accFinYonWrap" style="display:none">
               <label>Finansman tipi</label>
-              <div class="seg">
-                <button id="accFinGiris" class="on" onclick="setFinYon(&#39;giris&#39;)">Giriş (kredi/borç aldım)</button>
-                <button id="accFinCikis" onclick="setFinYon(&#39;cikis&#39;)">Çıkış (taksit/geri ödeme)</button>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <button type="button" id="accFinAldim" class="btn ghost on" onclick="setFinYon(&#39;aldim&#39;)" style="font-size:13px">📥 Borç Aldım (+)</button>
+                <button type="button" id="accFinOdedim" class="btn ghost" onclick="setFinYon(&#39;odedim&#39;)" style="font-size:13px">📤 Geri Ödedim (−)</button>
+                <button type="button" id="accFinVerdim" class="btn ghost" onclick="setFinYon(&#39;verdim&#39;)" style="font-size:13px">💸 Borç Verdim (−)</button>
+                <button type="button" id="accFinTahsil" class="btn ghost" onclick="setFinYon(&#39;tahsil&#39;)" style="font-size:13px">💰 Tahsil Ettim (+)</button>
               </div>
+              <div class="hint" id="accFinHint" style="margin-top:6px">Borç Aldım: kasaya para girer, borcun artar.</div>
             </div>
             <div><label>Açıklama</label><input id="accDesc" placeholder="Ofis kirası / fatura no vb." autocomplete="off"></div>
             <div><label>Tutar (₺)</label><input id="accAmount" type="number" min="0" placeholder="0"></div>
@@ -3395,7 +3398,7 @@ let accYon='gelir';
 async function loadAcc(){
   try{const res=await apiFetch('/api/acc');if(!res){accEntries=[];return;}accEntries=await res.json();}catch(e){accEntries=[];}
 }
-let accFinYon='giris';
+let accFinYon='aldim';
 function setAccYon(y){
   accYon=y;
   document.getElementById('accYonGelir').classList.toggle('on',y==='gelir');
@@ -3407,8 +3410,16 @@ function setAccYon(y){
 }
 function setFinYon(y){
   accFinYon=y;
-  document.getElementById('accFinGiris').classList.toggle('on',y==='giris');
-  document.getElementById('accFinCikis').classList.toggle('on',y==='cikis');
+  const map={aldim:'accFinAldim',odedim:'accFinOdedim',verdim:'accFinVerdim',tahsil:'accFinTahsil'};
+  Object.values(map).forEach(id=>{const b=document.getElementById(id);if(b)b.classList.remove('on');});
+  const btn=document.getElementById(map[y]);if(btn)btn.classList.add('on');
+  const hints={
+    aldim:'Borç Aldım: kasaya para girer, borcun artar.',
+    odedim:'Geri Ödedim: kasadan çıkar, borcun azalır.',
+    verdim:'Borç Verdim: kasadan çıkar, alacağın artar.',
+    tahsil:'Tahsil Ettim: kasaya girer, alacağın azalır.'
+  };
+  const h=document.getElementById('accFinHint');if(h)h.textContent=hints[y]||'';
 }
 
 // ── AYLIK SABİT ÖDEMELER (acc içinde recurring:true) ─────
@@ -3692,7 +3703,7 @@ function editAcc(id){
   document.getElementById('accFisLink').value=e.fisLink||'';
   document.getElementById('accFaturaLink').value=e.faturaLink||'';
   setAccYon(e.type==='finansman'?'finansman':(e.yon||'gelir'));
-  if(e.type==='finansman')setFinYon(e.finYon||'giris');
+  if(e.type==='finansman')setFinYon(e.finYon||'aldim');
   document.getElementById('accFormTitle').textContent='İşlem Düzenle';
   document.getElementById('accSaveBtn').textContent='Değişiklikleri kaydet';
   document.getElementById('accFormTitle').scrollIntoView({behavior:'smooth'});
@@ -4078,10 +4089,12 @@ function renderAcc(){
     if(e.docClient)return; // karşı taraf rehberi kendi kartında
     if(e.type==='cfg'||e.type==='kdvodeme')return; // ayar/rehber + kdv ödeme
     if(e.type==='finansman'){
-      const giris=e.finYon!=='cikis';
+      let fy=e.finYon; if(fy==='giris')fy='aldim'; if(fy==='cikis')fy='odedim';
+      const etiket={aldim:'Borç aldım (kasa +)',odedim:'Geri ödedim (kasa −)',verdim:'Borç verdim (kasa −)',tahsil:'Tahsil ettim (kasa +)'}[fy]||'Finansman';
+      const kasaArti=(fy==='aldim'||fy==='tahsil'); // kasaya giren
       items.push({kind:'F',id:e.id,date:e.date||'',title:'💳 '+(e.desc||'Finansman'),
-        sub:(giris?'Kredi/Borç girişi':'Taksit/Geri ödeme')+' · kâra dahil değil',
-        amount:e.amount,yon:giris?'gelir':'gider',status:'tamam',isFin:true});
+        sub:etiket+' · kâra dahil değil',
+        amount:e.amount,yon:kasaArti?'gelir':'gider',status:'tamam',isFin:true});
       return;
     }
     items.push({kind:'M',id:e.id,date:e.date||'',title:e.desc,
@@ -5112,14 +5125,24 @@ function renderDashboard(){
   const odenenToplam=kaseDusulen+konserGiderDusulen+sanatciOdeme+sirketGiderOdenen;
   // Eldeki net = tahsil edilen − çıkan (KDV dahil, fiziksel kasa)
   const eldekiNet=tahsilEdilen-odenenToplam;
-  // Finansman (kredi/borç): giriş kasayı artırır, çıkış (taksit) azaltır. Kâra/KDV'ye girmez.
-  let finGiris=0, finCikis=0;
+  // Finansman 4 tip: aldim(+borç,kasa+) odedim(-borç,kasa-) verdim(+alacak,kasa-) tahsil(-alacak,kasa+)
+  let borcAldim=0, borcOdedim=0, borcVerdim=0, borcTahsil=0;
   accEntries.forEach(e=>{
     if(e.type!=='finansman')return;
-    if(e.finYon==='cikis')finCikis+=(e.amount||0); else finGiris+=(e.amount||0);
+    const t=e.amount||0;
+    // geriye uyumluluk: eski 'giris'→aldim, 'cikis'→odedim
+    let fy=e.finYon;
+    if(fy==='giris')fy='aldim'; if(fy==='cikis')fy='odedim';
+    if(fy==='aldim')borcAldim+=t;
+    else if(fy==='odedim')borcOdedim+=t;
+    else if(fy==='verdim')borcVerdim+=t;
+    else if(fy==='tahsil')borcTahsil+=t;
   });
-  const finNet=finGiris-finCikis;        // kasadaki net finansman etkisi
-  const kalanBorc=Math.max(0,finGiris-finCikis); // henüz geri ödenmemiş borç
+  // kasa etkisi: aldım(+) ödedim(−) verdim(−) tahsil(+)
+  const finNet=borcAldim-borcOdedim-borcVerdim+borcTahsil;
+  const kalanBorc=Math.max(0,borcAldim-borcOdedim);    // senin borcun (geri ödenmemiş)
+  const kalanAlacak=Math.max(0,borcVerdim-borcTahsil); // senin alacağın (tahsil edilmemiş)
+  const finVar=borcAldim>0||borcOdedim>0||borcVerdim>0||borcTahsil>0;
   // Tahsil edilen şirket gelirinin KDV'si (kdv oranına göre içinden ayrıştır)
   let sirketKdv=0;
   accEntries.forEach(e=>{
@@ -5155,7 +5178,8 @@ function renderDashboard(){
     <div class="stat"><div class="n">Kalan Ödenecek KDV</div><div class="v ${odenecekKdv>0?'neg':'pos'}">${fmt(odenecekKdv)}</div></div>
     <div class="stat"><div class="n">KDV Sonrası Net</div><div class="v ${eldekiKdvsiz>=0?'pos':'neg'}">${fmt(eldekiKdvsiz)}${netTip}</div></div>
     <div class="stat"><div class="n">Bekleyen Alacak</div><div class="v">${fmt(bekleyen)}</div></div>
-    ${finGiris>0||finCikis>0?`<div class="stat" style="border-color:${kalanBorc>0?'var(--red)':'var(--green)'};background:${kalanBorc>0?'rgba(240,122,122,0.07)':'rgba(90,209,154,0.05)'}"><div class="n">💳 Kalan Borç (Kredi)</div><div class="v ${kalanBorc>0?'neg':'pos'}">${fmt(kalanBorc)}</div></div>`:''}`;
+    ${finVar&&kalanBorc>0?`<div class="stat" style="border-color:var(--red);background:rgba(240,122,122,0.07)"><div class="n">💳 Kalan Borç (benim borcum)</div><div class="v neg">${fmt(kalanBorc)}</div></div>`:''}
+    ${finVar&&kalanAlacak>0?`<div class="stat" style="border-color:var(--amber);background:rgba(245,177,61,0.07)"><div class="n">🤝 Kalan Alacak (verdiğim borç)</div><div class="v" style="color:var(--amber)">${fmt(kalanAlacak)}</div></div>`:''}`;
 
   // özet kartları
   let buAyKar=0, acikAlacak=0;
