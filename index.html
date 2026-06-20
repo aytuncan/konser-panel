@@ -933,6 +933,14 @@ select option{background:var(--surface)}
               <div class="seg">
                 <button id="accYonGelir" class="on" onclick="setAccYon(&#39;gelir&#39;)">GELİR</button>
                 <button id="accYonGider" onclick="setAccYon(&#39;gider&#39;)">GİDER</button>
+                <button id="accYonFin" onclick="setAccYon(&#39;finansman&#39;)">FİNANSMAN</button>
+              </div>
+            </div>
+            <div id="accFinYonWrap" style="display:none">
+              <label>Finansman tipi</label>
+              <div class="seg">
+                <button id="accFinGiris" class="on" onclick="setFinYon(&#39;giris&#39;)">Giriş (kredi/borç aldım)</button>
+                <button id="accFinCikis" onclick="setFinYon(&#39;cikis&#39;)">Çıkış (taksit/geri ödeme)</button>
               </div>
             </div>
             <div><label>Açıklama</label><input id="accDesc" placeholder="Ofis kirası / fatura no vb." autocomplete="off"></div>
@@ -3366,10 +3374,20 @@ let accYon='gelir';
 async function loadAcc(){
   try{const res=await apiFetch('/api/acc');if(!res){accEntries=[];return;}accEntries=await res.json();}catch(e){accEntries=[];}
 }
+let accFinYon='giris';
 function setAccYon(y){
   accYon=y;
   document.getElementById('accYonGelir').classList.toggle('on',y==='gelir');
   document.getElementById('accYonGider').classList.toggle('on',y==='gider');
+  const finBtn=document.getElementById('accYonFin');if(finBtn)finBtn.classList.toggle('on',y==='finansman');
+  // finansman seçilince alt seçim + KDV gizle (kredide KDV yok)
+  const finWrap=document.getElementById('accFinYonWrap');if(finWrap)finWrap.style.display=y==='finansman'?'block':'none';
+  const kdvEl=document.getElementById('accKdv');if(kdvEl&&kdvEl.closest('div'))kdvEl.closest('div').style.display=y==='finansman'?'none':'block';
+}
+function setFinYon(y){
+  accFinYon=y;
+  document.getElementById('accFinGiris').classList.toggle('on',y==='giris');
+  document.getElementById('accFinCikis').classList.toggle('on',y==='cikis');
 }
 
 // ── AYLIK SABİT ÖDEMELER (acc içinde recurring:true) ─────
@@ -3553,6 +3571,12 @@ async function saveAcc(){
     fisLink:document.getElementById('accFisLink').value.trim()||'',
     faturaLink:document.getElementById('accFaturaLink').value.trim()||''
   };
+  // Finansman (kredi/borç): kâra ve KDV'ye girmez, sadece kasayı etkiler
+  if(accYon==='finansman'){
+    e.type='finansman';
+    e.finYon=accFinYon;   // 'giris' = para girdi, 'cikis' = taksit ödendi
+    e.kdv=0; e.status='tamam';
+  }
   try{const ex=accEntries.find(x=>x.id===e.id);const res=await apiFetch('/api/acc'+(ex?'/'+e.id:''),{method:ex?'PUT':'POST',body:JSON.stringify(e)});if(!res||!res.ok){toast('Kaydedilemedi');return;}}catch(err){toast('Kaydedilemedi');return;}
   await loadAcc();
   resetAccForm();
@@ -3572,7 +3596,8 @@ function editAcc(id){
   document.getElementById('accStatus').value=e.status||'bekliyor';
   document.getElementById('accFisLink').value=e.fisLink||'';
   document.getElementById('accFaturaLink').value=e.faturaLink||'';
-  setAccYon(e.yon||'gelir');
+  setAccYon(e.type==='finansman'?'finansman':(e.yon||'gelir'));
+  if(e.type==='finansman')setFinYon(e.finYon||'giris');
   document.getElementById('accFormTitle').textContent='İşlem Düzenle';
   document.getElementById('accSaveBtn').textContent='Değişiklikleri kaydet';
   document.getElementById('accFormTitle').scrollIntoView({behavior:'smooth'});
@@ -3635,7 +3660,7 @@ function accAggregate(ayFilter){
     if(e.recurring)return; // sabit ödeme tanımları ayrı yönetilir
     if(e.artistPay)return; // sanatçı hesabı hareketleri ayrı yönetilir
     if(e.docClient)return; // karşı taraf rehberi ayrı
-    if(e.type==='cfg'||e.type==='kdvodeme')return; // ayar/rehber + kdv ödeme kayıtları
+    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman')return; // ayar/rehber + kdv ödeme kayıtları
     if(!ayUyar(e.date))return;
     const oran=Math.abs(e.kdv||0);
     const haric=(e.kdv||0)<0;            // negatif = "+ Ekle" (tutar KDV hariç)
@@ -3748,7 +3773,7 @@ function muhasebeExcelAktar(){
     // 2) GELİR / GİDER (ham işlemler — konser dışı, elle girilenler)
     const gg=[['Tarih','Açıklama','Yön','Tutar (KDV dahil)','KDV %','Net','Durum','Firma']];
     accEntries.forEach(e=>{
-      if(e.type==='cfg'||e.type==='kdvodeme'||e.recurring||e.artistPay||e.docClient)return;
+      if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.recurring||e.artistPay||e.docClient)return;
       const oran=Math.abs(e.kdv||0);
       const haric=(e.kdv||0)<0;
       const net=oran>0?(haric?(e.amount||0):(e.amount||0)/(1+oran/100)):(e.amount||0);
@@ -3957,8 +3982,15 @@ function renderAcc(){
     if(e.artistPay)return; // sanatçı hesabı kendi ekranında
     if(e.docClient)return; // karşı taraf rehberi kendi kartında
     if(e.type==='cfg'||e.type==='kdvodeme')return; // ayar/rehber + kdv ödeme
+    if(e.type==='finansman'){
+      const giris=e.finYon!=='cikis';
+      items.push({kind:'F',id:e.id,date:e.date||'',title:'💳 '+(e.desc||'Finansman'),
+        sub:(giris?'Kredi/Borç girişi':'Taksit/Geri ödeme')+' · kâra dahil değil',
+        amount:e.amount,yon:giris?'gelir':'gider',status:'tamam',isFin:true});
+      return;
+    }
     items.push({kind:'M',id:e.id,date:e.date||'',title:e.desc,
-      sub:[e.firmId?firmName(e.firmId):'',e.kdv?'KDV %'+e.kdv:'KDV yok'].filter(Boolean).join(' · '),
+      sub:[e.firmId?firmName(e.firmId):'',e.kdv?'KDV %'+Math.abs(e.kdv)+((e.kdv||0)<0?' +ekle':' dahil'):'KDV yok'].filter(Boolean).join(' · '),
       amount:e.amount,yon:e.yon,status:e.status||'bekliyor',fisLink:e.fisLink||'',faturaLink:e.faturaLink||''});
   });
   // filtre uygula
@@ -4963,7 +4995,7 @@ function renderDashboard(){
   // Şirket gelir/gider (acc): tahsil edilen gelir / ödenen gider, ve bekleyenler
   let sirketGelirAlinan=0, sirketGiderOdenen=0, sirketGelirBekleyen=0, sirketGiderBekleyen=0;
   accEntries.forEach(e=>{
-    if(e.type==='cfg'||e.type==='kdvodeme'||e.recurring||e.artistPay||e.docClient)return; // sadece normal gelir/gider
+    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.recurring||e.artistPay||e.docClient)return; // sadece normal gelir/gider
     const oran=Math.abs(e.kdv||0); const haric=(e.kdv||0)<0;
     const tutar=(oran>0&&haric)?(e.amount||0)*(1+oran/100):(e.amount||0); // hariç ise kasaya brüt girer
     if(e.yon==='gelir'){
@@ -4978,10 +5010,18 @@ function renderDashboard(){
   const odenenToplam=kaseDusulen+konserGiderDusulen+sanatciOdeme+sirketGiderOdenen;
   // Eldeki net = tahsil edilen − çıkan (KDV dahil, fiziksel kasa)
   const eldekiNet=tahsilEdilen-odenenToplam;
+  // Finansman (kredi/borç): giriş kasayı artırır, çıkış (taksit) azaltır. Kâra/KDV'ye girmez.
+  let finGiris=0, finCikis=0;
+  accEntries.forEach(e=>{
+    if(e.type!=='finansman')return;
+    if(e.finYon==='cikis')finCikis+=(e.amount||0); else finGiris+=(e.amount||0);
+  });
+  const finNet=finGiris-finCikis;        // kasadaki net finansman etkisi
+  const kalanBorc=Math.max(0,finGiris-finCikis); // henüz geri ödenmemiş borç
   // Tahsil edilen şirket gelirinin KDV'si (kdv oranına göre içinden ayrıştır)
   let sirketKdv=0;
   accEntries.forEach(e=>{
-    if(e.type==='cfg'||e.type==='kdvodeme'||e.recurring||e.artistPay||e.docClient)return;
+    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.recurring||e.artistPay||e.docClient)return;
     if(e.yon==='gelir'&&e.status==='tamam'){
       const oran=Math.abs(e.kdv||0); const haric=(e.kdv||0)<0;
       if(oran>0){ sirketKdv+= haric ? (e.amount||0)*oran/100 : (e.amount||0)-(e.amount||0)/(1+oran/100); }
@@ -4994,8 +5034,8 @@ function renderDashboard(){
   accEntries.forEach(e=>{ if(e.type==='kdvodeme') odenenKdvToplam+=(e.amount||0); });
   // Kalan (henüz ödenmemiş) KDV
   const odenecekKdv=Math.max(0,odenecekKdvBrut-odenenKdvToplam);
-  // Kasa Total = eldeki para − ödenen KDV (KDV ödeyince kasadan çıkar)
-  const kasaTotal=eldekiNet-odenenKdvToplam;
+  // Kasa Total = eldeki para − ödenen KDV + finansman net (kredi girdi/taksit çıktı)
+  const kasaTotal=eldekiNet-odenenKdvToplam+finNet;
   // KDV hariç gerçekten senin olan (kalan KDV ayrıldıktan sonra)
   const eldekiKdvsiz=kasaTotal-odenecekKdv;
   // Bekleyen alacak (alınmamış)
@@ -5012,7 +5052,8 @@ function renderDashboard(){
     <div class="stat"><div class="n">Ödenen KDV</div><div class="v">${fmt(odenenKdvToplam)}</div></div>
     <div class="stat"><div class="n">Kalan Ödenecek KDV</div><div class="v ${odenecekKdv>0?'neg':'pos'}">${fmt(odenecekKdv)}</div></div>
     <div class="stat"><div class="n">KDV Sonrası Net</div><div class="v ${eldekiKdvsiz>=0?'pos':'neg'}">${fmt(eldekiKdvsiz)}${netTip}</div></div>
-    <div class="stat"><div class="n">Bekleyen Alacak</div><div class="v">${fmt(bekleyen)}</div></div>`;
+    <div class="stat"><div class="n">Bekleyen Alacak</div><div class="v">${fmt(bekleyen)}</div></div>
+    ${finGiris>0||finCikis>0?`<div class="stat" style="border-color:${kalanBorc>0?'var(--red)':'var(--green)'};background:${kalanBorc>0?'rgba(240,122,122,0.07)':'rgba(90,209,154,0.05)'}"><div class="n">💳 Kalan Borç (Kredi)</div><div class="v ${kalanBorc>0?'neg':'pos'}">${fmt(kalanBorc)}</div></div>`:''}`;
 
   // özet kartları
   let buAyKar=0, acikAlacak=0;
