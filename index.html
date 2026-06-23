@@ -70,6 +70,21 @@ button{cursor:pointer;font-family:inherit}
 .nav{flex:1;overflow-y:auto;padding:16px 12px}
 .nav-section{font-size:11px;letter-spacing:.08em;text-transform:uppercase;
   color:var(--accent);padding:16px 12px 7px;font-weight:800}
+/* akordiyon */
+.nav-group{margin-bottom:2px}
+.nav-section{
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;user-select:none;border-radius:var(--radius);transition:background .15s;
+  width:100%;border:none;background:none;font-family:inherit;text-align:left;
+}
+.nav-section:hover{background:var(--surface2)}
+.nav-section .chev{
+  font-size:13px;transition:transform .2s;color:var(--muted);font-weight:400;
+  margin-left:8px;flex-shrink:0;
+}
+.nav-group.collapsed .nav-section .chev{transform:rotate(-90deg)}
+.nav-group-body{overflow:hidden;transition:max-height .25s ease;max-height:1000px}
+.nav-group.collapsed .nav-group-body{max-height:0}
 .nav-item{
   display:flex;align-items:center;gap:12px;
   padding:8px 12px;border-radius:var(--radius);
@@ -391,11 +406,16 @@ select option{background:var(--surface)}
     </div>
 
     <nav class="nav">
-      <div class="nav-section">Genel</div>
+      <div class="nav-group" id="navgrp-genel">
+      <button class="nav-section" type="button" onclick="toggleNavGroup('genel')">Genel <span class="chev">▾</span></button>
+      <div class="nav-group-body">
       <button class="nav-item active" id="tabDashboard" onclick="showTab(&#39;dashboard&#39;)">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg> Dashboard
       </button>
-      <div class="nav-section">Etkinlikler</div>
+      </div></div>
+      <div class="nav-group" id="navgrp-etkinlik">
+      <button class="nav-section" type="button" onclick="toggleNavGroup('etkinlik')">Etkinlikler <span class="chev">▾</span></button>
+      <div class="nav-group-body">
       <button class="nav-item" id="tabNew" onclick="showTab(&#39;new&#39;)">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Yeni Etkinlik
       </button>
@@ -412,8 +432,11 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabSanatci" onclick="showTab(&#39;sanatci&#39;)">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Sanatçı Hesabı
       </button>
+      </div></div>
 
-      <div class="nav-section">Muhasebe</div>
+      <div class="nav-group" id="navgrp-muhasebe">
+      <button class="nav-section" type="button" onclick="toggleNavGroup('muhasebe')">Muhasebe <span class="chev">▾</span></button>
+      <div class="nav-group-body">
       <button class="nav-item" id="tabMgenel" onclick="showTab('mgenel')">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Genel
       </button>
@@ -432,8 +455,11 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabFinansman" onclick="showTab(&#39;finansman&#39;)">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Finansman
       </button>
+      </div></div>
 
-      <div class="nav-section">Sözleşmeler</div>
+      <div class="nav-group" id="navgrp-sozlesme">
+      <button class="nav-section" type="button" onclick="toggleNavGroup('sozlesme')">Sözleşmeler <span class="chev">▾</span></button>
+      <div class="nav-group-body">
       <button class="nav-item" id="tabSzhazirla" onclick="showTab('szhazirla')">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Sözleşme Hazırla
       </button>
@@ -449,8 +475,11 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabSzsablon" onclick="showTab('szsablon')">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Sözleşme Şablonu
       </button>
+      </div></div>
 
-      <div class="nav-section">Belge &amp; Rehber</div>
+      <div class="nav-group" id="navgrp-rehber">
+      <button class="nav-section" type="button" onclick="toggleNavGroup('rehber')">Belge &amp; Rehber <span class="chev">▾</span></button>
+      <div class="nav-group-body">
       <button class="nav-item" id="tabFirms" onclick="showTab(&#39;firms&#39;)">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><line x1="9" y1="6" x2="9.01" y2="6"/><line x1="15" y1="6" x2="15.01" y2="6"/><line x1="9" y1="10" x2="9.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/></svg> Firmalar
       </button>
@@ -460,19 +489,26 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabEkip" onclick="showTab(&#39;ekip&#39;)">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Ekip Rehberi
       </button>
+      </div></div>
 
-      <div class="nav-section">Raporlar</div>
+      <div class="nav-group" id="navgrp-rapor">
+      <button class="nav-section" type="button" onclick="toggleNavGroup('rapor')">Raporlar <span class="chev">▾</span></button>
+      <div class="nav-group-body">
       <button class="nav-item" id="tabAnaliz" onclick="showTab(&#39;analiz&#39;)">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Rapor
       </button>
+      </div></div>
 
-      <div class="nav-section" id="navSecYonetim" style="display: block;">Yönetim</div>
+      <div class="nav-group" id="navgrp-yonetim">
+      <button class="nav-section" type="button" id="navSecYonetim" style="display: flex;" onclick="toggleNavGroup('yonetim')">Yönetim <span class="chev">▾</span></button>
+      <div class="nav-group-body" id="navYonetimBody">
       <button class="nav-item" id="tabUsers" onclick="showTab(&#39;users&#39;)" style="display: flex;">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Kullanıcılar
       </button>
       <button class="nav-item" id="tabAyarlar" onclick="showTab('ayarlar')" style="display: flex;">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Ayarlar
       </button>
+      </div></div>
     </nav>
 
   </aside>
@@ -2066,6 +2102,25 @@ function closeSidebar(){
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('overlay').classList.remove('open');
 }
+// ── SOL MENÜ AKORDİYON ──
+function toggleNavGroup(g){
+  const el=document.getElementById('navgrp-'+g);
+  if(el)el.classList.toggle('collapsed');
+}
+// hangi sekme hangi gruba ait (aktif sekmenin grubu otomatik açılır)
+const NAV_TAB_GROUP={
+  dashboard:'genel',
+  new:'etkinlik',saved:'etkinlik',simulasyon:'etkinlik',simdetay:'etkinlik',sanatci:'etkinlik',
+  mgenel:'muhasebe',mgg:'muhasebe',mcari:'muhasebe',mkdv:'muhasebe',ekipodeme:'muhasebe',finansman:'muhasebe',
+  szhazirla:'sozlesme',szyapilan:'sozlesme',szrehber:'sozlesme',szfirmam:'sozlesme',szsablon:'sozlesme',
+  firms:'rehber',venues:'rehber',ekip:'rehber',
+  analiz:'rapor',
+  users:'yonetim',ayarlar:'yonetim'
+};
+function openNavGroupFor(t){
+  const g=NAV_TAB_GROUP[t];
+  if(g){const el=document.getElementById('navgrp-'+g);if(el)el.classList.remove('collapsed');}
+}
 
 let tip='KAPI';
 let editingId=null;
@@ -2108,6 +2163,7 @@ function showTab(t){
   const tabId = t==='ekipodeme' ? 'tabEkipOdeme' : 'tab'+t.charAt(0).toUpperCase()+t.slice(1);
   const ab=document.getElementById(tabId);
   if(ab)ab.classList.add('active');
+  openNavGroupFor(t);
 
   document.getElementById('pageTitle').textContent=PAGE_TITLES[t]||'';
   closeSidebar();
@@ -6165,7 +6221,8 @@ function applyUserUI(){
   const isAdmin=_user.role==='admin';
   const roleEl=document.getElementById('userRole');
   if(roleEl)roleEl.textContent=isAdmin?'Yönetici':'Kullanıcı';
-  document.getElementById('navSecYonetim').style.display=isAdmin?'block':'none';
+  document.getElementById('navSecYonetim').style.display=isAdmin?'flex':'none';
+  const ygrp=document.getElementById('navgrp-yonetim');if(ygrp)ygrp.style.display=isAdmin?'':'none';
   document.getElementById('tabUsers').style.display=isAdmin?'flex':'none';
   const ay=document.getElementById('tabAyarlar');if(ay)ay.style.display=isAdmin?'flex':'none';
 }
