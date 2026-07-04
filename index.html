@@ -2363,10 +2363,10 @@ function calcTahsilat(){
   if(!fKesildi){
     html+=`<div class="line sub"><span class="k">Fatura kesilmedi — KDV yükü doğmadı</span><span class="v" style="color:var(--muted)">0 ₺</span></div>`;
   }else{
-    const oran=(fTutar>0&&bek>0)?Math.min(1,fTutar/bek):1;
-    const dogmusKdv=netKdv*oran;
+    const foran=(fTutar>0&&bek>0)?Math.min(1,fTutar/bek):1;
+    const dogmusKdv=netKdv*foran;
     const ayTxt=fTarih?trDate(fTarih):(document.getElementById('tarih').value?trDate(document.getElementById('tarih').value):'tarih yok');
-    const kismi=(oran<0.999)?` · kısmi %${Math.round(oran*100)}`:'';
+    const kismi=(foran<0.999)?` · kısmi %${Math.round(foran*100)}`:'';
     html+=`<div class="line sub"><span class="k">Fatura kesildi · ${ayTxt}${kismi}</span><span class="v ${dogmusKdv>=0?'neg':'pos'}">${fmt(dogmusKdv)} KDV</span></div>`;
     if(!fTarih)html+=`<div class="line sub"><span class="k" style="color:var(--amber)">⚠ Fatura tarihi boş — etkinlik ayına yazılır</span><span class="v"></span></div>`;
   }
@@ -4040,7 +4040,7 @@ function accAggregate(ayFilter){
     const fAy=faturaAy(ev);
     const hesKdvIs=a.gelirKdv*fo;   // bu işten doğan hesaplanan (satış) KDV
     const indKdvIs=a.indirKdv*fo;   // faturalanan orana denk indirilecek KDV
-    // Dönem (ay) filtresi: fatura ayına göre değerlendirilir
+    // Dönem (ay) filtresi: KDV, fatura ayına göre değerlendirilir
     if(fo>0 && (!ayFilter||fAy===ayFilter)){
       hesaplananKdv+=hesKdvIs;
       indirilecekKdv+=indKdvIs;
