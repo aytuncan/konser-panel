@@ -251,6 +251,10 @@ select option{background:var(--surface)}
 .vbadge.neg{background:rgba(248,113,113,0.1);color:var(--red)}
 .vbadge.warn{background:rgba(251,191,36,0.1);color:var(--amber)}
 .vbadge.bekliyor{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+.vbadge.soz{background:rgba(99,102,241,0.12);color:var(--accent,#6366f1)}
+.vchk{display:flex;align-items:center;justify-content:center;cursor:pointer}
+.vchk input[type=checkbox]{width:20px;height:20px;cursor:pointer;accent-color:var(--accent,#6366f1)}
+@media(max-width:560px){.vchk input[type=checkbox]{width:18px;height:18px}}
 .line.sub .k{padding-left:16px;font-size:13px}
 .line.strong{font-weight:600;font-size:15px;background:var(--surface);border-radius:6px;padding:12px;margin-top:4px;border-bottom:none}
 .line.strong .k{color:var(--ink)}
@@ -868,7 +872,7 @@ select option{background:var(--surface)}
 
           <div class="card-title" style="margin-top:32px">Vade Planı (beklenen ödemeler)</div>
           <div class="hint" style="margin-bottom:16px">Taksit/vade tarihlerini gir. Tahsil edilen toplam, en erken vadeden başlayarak vadelere dağıtılır; geciken ve yaklaşan vadeler işaretlenir.</div>
-          <div class="row-head" style="grid-template-columns:1fr 110px 120px 36px"><span>Açıklama</span><span>Tutar ₺</span><span>Vade tarihi</span><span></span></div>
+          <div class="row-head" style="grid-template-columns:1fr 100px 120px 64px 64px 36px"><span>Açıklama</span><span>Tutar ₺</span><span>Vade tarihi</span><span style="text-align:center">Söz.</span><span style="text-align:center">Tahsil</span><span></span></div>
           <div class="rows" id="vadeRows"></div>
           <button class="addbtn" onclick="addVade()">+ Vade ekle</button>
 
@@ -2263,15 +2267,17 @@ function addKapora(){
   const son=wrap.lastElementChild;
   if(son){const inp=son.querySelectorAll('input')[1];if(inp)inp.focus();}
 }
-function addVade(name='',amount='',date=''){
+function addVade(name='',amount='',date='',sozlesme=false,tahsil=false){
   const wrap=document.getElementById('vadeRows');
   const div=document.createElement('div');
   div.className='row';
-  div.style.gridTemplateColumns='1fr 110px 120px 36px';
+  div.style.gridTemplateColumns='1fr 100px 120px 64px 64px 36px';
   div.innerHTML=`
     <input placeholder="Taksit / bakiye / not" value="${(name||'').replace(/"/g,'&quot;')}" autocomplete="off" oninput="calcTahsilat()">
     <input type="number" min="0" placeholder="0" value="${amount}" oninput="calcTahsilat()">
     <input type="date" value="${date}" oninput="calcTahsilat()">
+    <label class="vchk" title="Sözleşme yollandı"><input type="checkbox" ${sozlesme?'checked':''} onchange="calcTahsilat()"></label>
+    <label class="vchk" title="Tahsil edildi"><input type="checkbox" ${tahsil?'checked':''} onchange="calcTahsilat()"></label>
     <button class="rm" onclick="this.parentElement.remove();calcTahsilat()">×</button>`;
   wrap.appendChild(div);
   calcTahsilat();
@@ -2281,7 +2287,9 @@ function readVadeler(){
   if(!wrap)return [];
   return [...wrap.children].map(r=>{
     const i=r.querySelectorAll('input');
-    return {name:i[0].value,amount:+i[1].value||0,date:i[2].value||''};
+    const chks=r.querySelectorAll('input[type=checkbox]');
+    return {name:i[0].value,amount:+i[1].value||0,date:i[2].value||'',
+            sozlesme:!!(chks[0]&&chks[0].checked),tahsil:!!(chks[1]&&chks[1].checked)};
   }).filter(x=>x.amount>0||x.date);
 }
 
@@ -2332,10 +2340,15 @@ function calcTahsilat(){
     const vd=vadeDurumlari(vadeler,al);
     html+='<div class="line strong" style="margin-top:12px"><span class="k">Vade Planı</span><span class="v"></span></div>';
     vd.forEach(v=>{
-      const etiket={'ödendi':'Ödendi','gecikmiş':'Gecikmiş','yaklaşıyor':'Yaklaşıyor','bekliyor':'Bekliyor'}[v.durum];
+      // "Tahsil edildi" tik'i işaretliyse ödendi kabul et (tahsilat dağıtımından bağımsız)
+      const manuelTahsil=v.tahsil===true;
+      let durum=v.durum, renk=v.renk;
+      if(manuelTahsil){durum='ödendi';renk='pos';}
+      const etiket={'ödendi':'Ödendi','gecikmiş':'Gecikmiş','yaklaşıyor':'Yaklaşıyor','bekliyor':'Bekliyor'}[durum];
       const tarihTxt=v.date?trDate(v.date):'tarihsiz';
-      const gfTxt=(v.durum==='gecikmiş'&&v.gf!=null)?` (${-v.gf} gün geçti)`:(v.durum==='yaklaşıyor'&&v.gf!=null)?` (${v.gf} gün kaldı)`:'';
-      html+=`<div class="line sub"><span class="k">${esc(v.name||'Taksit')} · ${tarihTxt}${gfTxt}</span><span class="v ${v.renk}">${fmt(v.acik>0?v.acik:v.amount)} <span class="vbadge ${v.renk||'bekliyor'}">${etiket}</span></span></div>`;
+      const gfTxt=(durum==='gecikmiş'&&v.gf!=null)?` (${-v.gf} gün geçti)`:(durum==='yaklaşıyor'&&v.gf!=null)?` (${v.gf} gün kaldı)`:'';
+      const sozBadge=v.sozlesme?' <span class="vbadge soz">Söz. ✓</span>':'';
+      html+=`<div class="line sub"><span class="k">${esc(v.name||'Taksit')} · ${tarihTxt}${gfTxt}</span><span class="v ${renk}">${fmt(v.acik>0?v.acik:v.amount)} <span class="vbadge ${renk||'bekliyor'}">${etiket}</span>${sozBadge}</span></div>`;
     });
     const toplamVade=vadeler.reduce((a,b)=>a+b.amount,0);
     if(Math.abs(toplamVade-bek)>1&&bek>0){
@@ -2490,7 +2503,7 @@ function restore(ev){
   document.getElementById('odemeRows').innerHTML='';
   (ev.odemeler||[]).forEach(o=>addOdeme(o.name,o.amount,o.date));
   document.getElementById('vadeRows').innerHTML='';
-  (ev.vadeler||[]).forEach(v=>addVade(v.name,v.amount,v.date));
+  (ev.vadeler||[]).forEach(v=>addVade(v.name,v.amount,v.date,v.sozlesme,v.tahsil));
   setTip(ev.tip||'KAPI');
   showTab('new');calc();
 }
@@ -2681,10 +2694,11 @@ function eventToRows(ev){
   rows.push(['Kalan bakiye',t.kalan]);
   if((ev.vadeler||[]).length){
     rows.push([]);
-    rows.push(['VADE PLANI','Tutar','Vade','Durum']);
+    rows.push(['VADE PLANI','Tutar','Vade','Durum','Sözleşme','Tahsil']);
     (t.vadeler||[]).forEach(v=>{
-      const d={'ödendi':'Ödendi','gecikmiş':'GECİKMİŞ','yaklaşıyor':'Yaklaşıyor','bekliyor':'Bekliyor'}[v.durum];
-      rows.push([v.name||'taksit',v.amount,v.date||'',d]);
+      const durumKey=v.tahsil?'ödendi':v.durum;
+      const d={'ödendi':'Ödendi','gecikmiş':'GECİKMİŞ','yaklaşıyor':'Yaklaşıyor','bekliyor':'Bekliyor'}[durumKey];
+      rows.push([v.name||'taksit',v.amount,v.date||'',d,v.sozlesme?'Yollandı':'',v.tahsil?'Tahsil edildi':'']);
     });
   }
   return rows;
