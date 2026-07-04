@@ -251,10 +251,8 @@ select option{background:var(--surface)}
 .vbadge.neg{background:rgba(248,113,113,0.1);color:var(--red)}
 .vbadge.warn{background:rgba(251,191,36,0.1);color:var(--amber)}
 .vbadge.bekliyor{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
-.vbadge.soz{background:rgba(99,102,241,0.12);color:var(--accent,#6366f1)}
 .vchk{display:flex;align-items:center;justify-content:center;cursor:pointer}
 .vchk input[type=checkbox]{width:20px;height:20px;cursor:pointer;accent-color:var(--accent,#6366f1)}
-@media(max-width:560px){.vchk input[type=checkbox]{width:18px;height:18px}}
 .line.sub .k{padding-left:16px;font-size:13px}
 .line.strong{font-weight:600;font-size:15px;background:var(--surface);border-radius:6px;padding:12px;margin-top:4px;border-bottom:none}
 .line.strong .k{color:var(--ink)}
@@ -872,7 +870,7 @@ select option{background:var(--surface)}
 
           <div class="card-title" style="margin-top:32px">Vade Planı (beklenen ödemeler)</div>
           <div class="hint" style="margin-bottom:16px">Taksit/vade tarihlerini gir. Tahsil edilen toplam, en erken vadeden başlayarak vadelere dağıtılır; geciken ve yaklaşan vadeler işaretlenir.</div>
-          <div class="row-head" style="grid-template-columns:1fr 100px 120px 64px 64px 36px"><span>Açıklama</span><span>Tutar ₺</span><span>Vade tarihi</span><span style="text-align:center">Söz.</span><span style="text-align:center">Tahsil</span><span></span></div>
+          <div class="row-head" style="grid-template-columns:1fr 110px 120px 36px"><span>Açıklama</span><span>Tutar ₺</span><span>Vade tarihi</span><span></span></div>
           <div class="rows" id="vadeRows"></div>
           <button class="addbtn" onclick="addVade()">+ Vade ekle</button>
 
@@ -881,6 +879,16 @@ select option{background:var(--surface)}
     <div class="line"><span class="k">Alınan tahsilat</span><span class="v">0 ₺</span></div>
     <div class="line strong"><span class="k">Kalan bakiye</span><span class="v ">0 ₺</span></div>
     <div class="line sub"><span class="k">Durum</span><span class="v ">Beklenen tutar yok</span></div></div>
+
+          <div class="card-title" style="margin-top:32px">Fatura</div>
+          <div class="hint" style="margin-bottom:16px">Fatura kesilince işaretle ve tarihini gir. KDV yükü, kapora/tahsilattan bağımsız olarak, <b>yalnızca fatura kesildiğinde</b> ve girdiğin fatura tarihinin ait olduğu <b>aya</b> düşer. Kısmi fatura kestiysen tutarı yaz; boş bırakırsan işin tamamı faturalanmış sayılır.</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <label class="vchk" style="justify-content:flex-start;gap:8px;cursor:pointer">
+              <input type="checkbox" id="faturaKesildi" onchange="calcTahsilat()"> <span>Fatura kesildi</span>
+            </label>
+            <div style="flex:1;min-width:150px"><label style="font-size:12px;color:var(--muted)">Fatura tarihi</label><input type="date" id="faturaTarih" oninput="calcTahsilat()"></div>
+            <div style="flex:1;min-width:150px"><label style="font-size:12px;color:var(--muted)">Fatura tutarı ₺ (ops. — boşsa tamamı)</label><input type="number" min="0" id="faturaTutar" placeholder="tamamı" oninput="calcTahsilat()"></div>
+          </div>
         </div>
 
         <div class="card result full">
@@ -2267,17 +2275,15 @@ function addKapora(){
   const son=wrap.lastElementChild;
   if(son){const inp=son.querySelectorAll('input')[1];if(inp)inp.focus();}
 }
-function addVade(name='',amount='',date='',sozlesme=false,tahsil=false){
+function addVade(name='',amount='',date=''){
   const wrap=document.getElementById('vadeRows');
   const div=document.createElement('div');
   div.className='row';
-  div.style.gridTemplateColumns='1fr 100px 120px 64px 64px 36px';
+  div.style.gridTemplateColumns='1fr 110px 120px 36px';
   div.innerHTML=`
     <input placeholder="Taksit / bakiye / not" value="${(name||'').replace(/"/g,'&quot;')}" autocomplete="off" oninput="calcTahsilat()">
     <input type="number" min="0" placeholder="0" value="${amount}" oninput="calcTahsilat()">
     <input type="date" value="${date}" oninput="calcTahsilat()">
-    <label class="vchk" title="Sözleşme yollandı"><input type="checkbox" ${sozlesme?'checked':''} onchange="calcTahsilat()"></label>
-    <label class="vchk" title="Tahsil edildi"><input type="checkbox" ${tahsil?'checked':''} onchange="calcTahsilat()"></label>
     <button class="rm" onclick="this.parentElement.remove();calcTahsilat()">×</button>`;
   wrap.appendChild(div);
   calcTahsilat();
@@ -2287,9 +2293,7 @@ function readVadeler(){
   if(!wrap)return [];
   return [...wrap.children].map(r=>{
     const i=r.querySelectorAll('input');
-    const chks=r.querySelectorAll('input[type=checkbox]');
-    return {name:i[0].value,amount:+i[1].value||0,date:i[2].value||'',
-            sozlesme:!!(chks[0]&&chks[0].checked),tahsil:!!(chks[1]&&chks[1].checked)};
+    return {name:i[0].value,amount:+i[1].value||0,date:i[2].value||''};
   }).filter(x=>x.amount>0||x.date);
 }
 
@@ -2340,20 +2344,31 @@ function calcTahsilat(){
     const vd=vadeDurumlari(vadeler,al);
     html+='<div class="line strong" style="margin-top:12px"><span class="k">Vade Planı</span><span class="v"></span></div>';
     vd.forEach(v=>{
-      // "Tahsil edildi" tik'i işaretliyse ödendi kabul et (tahsilat dağıtımından bağımsız)
-      const manuelTahsil=v.tahsil===true;
-      let durum=v.durum, renk=v.renk;
-      if(manuelTahsil){durum='ödendi';renk='pos';}
-      const etiket={'ödendi':'Ödendi','gecikmiş':'Gecikmiş','yaklaşıyor':'Yaklaşıyor','bekliyor':'Bekliyor'}[durum];
+      const etiket={'ödendi':'Ödendi','gecikmiş':'Gecikmiş','yaklaşıyor':'Yaklaşıyor','bekliyor':'Bekliyor'}[v.durum];
       const tarihTxt=v.date?trDate(v.date):'tarihsiz';
-      const gfTxt=(durum==='gecikmiş'&&v.gf!=null)?` (${-v.gf} gün geçti)`:(durum==='yaklaşıyor'&&v.gf!=null)?` (${v.gf} gün kaldı)`:'';
-      const sozBadge=v.sozlesme?' <span class="vbadge soz">Söz. ✓</span>':'';
-      html+=`<div class="line sub"><span class="k">${esc(v.name||'Taksit')} · ${tarihTxt}${gfTxt}</span><span class="v ${renk}">${fmt(v.acik>0?v.acik:v.amount)} <span class="vbadge ${renk||'bekliyor'}">${etiket}</span>${sozBadge}</span></div>`;
+      const gfTxt=(v.durum==='gecikmiş'&&v.gf!=null)?` (${-v.gf} gün geçti)`:(v.durum==='yaklaşıyor'&&v.gf!=null)?` (${v.gf} gün kaldı)`:'';
+      html+=`<div class="line sub"><span class="k">${esc(v.name||'Taksit')} · ${tarihTxt}${gfTxt}</span><span class="v ${v.renk}">${fmt(v.acik>0?v.acik:v.amount)} <span class="vbadge ${v.renk||'bekliyor'}">${etiket}</span></span></div>`;
     });
     const toplamVade=vadeler.reduce((a,b)=>a+b.amount,0);
     if(Math.abs(toplamVade-bek)>1&&bek>0){
       html+=`<div class="line sub"><span class="k" style="color:var(--amber)">⚠ Vade toplamı (${fmt(toplamVade)}) beklenen tutardan (${fmt(bek)}) farklı</span><span class="v"></span></div>`;
     }
+  }
+  // Fatura / KDV durumu
+  const fKesildi=document.getElementById('faturaKesildi').checked;
+  const fTarih=document.getElementById('faturaTarih').value||'';
+  const fTutar=+document.getElementById('faturaTutar').value||0;
+  const netKdv=c.netKdv||0;
+  html+='<div class="line strong" style="margin-top:12px"><span class="k">Fatura / KDV</span><span class="v"></span></div>';
+  if(!fKesildi){
+    html+=`<div class="line sub"><span class="k">Fatura kesilmedi — KDV yükü doğmadı</span><span class="v" style="color:var(--muted)">0 ₺</span></div>`;
+  }else{
+    const oran=(fTutar>0&&bek>0)?Math.min(1,fTutar/bek):1;
+    const dogmusKdv=netKdv*oran;
+    const ayTxt=fTarih?trDate(fTarih):(document.getElementById('tarih').value?trDate(document.getElementById('tarih').value):'tarih yok');
+    const kismi=(oran<0.999)?` · kısmi %${Math.round(oran*100)}`:'';
+    html+=`<div class="line sub"><span class="k">Fatura kesildi · ${ayTxt}${kismi}</span><span class="v ${dogmusKdv>=0?'neg':'pos'}">${fmt(dogmusKdv)} KDV</span></div>`;
+    if(!fTarih)html+=`<div class="line sub"><span class="k" style="color:var(--amber)">⚠ Fatura tarihi boş — etkinlik ayına yazılır</span><span class="v"></span></div>`;
   }
   oz.innerHTML=html;
 }
@@ -2464,7 +2479,10 @@ function gather(){
     p2ad:document.getElementById('p2ad').value,p2pay:+document.getElementById('p2pay').value||0,
     kase:readRows('kase'),gider:readRows('gider'),
     odemeler:readOdemeler(),
-    vadeler:readVadeler()
+    vadeler:readVadeler(),
+    faturaKesildi:!!document.getElementById('faturaKesildi').checked,
+    faturaTarih:document.getElementById('faturaTarih').value||'',
+    faturaTutar:+document.getElementById('faturaTutar').value||0
   };
 }
 function restore(ev){
@@ -2503,7 +2521,10 @@ function restore(ev){
   document.getElementById('odemeRows').innerHTML='';
   (ev.odemeler||[]).forEach(o=>addOdeme(o.name,o.amount,o.date));
   document.getElementById('vadeRows').innerHTML='';
-  (ev.vadeler||[]).forEach(v=>addVade(v.name,v.amount,v.date,v.sozlesme,v.tahsil));
+  (ev.vadeler||[]).forEach(v=>addVade(v.name,v.amount,v.date));
+  document.getElementById('faturaKesildi').checked=!!ev.faturaKesildi;
+  document.getElementById('faturaTarih').value=ev.faturaTarih||'';
+  document.getElementById('faturaTutar').value=ev.faturaTutar||'';
   setTip(ev.tip||'KAPI');
   showTab('new');calc();
 }
@@ -2522,6 +2543,9 @@ function resetForm(){
   addRow('kase');addRow('gider');
   document.getElementById('odemeRows').innerHTML='';
   document.getElementById('vadeRows').innerHTML='';
+  document.getElementById('faturaKesildi').checked=false;
+  document.getElementById('faturaTarih').value='';
+  document.getElementById('faturaTutar').value='';
   setTip('KAPI');calc();
 }
 
@@ -2636,6 +2660,23 @@ function computeFor(ev){
           p1amt:kar*(ev.p1pay/100),p2amt:kar*(ev.p2pay/100)};
 }
 
+// Faturalanan oran: KDV yükü sadece fatura kesildiğinde doğar.
+//  - Fatura kesilmediyse 0 (KDV henüz yok)
+//  - Kesildiyse ve tutar boşsa 1 (işin tamamı faturalandı)
+//  - Kısmi fatura tutarı girildiyse tutar / brüt ciro oranı (0..1)
+function faturaOrani(ev){
+  if(!ev||!ev.faturaKesildi)return 0;
+  const c=computeFor(ev);
+  const brut=c.ciroGross||0;
+  const ft=+ev.faturaTutar||0;
+  if(ft>0&&brut>0)return Math.min(1,ft/brut);
+  return 1;
+}
+// KDV'nin ait olduğu dönem: fatura tarihi varsa onun ayı, yoksa etkinlik ayı
+function faturaAy(ev){
+  return ((ev&&ev.faturaTarih)||(ev&&ev.tarih)||'').slice(0,7);
+}
+
 function tahsilatFor(ev){
   const c=computeFor(ev);
   const bek=c.ciroGross;
@@ -2694,11 +2735,10 @@ function eventToRows(ev){
   rows.push(['Kalan bakiye',t.kalan]);
   if((ev.vadeler||[]).length){
     rows.push([]);
-    rows.push(['VADE PLANI','Tutar','Vade','Durum','Sözleşme','Tahsil']);
+    rows.push(['VADE PLANI','Tutar','Vade','Durum']);
     (t.vadeler||[]).forEach(v=>{
-      const durumKey=v.tahsil?'ödendi':v.durum;
-      const d={'ödendi':'Ödendi','gecikmiş':'GECİKMİŞ','yaklaşıyor':'Yaklaşıyor','bekliyor':'Bekliyor'}[durumKey];
-      rows.push([v.name||'taksit',v.amount,v.date||'',d,v.sozlesme?'Yollandı':'',v.tahsil?'Tahsil edildi':'']);
+      const d={'ödendi':'Ödendi','gecikmiş':'GECİKMİŞ','yaklaşıyor':'Yaklaşıyor','bekliyor':'Bekliyor'}[v.durum];
+      rows.push([v.name||'taksit',v.amount,v.date||'',d]);
     });
   }
   return rows;
@@ -3993,10 +4033,21 @@ function accAggregate(ayFilter){
   const ayUyar=(d)=>!ayFilter||((d||'').slice(0,7)===ayFilter);
 
   events.forEach(ev=>{
-    if(!ayUyar(ev.tarih))return;
     const a=eventAsAcc(ev);
-    hesaplananKdv+=a.gelirKdv;
-    indirilecekKdv+=a.indirKdv;
+    // KDV yükü faturaya bağlı: fatura kesilen oran kadar KDV doğar,
+    // ve fatura tarihinin ait olduğu aya (yoksa etkinlik ayına) düşer.
+    const fo=faturaOrani(ev);
+    const fAy=faturaAy(ev);
+    const hesKdvIs=a.gelirKdv*fo;   // bu işten doğan hesaplanan (satış) KDV
+    const indKdvIs=a.indirKdv*fo;   // faturalanan orana denk indirilecek KDV
+    // Dönem (ay) filtresi: fatura ayına göre değerlendirilir
+    if(fo>0 && (!ayFilter||fAy===ayFilter)){
+      hesaplananKdv+=hesKdvIs;
+      indirilecekKdv+=indKdvIs;
+      addAy(fAy||ev.tarih,hesKdvIs,indKdvIs);
+    }
+    // Gelir/gider (kâr) ve cari, eskisi gibi etkinlik ayına göre kalır
+    if(!ayUyar(ev.tarih))return;
     toplamGelir+=a.c.ciroNet;
     toplamGider+=a.c.giderNet;
     toplamArtist+=a.c.p1amt;
@@ -4148,13 +4199,13 @@ function muhasebeExcelAktar(){
     XLSX.utils.book_append_sheet(wb,wsGG,'GELİR-GİDER');
 
     // 3) KONSERLER (özet)
-    const kon=[['Şehir','Mekan','Tarih','Tip','Ciro (net)','Komisyon','Toplam Gider','Kâr/Zarar','Tahsil Edilen','Kalan']];
+    const kon=[['Şehir','Mekan','Tarih','Tip','Ciro (net)','Komisyon','Toplam Gider','Kâr/Zarar','Tahsil Edilen','Kalan','Fatura','Fatura Tarihi']];
     events.forEach(ev=>{
       const c=computeFor(ev);const t=tahsilatFor(ev);
-      kon.push([ev.sehir||'',ev.mekan||'',ev.tarih||'',ev.tip||'',R(c.ciroNet),R(c.komisyon),R(c.toplamGider),R(c.kar),R(t.al),R(Math.max(0,t.kalan))]);
+      kon.push([ev.sehir||'',ev.mekan||'',ev.tarih||'',ev.tip||'',R(c.ciroNet),R(c.komisyon),R(c.toplamGider),R(c.kar),R(t.al),R(Math.max(0,t.kalan)),ev.faturaKesildi?'Kesildi':'—',ev.faturaTarih||'']);
     });
     const wsKon=XLSX.utils.aoa_to_sheet(kon);
-    wsKon['!cols']=[{wch:14},{wch:18},{wch:12},{wch:12},{wch:14},{wch:12},{wch:14},{wch:14},{wch:14},{wch:12}];
+    wsKon['!cols']=[{wch:14},{wch:18},{wch:12},{wch:12},{wch:14},{wch:12},{wch:14},{wch:14},{wch:14},{wch:12},{wch:10},{wch:12}];
     XLSX.utils.book_append_sheet(wb,wsKon,'KONSERLER');
 
     // 4) CARİ DURUM
@@ -5335,8 +5386,11 @@ function renderDashboard(){
     const menajerToplam=c.p2amt; // bu işin toplam menajer payı
     menajerAlinan+=menajerToplam*oran;
     menajerBekleyen+=menajerToplam*(1-oran);
-    // tahsil edilen kısmın içindeki KDV (net KDV, tahsil oranıyla)
-    tahsilEdilenKdv+=c.netKdv*oran;
+    // KDV yükü artık tahsilata değil FATURAYA bağlı:
+    // sadece fatura kesilen kısmın net KDV'si devlete ödenecek olarak sayılır.
+    // (Kapora/avans alsan bile fatura kesilmediyse KDV doğmaz.)
+    const fo=faturaOrani(ev);
+    tahsilEdilenKdv+=c.netKdv*fo;
     // KAŞE: sadece FİİLEN ÖDENEN kaşeler kasadan düşer (ödediysen para cebinden gitti, tam düşer).
     // Ödenmemiş kaşe kasada durmaya devam eder.
     let kaseOdenenBuIs=0, kaseAcikBuIs=0;
