@@ -251,8 +251,6 @@ select option{background:var(--surface)}
 .vbadge.neg{background:rgba(248,113,113,0.1);color:var(--red)}
 .vbadge.warn{background:rgba(251,191,36,0.1);color:var(--amber)}
 .vbadge.bekliyor{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
-.vchk{display:flex;align-items:center;justify-content:center;cursor:pointer}
-.vchk input[type=checkbox]{width:20px;height:20px;cursor:pointer;accent-color:var(--accent,#6366f1)}
 .line.sub .k{padding-left:16px;font-size:13px}
 .line.strong{font-weight:600;font-size:15px;background:var(--surface);border-radius:6px;padding:12px;margin-top:4px;border-bottom:none}
 .line.strong .k{color:var(--ink)}
@@ -879,16 +877,6 @@ select option{background:var(--surface)}
     <div class="line"><span class="k">Alınan tahsilat</span><span class="v">0 ₺</span></div>
     <div class="line strong"><span class="k">Kalan bakiye</span><span class="v ">0 ₺</span></div>
     <div class="line sub"><span class="k">Durum</span><span class="v ">Beklenen tutar yok</span></div></div>
-
-          <div class="card-title" style="margin-top:32px">Fatura</div>
-          <div class="hint" style="margin-bottom:16px">Fatura kesilince işaretle ve tarihini gir. KDV yükü, kapora/tahsilattan bağımsız olarak, <b>yalnızca fatura kesildiğinde</b> ve girdiğin fatura tarihinin ait olduğu <b>aya</b> düşer. Kısmi fatura kestiysen tutarı yaz; boş bırakırsan işin tamamı faturalanmış sayılır.</div>
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <label class="vchk" style="justify-content:flex-start;gap:8px;cursor:pointer">
-              <input type="checkbox" id="faturaKesildi" onchange="calcTahsilat()"> <span>Fatura kesildi</span>
-            </label>
-            <div style="flex:1;min-width:150px"><label style="font-size:12px;color:var(--muted)">Fatura tarihi</label><input type="date" id="faturaTarih" oninput="calcTahsilat()"></div>
-            <div style="flex:1;min-width:150px"><label style="font-size:12px;color:var(--muted)">Fatura tutarı ₺ (ops. — boşsa tamamı)</label><input type="number" min="0" id="faturaTutar" placeholder="tamamı" oninput="calcTahsilat()"></div>
-          </div>
         </div>
 
         <div class="card result full">
@@ -1190,6 +1178,34 @@ select option{background:var(--surface)}
             </div>
           </div>
           <div class="hint">Sanatçıyı işe bağlamak için "Yeni İş" ekranında sanatçı seçmelisin. Burada o sanatçının tüm konserlerden payı (%75), ona yapılan ödemeler ve adına yapılan giderler toplanır.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" id="arFormTitle">Sanatçı Ekle</div>
+          <div class="hint" style="margin-bottom:16px">Buraya eklediğin sanatçılar hem yukarıdaki listede hem de "Yeni Etkinlik" ekranındaki sanatçı seçiminde çıkar.</div>
+          <div class="grid">
+            <div><label>Sanatçı adı *</label><input id="arName" placeholder="Sanatçı / grup adı" autocomplete="off"></div>
+            <div><label>Telefon</label><input id="arPhone" placeholder="+90 ..." autocomplete="off"></div>
+            <div><label>E-posta</label><input id="arMail" placeholder="mail@..." autocomplete="off"></div>
+            <div><label>Komisyon oranı (%)</label><input id="arKom" type="number" min="0" max="100" step="0.5" placeholder="örn. 25"></div>
+            <div><label>IBAN</label><input id="arIban" placeholder="TR.." autocomplete="off"></div>
+            <div><label>Vergi dairesi</label><input id="arTaxOffice" placeholder="Vergi dairesi" autocomplete="off"></div>
+            <div><label>Vergi / TC no</label><input id="arTaxNo" placeholder="Vergi / TC no" autocomplete="off"></div>
+          </div>
+          <div style="margin-top:16px">
+            <label>Not</label>
+            <input id="arNote" placeholder="Menajer, rider, geçmiş işler vb." autocomplete="off">
+          </div>
+          <div class="actions" style="margin-top:24px">
+            <button class="btn primary" onclick="saveArtist()" id="arSaveBtn">Sanatçı kaydet</button>
+            <button class="btn ghost" onclick="resetArtistForm()">Temizle</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Kayıtlı Sanatçılar</div>
+          <input id="arSearch" placeholder="Ara: ad, telefon..." autocomplete="off" oninput="renderArtists()" style="margin-bottom:20px">
+          <div class="saved-list" id="arList"></div>
         </div>
 
         <div id="saBos" class="card"><div class="anEmpty">Sanatçı seç, hesabı burada görünsün.</div></div>
@@ -2198,7 +2214,7 @@ function showTab(t){
     sdRenderKayitli();
     renderSimDetay();
   }
-  if(t==='sanatci'){refreshSaPicker();renderSanatci();}
+  if(t==='sanatci'){refreshSaPicker();renderArtists();renderSanatci();}
   if(t==='szhazirla'){refreshDocPicker();refreshDcPicker();szRenderKayitli();}
   if(t==='szyapilan'){szSetFiltre(szFiltre);}
   if(t==='szrehber'){renderDcList();}
@@ -2354,22 +2370,6 @@ function calcTahsilat(){
       html+=`<div class="line sub"><span class="k" style="color:var(--amber)">⚠ Vade toplamı (${fmt(toplamVade)}) beklenen tutardan (${fmt(bek)}) farklı</span><span class="v"></span></div>`;
     }
   }
-  // Fatura / KDV durumu
-  const fKesildi=document.getElementById('faturaKesildi').checked;
-  const fTarih=document.getElementById('faturaTarih').value||'';
-  const fTutar=+document.getElementById('faturaTutar').value||0;
-  const netKdv=c.netKdv||0;
-  html+='<div class="line strong" style="margin-top:12px"><span class="k">Fatura / KDV</span><span class="v"></span></div>';
-  if(!fKesildi){
-    html+=`<div class="line sub"><span class="k">Fatura kesilmedi — KDV yükü doğmadı</span><span class="v" style="color:var(--muted)">0 ₺</span></div>`;
-  }else{
-    const foran=(fTutar>0&&bek>0)?Math.min(1,fTutar/bek):1;
-    const dogmusKdv=netKdv*foran;
-    const ayTxt=fTarih?trDate(fTarih):(document.getElementById('tarih').value?trDate(document.getElementById('tarih').value):'tarih yok');
-    const kismi=(foran<0.999)?` · kısmi %${Math.round(foran*100)}`:'';
-    html+=`<div class="line sub"><span class="k">Fatura kesildi · ${ayTxt}${kismi}</span><span class="v ${dogmusKdv>=0?'neg':'pos'}">${fmt(dogmusKdv)} KDV</span></div>`;
-    if(!fTarih)html+=`<div class="line sub"><span class="k" style="color:var(--amber)">⚠ Fatura tarihi boş — etkinlik ayına yazılır</span><span class="v"></span></div>`;
-  }
   oz.innerHTML=html;
 }
 
@@ -2479,10 +2479,7 @@ function gather(){
     p2ad:document.getElementById('p2ad').value,p2pay:+document.getElementById('p2pay').value||0,
     kase:readRows('kase'),gider:readRows('gider'),
     odemeler:readOdemeler(),
-    vadeler:readVadeler(),
-    faturaKesildi:!!document.getElementById('faturaKesildi').checked,
-    faturaTarih:document.getElementById('faturaTarih').value||'',
-    faturaTutar:+document.getElementById('faturaTutar').value||0
+    vadeler:readVadeler()
   };
 }
 function restore(ev){
@@ -2522,9 +2519,6 @@ function restore(ev){
   (ev.odemeler||[]).forEach(o=>addOdeme(o.name,o.amount,o.date));
   document.getElementById('vadeRows').innerHTML='';
   (ev.vadeler||[]).forEach(v=>addVade(v.name,v.amount,v.date));
-  document.getElementById('faturaKesildi').checked=!!ev.faturaKesildi;
-  document.getElementById('faturaTarih').value=ev.faturaTarih||'';
-  document.getElementById('faturaTutar').value=ev.faturaTutar||'';
   setTip(ev.tip||'KAPI');
   showTab('new');calc();
 }
@@ -2543,9 +2537,6 @@ function resetForm(){
   addRow('kase');addRow('gider');
   document.getElementById('odemeRows').innerHTML='';
   document.getElementById('vadeRows').innerHTML='';
-  document.getElementById('faturaKesildi').checked=false;
-  document.getElementById('faturaTarih').value='';
-  document.getElementById('faturaTutar').value='';
   setTip('KAPI');calc();
 }
 
@@ -2658,23 +2649,6 @@ function computeFor(ev){
   const kar=ciroNet-komisyon-giderNet;
   return {kdvRate,ciroGross,ciroNet,komisyon,sumKase,sumGider,toplamGider,giderKdv,gelirKdv,netKdv,giderNet,kar,
           p1amt:kar*(ev.p1pay/100),p2amt:kar*(ev.p2pay/100)};
-}
-
-// Faturalanan oran: KDV yükü sadece fatura kesildiğinde doğar.
-//  - Fatura kesilmediyse 0 (KDV henüz yok)
-//  - Kesildiyse ve tutar boşsa 1 (işin tamamı faturalandı)
-//  - Kısmi fatura tutarı girildiyse tutar / brüt ciro oranı (0..1)
-function faturaOrani(ev){
-  if(!ev||!ev.faturaKesildi)return 0;
-  const c=computeFor(ev);
-  const brut=c.ciroGross||0;
-  const ft=+ev.faturaTutar||0;
-  if(ft>0&&brut>0)return Math.min(1,ft/brut);
-  return 1;
-}
-// KDV'nin ait olduğu dönem: fatura tarihi varsa onun ayı, yoksa etkinlik ayı
-function faturaAy(ev){
-  return ((ev&&ev.faturaTarih)||(ev&&ev.tarih)||'').slice(0,7);
 }
 
 function tahsilatFor(ev){
@@ -3089,7 +3063,17 @@ function refreshEvArtistPicker(){
   const sel=document.getElementById('evArtistPick');if(!sel)return;
   const cur=sel.value;
   sel.innerHTML='<option value="">— sanatçı yok / seç —</option>';
-  firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');sel.appendChild(o);});
+  const arts=(typeof artistList==='function')?artistList():[];
+  if(arts.length){
+    const g=document.createElement('optgroup');g.label='Sanatçılar';
+    arts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;g.appendChild(o);});
+    sel.appendChild(g);
+  }
+  if(firms.length){
+    const g2=document.createElement('optgroup');g2.label='Firmalar';
+    firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');g2.appendChild(o);});
+    sel.appendChild(g2);
+  }
   sel.value=cur;
 }
 function fillClientFromFirm(){
@@ -4033,21 +4017,10 @@ function accAggregate(ayFilter){
   const ayUyar=(d)=>!ayFilter||((d||'').slice(0,7)===ayFilter);
 
   events.forEach(ev=>{
-    const a=eventAsAcc(ev);
-    // KDV yükü faturaya bağlı: fatura kesilen oran kadar KDV doğar,
-    // ve fatura tarihinin ait olduğu aya (yoksa etkinlik ayına) düşer.
-    const fo=faturaOrani(ev);
-    const fAy=faturaAy(ev);
-    const hesKdvIs=a.gelirKdv*fo;   // bu işten doğan hesaplanan (satış) KDV
-    const indKdvIs=a.indirKdv*fo;   // faturalanan orana denk indirilecek KDV
-    // Dönem (ay) filtresi: KDV, fatura ayına göre değerlendirilir
-    if(fo>0 && (!ayFilter||fAy===ayFilter)){
-      hesaplananKdv+=hesKdvIs;
-      indirilecekKdv+=indKdvIs;
-      addAy(fAy||ev.tarih,hesKdvIs,indKdvIs);
-    }
-    // Gelir/gider (kâr) ve cari, eskisi gibi etkinlik ayına göre kalır
     if(!ayUyar(ev.tarih))return;
+    const a=eventAsAcc(ev);
+    hesaplananKdv+=a.gelirKdv;
+    indirilecekKdv+=a.indirKdv;
     toplamGelir+=a.c.ciroNet;
     toplamGider+=a.c.giderNet;
     toplamArtist+=a.c.p1amt;
@@ -4199,13 +4172,13 @@ function muhasebeExcelAktar(){
     XLSX.utils.book_append_sheet(wb,wsGG,'GELİR-GİDER');
 
     // 3) KONSERLER (özet)
-    const kon=[['Şehir','Mekan','Tarih','Tip','Ciro (net)','Komisyon','Toplam Gider','Kâr/Zarar','Tahsil Edilen','Kalan','Fatura','Fatura Tarihi']];
+    const kon=[['Şehir','Mekan','Tarih','Tip','Ciro (net)','Komisyon','Toplam Gider','Kâr/Zarar','Tahsil Edilen','Kalan']];
     events.forEach(ev=>{
       const c=computeFor(ev);const t=tahsilatFor(ev);
-      kon.push([ev.sehir||'',ev.mekan||'',ev.tarih||'',ev.tip||'',R(c.ciroNet),R(c.komisyon),R(c.toplamGider),R(c.kar),R(t.al),R(Math.max(0,t.kalan)),ev.faturaKesildi?'Kesildi':'—',ev.faturaTarih||'']);
+      kon.push([ev.sehir||'',ev.mekan||'',ev.tarih||'',ev.tip||'',R(c.ciroNet),R(c.komisyon),R(c.toplamGider),R(c.kar),R(t.al),R(Math.max(0,t.kalan))]);
     });
     const wsKon=XLSX.utils.aoa_to_sheet(kon);
-    wsKon['!cols']=[{wch:14},{wch:18},{wch:12},{wch:12},{wch:14},{wch:12},{wch:14},{wch:14},{wch:14},{wch:12},{wch:10},{wch:12}];
+    wsKon['!cols']=[{wch:14},{wch:18},{wch:12},{wch:12},{wch:14},{wch:12},{wch:14},{wch:14},{wch:14},{wch:12}];
     XLSX.utils.book_append_sheet(wb,wsKon,'KONSERLER');
 
     // 4) CARİ DURUM
@@ -4743,12 +4716,99 @@ function setSaTur(t){
   document.getElementById('saTurOdeme').classList.toggle('on',t==='odeme');
   document.getElementById('saTurGider').classList.toggle('on',t==='gider');
 }
+// ── SANATÇI REHBERİ (acc içinde cfg:'artist_<id>', arData) ─────
+let editingArtistId=null;
+const ARTIST_FIELDS={arName:'name',arPhone:'phone',arMail:'mail',arKom:'kom',
+  arIban:'iban',arTaxOffice:'taxOffice',arTaxNo:'taxNo',arNote:'note'};
+// Kayıtlı sanatçılar (acc cfg kayıtlarından)
+function artistList(){
+  return accEntries.filter(e=>e.type==='cfg'&&typeof e.cfg==='string'&&e.cfg.startsWith('artist_')&&e.arData)
+    .map(e=>({id:e.id, ...e.arData}));
+}
+// artistId → sanatçı adı (önce sanatçı rehberi, sonra firmalar — eski işler için geriye dönük)
+function artistName(id){
+  if(!id)return '';
+  const a=artistList().find(x=>x.id===id);
+  if(a)return a.name||'';
+  const f=firms.find(x=>x.id===id);
+  return f?f.name:'';
+}
+function gatherArtist(){
+  const o={id:editingArtistId||('ar'+Date.now())};
+  for(const [el,key] of Object.entries(ARTIST_FIELDS)){const e=document.getElementById(el);o[key]=e?e.value:'';}
+  return o;
+}
+async function saveArtist(){
+  const a=gatherArtist();
+  if(!a.name){toast('Sanatçı adı gerekli');return;}
+  const entry={id:a.id, type:'cfg', cfg:'artist_'+a.id, desc:a.name, arData:a};
+  try{
+    const ex=accEntries.find(x=>x.id===editingArtistId);
+    const res=await apiFetch('/api/acc'+(ex?'/'+editingArtistId:''),{method:ex?'PUT':'POST',body:JSON.stringify(entry)});
+    if(!res||!res.ok){toast('Kaydedilemedi');return;}
+    if(res&&res.ok){let s=null;try{s=await res.json();}catch(e){}if(s&&s.id)entry.id=s.id;}
+  }catch(e){toast('Kaydedilemedi');return;}
+  await loadAcc();
+  resetArtistForm();
+  renderArtists();refreshSaPicker();refreshEvArtistPicker();
+  toast('Sanatçı kaydedildi');
+}
+function resetArtistForm(){
+  editingArtistId=null;
+  Object.keys(ARTIST_FIELDS).forEach(el=>{const e=document.getElementById(el);if(e)e.value='';});
+  const t=document.getElementById('arFormTitle');if(t)t.textContent='Sanatçı Ekle';
+  const b=document.getElementById('arSaveBtn');if(b)b.textContent='Sanatçı kaydet';
+}
+function editArtist(id){
+  const a=artistList().find(x=>x.id===id);if(!a)return;
+  editingArtistId=a.id;
+  for(const [el,key] of Object.entries(ARTIST_FIELDS)){const e=document.getElementById(el);if(e)e.value=a[key]||'';}
+  const t=document.getElementById('arFormTitle');if(t)t.textContent='Sanatçı Düzenle';
+  const b=document.getElementById('arSaveBtn');if(b)b.textContent='Değişiklikleri kaydet';
+  document.getElementById('view-sanatci').scrollIntoView({behavior:'smooth'});
+}
+async function delArtist(id){
+  if(!confirm('Bu sanatçıyı silmek istiyor musun?'))return;
+  try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
+  await loadAcc();renderArtists();refreshSaPicker();refreshEvArtistPicker();toast('Silindi');
+}
+function renderArtists(){
+  const wrap=document.getElementById('arList');if(!wrap)return;
+  const q=(document.getElementById('arSearch').value||'').toLocaleLowerCase('tr');
+  const all=artistList();
+  const list=all.filter(a=>!q||[a.name,a.phone,a.mail].some(v=>(v||'').toLocaleLowerCase('tr').includes(q)));
+  if(!list.length){wrap.innerHTML='<div class="empty"><div class="big">♪</div>'+(all.length?'Eşleşen sanatçı yok.':'Henüz sanatçı yok. Yukarıdan ekle.')+'</div>';return;}
+  wrap.innerHTML='';
+  list.forEach(a=>{
+    const d=document.createElement('div');
+    d.className='saved-item';
+    d.onclick=(e)=>{if(e.target.classList.contains('del'))return;editArtist(a.id);};
+    const komTxt=(a.kom!==''&&a.kom!=null)?('%'+a.kom+' kom.'):'';
+    d.innerHTML=`
+      <div class="info">
+        <div class="ttl">${esc(a.name)}${komTxt?`<span class="badge">${esc(komTxt)}</span>`:''}</div>
+        <div class="sub">${[a.phone,a.mail,a.iban].filter(Boolean).map(esc).join(' · ')||'detay yok'}</div>
+      </div>
+      <button class="del" title="Sil" onclick="delArtist('${a.id}')">🗑</button>`;
+    wrap.appendChild(d);
+  });
+}
 function refreshSaPicker(){
   const sel=document.getElementById('saPick');if(!sel)return;
   const cur=sel.value;
   sel.innerHTML='<option value="">— sanatçı seç —</option>';
-  // sadece bir işe sanatçı olarak bağlanmış firmaları + tüm firmaları göster
-  firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');sel.appendChild(o);});
+  // önce kayıtlı sanatçılar, sonra firmalar (eski işlerin artistId'si firmaya işaret edebilir)
+  const arts=artistList();
+  if(arts.length){
+    const g=document.createElement('optgroup');g.label='Sanatçılar';
+    arts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;g.appendChild(o);});
+    sel.appendChild(g);
+  }
+  if(firms.length){
+    const g2=document.createElement('optgroup');g2.label='Firmalar';
+    firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');g2.appendChild(o);});
+    sel.appendChild(g2);
+  }
   sel.value=cur;
 }
 // sanatçı hareketleri acc içinde: artistPay:true, artistId, saTur('odeme'|'gider')
@@ -4891,7 +4951,7 @@ function renderSanatci(){
   }
 
   // ay sonu raporu
-  const fnm=firmName(artistId)||'Sanatçı';
+  const fnm=artistName(artistId)||'Sanatçı';
   const donem=ayFilter?ayDisplay(ayFilter):'Tüm zamanlar';
   document.getElementById('saRapor').innerHTML=`
     <table class="atable"><tbody>
@@ -4919,7 +4979,7 @@ function exportSanatci(){
   const odenen=hareketler.filter(h=>h.saTur==='odeme').reduce((a,h)=>a+h.amount,0);
   const giderler=hareketler.filter(h=>h.saTur==='gider').reduce((a,h)=>a+h.amount,0);
   const kalan=toplamPay-odenen-giderler;
-  const fnm=firmName(artistId)||'Sanatci';
+  const fnm=artistName(artistId)||'Sanatci';
   const rows=[
     ['SANATÇI HESAP RAPORU'],
     ['Sanatçı',fnm],
@@ -5386,11 +5446,8 @@ function renderDashboard(){
     const menajerToplam=c.p2amt; // bu işin toplam menajer payı
     menajerAlinan+=menajerToplam*oran;
     menajerBekleyen+=menajerToplam*(1-oran);
-    // KDV yükü artık tahsilata değil FATURAYA bağlı:
-    // sadece fatura kesilen kısmın net KDV'si devlete ödenecek olarak sayılır.
-    // (Kapora/avans alsan bile fatura kesilmediyse KDV doğmaz.)
-    const fo=faturaOrani(ev);
-    tahsilEdilenKdv+=c.netKdv*fo;
+    // tahsil edilen kısmın içindeki KDV (net KDV, tahsil oranıyla)
+    tahsilEdilenKdv+=c.netKdv*oran;
     // KAŞE: sadece FİİLEN ÖDENEN kaşeler kasadan düşer (ödediysen para cebinden gitti, tam düşer).
     // Ödenmemiş kaşe kasada durmaya devam eder.
     let kaseOdenenBuIs=0, kaseAcikBuIs=0;
@@ -5882,9 +5939,9 @@ async function toggleKaseOdendi(eventId, kaseIdx){
 
 // ── RAPOR: dönem filtresi ──
 let rapDonem='all';
-// bir işin sanatçısını bul (artistId→firma adı, yoksa p1ad)
+// bir işin sanatçısını bul (artistId→sanatçı rehberi/firma adı, yoksa p1ad)
 function evSanatciAd(ev){
-  if(ev.artistId){const f=firms.find(x=>x.id===ev.artistId);if(f)return f.name;}
+  if(ev.artistId){const nm=artistName(ev.artistId);if(nm)return nm;}
   if(ev.p1ad&&ev.p1ad!=='MAN FEE')return ev.p1ad;
   return '';
 }
@@ -6070,7 +6127,7 @@ function renderAnaliz(){
   const bySan={};
   evs.forEach(({ev,c})=>{
     let ad='—';
-    if(ev.artistId){const f=firms.find(x=>x.id===ev.artistId);if(f)ad=f.name;}
+    if(ev.artistId){const nm=artistName(ev.artistId);if(nm)ad=nm;}
     else if(ev.p1ad&&ev.p1ad!=='MAN FEE')ad=ev.p1ad;
     if(!bySan[ad])bySan[ad]={n:0,ciro:0,kar:0};
     bySan[ad].n++;bySan[ad].ciro+=c.ciroNet;bySan[ad].kar+=c.kar;
@@ -6204,9 +6261,15 @@ function sanatciRaporPdf(){
 function sanatciRaporMail(){
   const r=sanatciRaporHTML();
   if(!r){toast('Önce sanatçı seç');return;}
-  // sanatçı mailini bul (artistId → firma → mail)
+  // sanatçı mailini bul (artistId → sanatçı rehberi → firma → mail)
   let mail='';
-  for(const {ev} of r.evs){if(ev.artistId){const f=firms.find(x=>x.id===ev.artistId);if(f&&f.mail){mail=f.mail;break;}}}
+  for(const {ev} of r.evs){
+    if(!ev.artistId)continue;
+    const a=artistList().find(x=>x.id===ev.artistId);
+    if(a&&a.mail){mail=a.mail;break;}
+    const f=firms.find(x=>x.id===ev.artistId);
+    if(f&&f.mail){mail=f.mail;break;}
+  }
   const firmaAd=document.getElementById('coName')?document.getElementById('coName').value:'';
   const konu=`${r.sec} — Performans Raporu (${rapDonemAd()})`;
   let g=`Merhaba,\n\n${r.sec} için ${rapDonemAd()} dönemi performans özeti:\n\n`;
