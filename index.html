@@ -1181,31 +1181,37 @@ select option{background:var(--surface)}
         </div>
 
         <div class="card">
-          <div class="card-title" id="arFormTitle">Sanatçı Ekle</div>
-          <div class="hint" style="margin-bottom:16px">Buraya eklediğin sanatçılar hem yukarıdaki listede hem de "Yeni Etkinlik" ekranındaki sanatçı seçiminde çıkar.</div>
-          <div class="grid">
-            <div><label>Sanatçı adı *</label><input id="arName" placeholder="Sanatçı / grup adı" autocomplete="off"></div>
-            <div><label>Telefon</label><input id="arPhone" placeholder="+90 ..." autocomplete="off"></div>
-            <div><label>E-posta</label><input id="arMail" placeholder="mail@..." autocomplete="off"></div>
-            <div><label>Komisyon oranı (%)</label><input id="arKom" type="number" min="0" max="100" step="0.5" placeholder="örn. 25"></div>
-            <div><label>IBAN</label><input id="arIban" placeholder="TR.." autocomplete="off"></div>
-            <div><label>Vergi dairesi</label><input id="arTaxOffice" placeholder="Vergi dairesi" autocomplete="off"></div>
-            <div><label>Vergi / TC no</label><input id="arTaxNo" placeholder="Vergi / TC no" autocomplete="off"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div class="card-title" style="margin:0">Sanatçı Rehberi</div>
+            <button class="btn primary" style="flex:none;min-width:auto;padding:9px 16px;font-size:13px" onclick="artistFormAc()" id="arAcBtn">+ Yeni Sanatçı Ekle</button>
           </div>
-          <div style="margin-top:16px">
-            <label>Not</label>
-            <input id="arNote" placeholder="Menajer, rider, geçmiş işler vb." autocomplete="off">
-          </div>
-          <div class="actions" style="margin-top:24px">
-            <button class="btn primary" onclick="saveArtist()" id="arSaveBtn">Sanatçı kaydet</button>
-            <button class="btn ghost" onclick="resetArtistForm()">Temizle</button>
-          </div>
-        </div>
 
-        <div class="card">
-          <div class="card-title">Kayıtlı Sanatçılar</div>
-          <input id="arSearch" placeholder="Ara: ad, telefon..." autocomplete="off" oninput="renderArtists()" style="margin-bottom:20px">
-          <div class="saved-list" id="arList"></div>
+          <div id="arFormWrap" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
+            <div class="card-title" id="arFormTitle">Yeni Sanatçı</div>
+            <div class="hint" style="margin-bottom:16px">Buraya eklediğin sanatçılar hem yukarıdaki listede hem de "Yeni Etkinlik" ekranındaki sanatçı seçiminde çıkar.</div>
+            <div class="grid">
+              <div><label>Sanatçı adı *</label><input id="arName" placeholder="Sanatçı / grup adı" autocomplete="off"></div>
+              <div><label>Telefon</label><input id="arPhone" placeholder="+90 ..." autocomplete="off"></div>
+              <div><label>E-posta</label><input id="arMail" placeholder="mail@..." autocomplete="off"></div>
+              <div><label>Komisyon oranı (%)</label><input id="arKom" type="number" min="0" max="100" step="0.5" placeholder="örn. 25"></div>
+              <div><label>IBAN</label><input id="arIban" placeholder="TR.." autocomplete="off"></div>
+              <div><label>Vergi dairesi</label><input id="arTaxOffice" placeholder="Vergi dairesi" autocomplete="off"></div>
+              <div><label>Vergi / TC no</label><input id="arTaxNo" placeholder="Vergi / TC no" autocomplete="off"></div>
+            </div>
+            <div style="margin-top:16px">
+              <label>Not</label>
+              <input id="arNote" placeholder="Menajer, rider, geçmiş işler vb." autocomplete="off">
+            </div>
+            <div class="actions" style="margin-top:24px">
+              <button class="btn primary" onclick="saveArtist()" id="arSaveBtn">Sanatçı kaydet</button>
+              <button class="btn ghost" onclick="artistFormKapat()">Vazgeç / Kapat</button>
+            </div>
+          </div>
+
+          <div style="margin-top:20px">
+            <input id="arSearch" placeholder="Ara: ad, telefon..." autocomplete="off" oninput="renderArtists()" style="margin-bottom:16px">
+            <div class="saved-list" id="arList"></div>
+          </div>
         </div>
 
         <div id="saBos" class="card"><div class="anEmpty">Sanatçı seç, hesabı burada görünsün.</div></div>
@@ -2214,7 +2220,7 @@ function showTab(t){
     sdRenderKayitli();
     renderSimDetay();
   }
-  if(t==='sanatci'){refreshSaPicker();renderArtists();renderSanatci();}
+  if(t==='sanatci'){refreshSaPicker();renderArtists();renderSanatci();artistFormKapat();}
   if(t==='szhazirla'){refreshDocPicker();refreshDcPicker();szRenderKayitli();}
   if(t==='szyapilan'){szSetFiltre(szFiltre);}
   if(t==='szrehber'){renderDcList();}
@@ -4716,6 +4722,7 @@ function setSaTur(t){
   document.getElementById('saTurOdeme').classList.toggle('on',t==='odeme');
   document.getElementById('saTurGider').classList.toggle('on',t==='gider');
 }
+
 // ── SANATÇI REHBERİ (acc içinde cfg:'artist_<id>', arData) ─────
 let editingArtistId=null;
 const ARTIST_FIELDS={arName:'name',arPhone:'phone',arMail:'mail',arKom:'kom',
@@ -4733,6 +4740,18 @@ function artistName(id){
   const f=firms.find(x=>x.id===id);
   return f?f.name:'';
 }
+// Form aç/kapat (kafa karışmasın diye normalde gizli)
+function artistFormAc(){
+  const w=document.getElementById('arFormWrap');if(w)w.style.display='block';
+  const b=document.getElementById('arAcBtn');if(b)b.style.display='none';
+  const t=document.getElementById('arFormTitle');if(t&&!editingArtistId)t.textContent='Yeni Sanatçı';
+  const n=document.getElementById('arName');if(n)n.focus();
+}
+function artistFormKapat(){
+  resetArtistForm();
+  const w=document.getElementById('arFormWrap');if(w)w.style.display='none';
+  const b=document.getElementById('arAcBtn');if(b)b.style.display='';
+}
 function gatherArtist(){
   const o={id:editingArtistId||('ar'+Date.now())};
   for(const [el,key] of Object.entries(ARTIST_FIELDS)){const e=document.getElementById(el);o[key]=e?e.value:'';}
@@ -4749,14 +4768,14 @@ async function saveArtist(){
     if(res&&res.ok){let s=null;try{s=await res.json();}catch(e){}if(s&&s.id)entry.id=s.id;}
   }catch(e){toast('Kaydedilemedi');return;}
   await loadAcc();
-  resetArtistForm();
+  artistFormKapat();
   renderArtists();refreshSaPicker();refreshEvArtistPicker();
   toast('Sanatçı kaydedildi');
 }
 function resetArtistForm(){
   editingArtistId=null;
   Object.keys(ARTIST_FIELDS).forEach(el=>{const e=document.getElementById(el);if(e)e.value='';});
-  const t=document.getElementById('arFormTitle');if(t)t.textContent='Sanatçı Ekle';
+  const t=document.getElementById('arFormTitle');if(t)t.textContent='Yeni Sanatçı';
   const b=document.getElementById('arSaveBtn');if(b)b.textContent='Sanatçı kaydet';
 }
 function editArtist(id){
@@ -4765,7 +4784,10 @@ function editArtist(id){
   for(const [el,key] of Object.entries(ARTIST_FIELDS)){const e=document.getElementById(el);if(e)e.value=a[key]||'';}
   const t=document.getElementById('arFormTitle');if(t)t.textContent='Sanatçı Düzenle';
   const b=document.getElementById('arSaveBtn');if(b)b.textContent='Değişiklikleri kaydet';
-  document.getElementById('view-sanatci').scrollIntoView({behavior:'smooth'});
+  // düzenlemeye basınca formu aç
+  const w=document.getElementById('arFormWrap');if(w)w.style.display='block';
+  const ab=document.getElementById('arAcBtn');if(ab)ab.style.display='none';
+  if(w)w.scrollIntoView({behavior:'smooth',block:'center'});
 }
 async function delArtist(id){
   if(!confirm('Bu sanatçıyı silmek istiyor musun?'))return;
@@ -4777,7 +4799,7 @@ function renderArtists(){
   const q=(document.getElementById('arSearch').value||'').toLocaleLowerCase('tr');
   const all=artistList();
   const list=all.filter(a=>!q||[a.name,a.phone,a.mail].some(v=>(v||'').toLocaleLowerCase('tr').includes(q)));
-  if(!list.length){wrap.innerHTML='<div class="empty"><div class="big">♪</div>'+(all.length?'Eşleşen sanatçı yok.':'Henüz sanatçı yok. Yukarıdan ekle.')+'</div>';return;}
+  if(!list.length){wrap.innerHTML='<div class="empty"><div class="big">♪</div>'+(all.length?'Eşleşen sanatçı yok.':'Henüz sanatçı yok. "+ Yeni Sanatçı Ekle" ile başla.')+'</div>';return;}
   wrap.innerHTML='';
   list.forEach(a=>{
     const d=document.createElement('div');
@@ -5939,7 +5961,7 @@ async function toggleKaseOdendi(eventId, kaseIdx){
 
 // ── RAPOR: dönem filtresi ──
 let rapDonem='all';
-// bir işin sanatçısını bul (artistId→sanatçı rehberi/firma adı, yoksa p1ad)
+// bir işin sanatçısını bul (artistId→firma adı, yoksa p1ad)
 function evSanatciAd(ev){
   if(ev.artistId){const nm=artistName(ev.artistId);if(nm)return nm;}
   if(ev.p1ad&&ev.p1ad!=='MAN FEE')return ev.p1ad;
