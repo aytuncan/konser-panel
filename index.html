@@ -321,6 +321,77 @@ select option{background:var(--surface)}
 .stat .v{font-size:24px;font-weight:700;margin-top:8px;font-variant-numeric:tabular-nums;letter-spacing:-0.5px}
 .stat .v.pos{color:var(--ink)}.stat .v.neg{color:var(--red)}
 
+/* ── DASHBOARD 2.0: KPI KARTLARI ──────────────────────── */
+.kpi-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-bottom:24px;
+}
+.kpi-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:20px;display:flex;flex-direction:column;gap:12px;transition:box-shadow .18s,transform .18s;
+}
+.kpi-card:hover{box-shadow:0 8px 24px rgba(20,25,45,0.06);transform:translateY(-2px)}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.kpi-ico{
+  width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  color:#fff;flex-shrink:0;
+}
+.kpi-ico svg{width:22px;height:22px;stroke:#fff}
+.kpi-chip{
+  display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;
+  padding:4px 9px;border-radius:20px;white-space:nowrap;
+}
+.kpi-chip.up{background:rgba(22,163,74,0.12);color:var(--green)}
+.kpi-chip.down{background:rgba(220,38,38,0.12);color:var(--red)}
+.kpi-chip.flat{background:var(--faint);color:var(--muted)}
+.kpi-lbl{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kpi-val{font-size:28px;font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums;line-height:1;margin-top:2px}
+.kpi-val.neg{color:var(--red)}
+
+/* ── DASHBOARD 2.0: PANEL BAŞLIK ──────────────────────── */
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px}
+.panel-title{font-size:15px;font-weight:700;letter-spacing:-.2px;color:var(--ink)}
+.panel-sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* ── DASHBOARD 2.0: ALAN GRAFİĞİ ──────────────────────── */
+.area-tip{
+  position:absolute;pointer-events:none;background:var(--ink);color:#fff;
+  padding:7px 11px;border-radius:8px;font-size:12px;font-weight:600;white-space:nowrap;
+  transform:translate(-50%,-130%);opacity:0;transition:opacity .12s;z-index:5;box-shadow:0 6px 20px rgba(0,0,0,.25);
+}
+.area-tip .t-lbl{color:rgba(255,255,255,.6);font-weight:500;font-size:11px}
+.area-dot{cursor:pointer;transition:r .12s}
+
+/* ── DASHBOARD 2.0: DONUT LEGEND ──────────────────────── */
+.donut-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center}
+.donut-legend{display:flex;flex-direction:column;gap:10px;min-width:130px}
+.donut-leg-item{display:flex;align-items:center;gap:8px;font-size:13px}
+.donut-leg-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.donut-leg-name{color:var(--ink);font-weight:500}
+.donut-leg-val{color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600}
+
+/* ── DASHBOARD 2.0: PERFORMANS BAR LİSTESİ ────────────── */
+.perf-row{display:grid;grid-template-columns:120px 1fr auto;align-items:center;gap:12px;margin-bottom:14px}
+.perf-row:last-child{margin-bottom:0}
+.perf-name{font-size:13.5px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.perf-track{height:9px;background:var(--faint);border-radius:6px;overflow:hidden}
+.perf-fill{height:100%;border-radius:6px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.perf-val{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+@media(max-width:520px){.perf-row{grid-template-columns:90px 1fr auto}}
+
+/* ── DASHBOARD 2.0: MODERN TABLO ──────────────────────── */
+.dtable{width:100%;border-collapse:collapse;font-size:13.5px}
+.dtable th{
+  text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;
+  padding:10px 12px;border-bottom:1px solid var(--border);font-weight:600;
+}
+.dtable td{padding:13px 12px;border-bottom:1px solid var(--faint)}
+.dtable tr:last-child td{border-bottom:none}
+.dtable tr:hover td{background:var(--faint)}
+.pill{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:700;letter-spacing:.02em}
+.pill.ok{background:rgba(22,163,74,0.12);color:var(--green)}
+.pill.wait{background:rgba(217,119,6,0.13);color:var(--amber)}
+.pill.late{background:rgba(220,38,38,0.12);color:var(--red)}
+
 /* ── TABLES ────────────────────────────────────────────── */
 .atable{width:100%;border-collapse:collapse;font-size:13.5px}
 .atable th{
@@ -535,28 +606,60 @@ select option{background:var(--surface)}
     <div class="content">
 
       <div id="view-dashboard" style="">
-        <!-- GRUP 1: GERÇEK KASA (sıcak para) -->
+        <!-- KPI ŞERİDİ (özet göstergeler) -->
+        <div class="kpi-grid" id="dashKpi"></div>
+
+        <!-- ANA GRAFİK SATIRI: alan grafiği + donut -->
+        <div class="dashboard-grid" style="grid-template-columns:minmax(0,1.9fr) minmax(0,1fr)">
+          <div class="card full-w" style="grid-column:auto">
+            <div class="panel-head">
+              <div>
+                <div class="panel-title">Aylık Ciro & Kâr Trendi</div>
+                <div class="panel-sub">Tarihli konserlere göre aylık ciro (KDV hariç) ve net kâr</div>
+              </div>
+              <div style="display:flex;gap:14px;align-items:center;font-size:12px;color:var(--muted)">
+                <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:11px;height:11px;background:var(--accent);border-radius:3px;display:inline-block"></span>Ciro</span>
+                <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:11px;height:11px;background:var(--green);border-radius:3px;display:inline-block"></span>Kâr</span>
+              </div>
+            </div>
+            <div id="dashTrend" style="margin-top:16px;position:relative"><div class="anEmpty">Tarihli konser yok.</div></div>
+          </div>
+          <div class="card">
+            <div class="panel-head"><div class="panel-title">Gelir Dağılımı</div></div>
+            <div class="panel-sub" style="margin-bottom:12px">Tahsil edilen paranın kaynağı</div>
+            <div id="dashDonut"><div class="anEmpty">Veri yok.</div></div>
+          </div>
+        </div>
+
+        <!-- PERFORMANS + SON İŞLEMLER -->
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="panel-head"><div class="panel-title">En Kârlı Konserler</div></div>
+            <div class="panel-sub" style="margin-bottom:16px">Kâra göre ilk 5 iş</div>
+            <div id="dashTopKonser"><div class="anEmpty">Konser yok.</div></div>
+          </div>
+          <div class="card">
+            <div class="panel-head"><div class="panel-title">Son İşlemler</div></div>
+            <div class="panel-sub" style="margin-bottom:16px">En son eklenen konserler</div>
+            <div id="dashSonIslem" style="overflow-x:auto"><div class="anEmpty">İşlem yok.</div></div>
+          </div>
+        </div>
+
+        <!-- GERÇEK KASA (detay) -->
         <div class="card">
           <div class="card-title">💰 Gerçek Kasa</div>
           <div class="hint" style="margin-bottom:20px">Şu an kasaya giren/çıkan gerçek para. Tahsil edilen paradan, o konserlerin tahsil oranına denk kaşeler, giderler ve sanatçıya yapılan ödemeler düşülür.</div>
           <div class="stat-grid" id="kasaSirket"></div>
         </div>
 
-        <!-- GRUP 2: KÂR / ZARAR (muhasebe) -->
+        <!-- KÂR / ZARAR (muhasebe) -->
         <div class="card">
           <div class="card-title" id="dashAyBaslik">Kâr / Zarar — Bu Ay</div>
           <div class="hint" style="margin-bottom:20px">Bu ayın işlerinden doğan kâr, paylar ve hak edişler. (Kasadaki gerçek paradan farklıdır; bu muhasebe kârıdır.)</div>
           <div class="stat-grid" id="dashAyOzet"></div>
         </div>
 
-        <!-- AYLIK TREND GRAFİĞİ -->
-        <div class="card">
-          <div class="card-title">Aylık Ciro & Kâr Trendi</div>
-          <div class="hint" style="margin-bottom:16px">Tarihli konserlere göre aylık ciro (KDV hariç) ve net kâr. <span style="display:inline-block;width:12px;height:12px;background:var(--accent);border-radius:3px;vertical-align:middle"></span> Ciro &nbsp; <span style="display:inline-block;width:12px;height:12px;background:var(--green);border-radius:3px;vertical-align:middle"></span> Kâr</div>
-          <div id="dashTrend"><div class="anEmpty">Tarihli konser yok.</div></div>
-        </div>
-
-        <!-- GRUP 3: OPERASYON -->
+        <!-- OPERASYON -->
         <div class="dashboard-grid">
           <div class="card">
             <div class="card-title">Yaklaşan Etkinlikler</div>
@@ -576,7 +679,7 @@ select option{background:var(--surface)}
           <div id="dashKase"><div class="anEmpty">Ödenmemiş Ekip Kaşesi yok 🎉</div></div>
         </div>
 
-        <!-- gizli: eski genel bakış kaldırıldı, kasa+menajer birleşti -->
+        <!-- gizli: eski genel bakış -->
         <div id="dashOzet" style="display:none"></div>
         <div id="kasaMenajer" style="display:none"></div>
       </div>
@@ -1178,40 +1281,6 @@ select option{background:var(--surface)}
             </div>
           </div>
           <div class="hint">Sanatçıyı işe bağlamak için "Yeni İş" ekranında sanatçı seçmelisin. Burada o sanatçının tüm konserlerden payı (%75), ona yapılan ödemeler ve adına yapılan giderler toplanır.</div>
-        </div>
-
-        <div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-            <div class="card-title" style="margin:0">Sanatçı Rehberi</div>
-            <button class="btn primary" style="flex:none;min-width:auto;padding:9px 16px;font-size:13px" onclick="artistFormAc()" id="arAcBtn">+ Yeni Sanatçı Ekle</button>
-          </div>
-
-          <div id="arFormWrap" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
-            <div class="card-title" id="arFormTitle">Yeni Sanatçı</div>
-            <div class="hint" style="margin-bottom:16px">Buraya eklediğin sanatçılar hem yukarıdaki listede hem de "Yeni Etkinlik" ekranındaki sanatçı seçiminde çıkar.</div>
-            <div class="grid">
-              <div><label>Sanatçı adı *</label><input id="arName" placeholder="Sanatçı / grup adı" autocomplete="off"></div>
-              <div><label>Telefon</label><input id="arPhone" placeholder="+90 ..." autocomplete="off"></div>
-              <div><label>E-posta</label><input id="arMail" placeholder="mail@..." autocomplete="off"></div>
-              <div><label>Komisyon oranı (%)</label><input id="arKom" type="number" min="0" max="100" step="0.5" placeholder="örn. 25"></div>
-              <div><label>IBAN</label><input id="arIban" placeholder="TR.." autocomplete="off"></div>
-              <div><label>Vergi dairesi</label><input id="arTaxOffice" placeholder="Vergi dairesi" autocomplete="off"></div>
-              <div><label>Vergi / TC no</label><input id="arTaxNo" placeholder="Vergi / TC no" autocomplete="off"></div>
-            </div>
-            <div style="margin-top:16px">
-              <label>Not</label>
-              <input id="arNote" placeholder="Menajer, rider, geçmiş işler vb." autocomplete="off">
-            </div>
-            <div class="actions" style="margin-top:24px">
-              <button class="btn primary" onclick="saveArtist()" id="arSaveBtn">Sanatçı kaydet</button>
-              <button class="btn ghost" onclick="artistFormKapat()">Vazgeç / Kapat</button>
-            </div>
-          </div>
-
-          <div style="margin-top:20px">
-            <input id="arSearch" placeholder="Ara: ad, telefon..." autocomplete="off" oninput="renderArtists()" style="margin-bottom:16px">
-            <div class="saved-list" id="arList"></div>
-          </div>
         </div>
 
         <div id="saBos" class="card"><div class="anEmpty">Sanatçı seç, hesabı burada görünsün.</div></div>
@@ -2220,7 +2289,7 @@ function showTab(t){
     sdRenderKayitli();
     renderSimDetay();
   }
-  if(t==='sanatci'){refreshSaPicker();renderArtists();renderSanatci();artistFormKapat();}
+  if(t==='sanatci'){refreshSaPicker();renderSanatci();}
   if(t==='szhazirla'){refreshDocPicker();refreshDcPicker();szRenderKayitli();}
   if(t==='szyapilan'){szSetFiltre(szFiltre);}
   if(t==='szrehber'){renderDcList();}
@@ -3069,17 +3138,7 @@ function refreshEvArtistPicker(){
   const sel=document.getElementById('evArtistPick');if(!sel)return;
   const cur=sel.value;
   sel.innerHTML='<option value="">— sanatçı yok / seç —</option>';
-  const arts=(typeof artistList==='function')?artistList():[];
-  if(arts.length){
-    const g=document.createElement('optgroup');g.label='Sanatçılar';
-    arts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;g.appendChild(o);});
-    sel.appendChild(g);
-  }
-  if(firms.length){
-    const g2=document.createElement('optgroup');g2.label='Firmalar';
-    firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');g2.appendChild(o);});
-    sel.appendChild(g2);
-  }
+  firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');sel.appendChild(o);});
   sel.value=cur;
 }
 function fillClientFromFirm(){
@@ -4722,115 +4781,12 @@ function setSaTur(t){
   document.getElementById('saTurOdeme').classList.toggle('on',t==='odeme');
   document.getElementById('saTurGider').classList.toggle('on',t==='gider');
 }
-
-// ── SANATÇI REHBERİ (acc içinde cfg:'artist_<id>', arData) ─────
-let editingArtistId=null;
-const ARTIST_FIELDS={arName:'name',arPhone:'phone',arMail:'mail',arKom:'kom',
-  arIban:'iban',arTaxOffice:'taxOffice',arTaxNo:'taxNo',arNote:'note'};
-// Kayıtlı sanatçılar (acc cfg kayıtlarından)
-function artistList(){
-  return accEntries.filter(e=>e.type==='cfg'&&typeof e.cfg==='string'&&e.cfg.startsWith('artist_')&&e.arData)
-    .map(e=>({id:e.id, ...e.arData}));
-}
-// artistId → sanatçı adı (önce sanatçı rehberi, sonra firmalar — eski işler için geriye dönük)
-function artistName(id){
-  if(!id)return '';
-  const a=artistList().find(x=>x.id===id);
-  if(a)return a.name||'';
-  const f=firms.find(x=>x.id===id);
-  return f?f.name:'';
-}
-// Form aç/kapat (kafa karışmasın diye normalde gizli)
-function artistFormAc(){
-  const w=document.getElementById('arFormWrap');if(w)w.style.display='block';
-  const b=document.getElementById('arAcBtn');if(b)b.style.display='none';
-  const t=document.getElementById('arFormTitle');if(t&&!editingArtistId)t.textContent='Yeni Sanatçı';
-  const n=document.getElementById('arName');if(n)n.focus();
-}
-function artistFormKapat(){
-  resetArtistForm();
-  const w=document.getElementById('arFormWrap');if(w)w.style.display='none';
-  const b=document.getElementById('arAcBtn');if(b)b.style.display='';
-}
-function gatherArtist(){
-  const o={id:editingArtistId||('ar'+Date.now())};
-  for(const [el,key] of Object.entries(ARTIST_FIELDS)){const e=document.getElementById(el);o[key]=e?e.value:'';}
-  return o;
-}
-async function saveArtist(){
-  const a=gatherArtist();
-  if(!a.name){toast('Sanatçı adı gerekli');return;}
-  const entry={id:a.id, type:'cfg', cfg:'artist_'+a.id, desc:a.name, arData:a};
-  try{
-    const ex=accEntries.find(x=>x.id===editingArtistId);
-    const res=await apiFetch('/api/acc'+(ex?'/'+editingArtistId:''),{method:ex?'PUT':'POST',body:JSON.stringify(entry)});
-    if(!res||!res.ok){toast('Kaydedilemedi');return;}
-    if(res&&res.ok){let s=null;try{s=await res.json();}catch(e){}if(s&&s.id)entry.id=s.id;}
-  }catch(e){toast('Kaydedilemedi');return;}
-  await loadAcc();
-  artistFormKapat();
-  renderArtists();refreshSaPicker();refreshEvArtistPicker();
-  toast('Sanatçı kaydedildi');
-}
-function resetArtistForm(){
-  editingArtistId=null;
-  Object.keys(ARTIST_FIELDS).forEach(el=>{const e=document.getElementById(el);if(e)e.value='';});
-  const t=document.getElementById('arFormTitle');if(t)t.textContent='Yeni Sanatçı';
-  const b=document.getElementById('arSaveBtn');if(b)b.textContent='Sanatçı kaydet';
-}
-function editArtist(id){
-  const a=artistList().find(x=>x.id===id);if(!a)return;
-  editingArtistId=a.id;
-  for(const [el,key] of Object.entries(ARTIST_FIELDS)){const e=document.getElementById(el);if(e)e.value=a[key]||'';}
-  const t=document.getElementById('arFormTitle');if(t)t.textContent='Sanatçı Düzenle';
-  const b=document.getElementById('arSaveBtn');if(b)b.textContent='Değişiklikleri kaydet';
-  // düzenlemeye basınca formu aç
-  const w=document.getElementById('arFormWrap');if(w)w.style.display='block';
-  const ab=document.getElementById('arAcBtn');if(ab)ab.style.display='none';
-  if(w)w.scrollIntoView({behavior:'smooth',block:'center'});
-}
-async function delArtist(id){
-  if(!confirm('Bu sanatçıyı silmek istiyor musun?'))return;
-  try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
-  await loadAcc();renderArtists();refreshSaPicker();refreshEvArtistPicker();toast('Silindi');
-}
-function renderArtists(){
-  const wrap=document.getElementById('arList');if(!wrap)return;
-  const q=(document.getElementById('arSearch').value||'').toLocaleLowerCase('tr');
-  const all=artistList();
-  const list=all.filter(a=>!q||[a.name,a.phone,a.mail].some(v=>(v||'').toLocaleLowerCase('tr').includes(q)));
-  if(!list.length){wrap.innerHTML='<div class="empty"><div class="big">♪</div>'+(all.length?'Eşleşen sanatçı yok.':'Henüz sanatçı yok. "+ Yeni Sanatçı Ekle" ile başla.')+'</div>';return;}
-  wrap.innerHTML='';
-  list.forEach(a=>{
-    const d=document.createElement('div');
-    d.className='saved-item';
-    d.onclick=(e)=>{if(e.target.classList.contains('del'))return;editArtist(a.id);};
-    const komTxt=(a.kom!==''&&a.kom!=null)?('%'+a.kom+' kom.'):'';
-    d.innerHTML=`
-      <div class="info">
-        <div class="ttl">${esc(a.name)}${komTxt?`<span class="badge">${esc(komTxt)}</span>`:''}</div>
-        <div class="sub">${[a.phone,a.mail,a.iban].filter(Boolean).map(esc).join(' · ')||'detay yok'}</div>
-      </div>
-      <button class="del" title="Sil" onclick="delArtist('${a.id}')">🗑</button>`;
-    wrap.appendChild(d);
-  });
-}
 function refreshSaPicker(){
   const sel=document.getElementById('saPick');if(!sel)return;
   const cur=sel.value;
   sel.innerHTML='<option value="">— sanatçı seç —</option>';
-  // önce kayıtlı sanatçılar, sonra firmalar (eski işlerin artistId'si firmaya işaret edebilir)
-  const arts=artistList();
-  if(arts.length){
-    const g=document.createElement('optgroup');g.label='Sanatçılar';
-    arts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;g.appendChild(o);});
-    sel.appendChild(g);
-  }
-  if(firms.length){
-    const g2=document.createElement('optgroup');g2.label='Firmalar';
-    firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');g2.appendChild(o);});
-    sel.appendChild(g2);
-  }
+  // sadece bir işe sanatçı olarak bağlanmış firmaları + tüm firmaları göster
+  firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');sel.appendChild(o);});
   sel.value=cur;
 }
 // sanatçı hareketleri acc içinde: artistPay:true, artistId, saTur('odeme'|'gider')
@@ -4973,7 +4929,7 @@ function renderSanatci(){
   }
 
   // ay sonu raporu
-  const fnm=artistName(artistId)||'Sanatçı';
+  const fnm=firmName(artistId)||'Sanatçı';
   const donem=ayFilter?ayDisplay(ayFilter):'Tüm zamanlar';
   document.getElementById('saRapor').innerHTML=`
     <table class="atable"><tbody>
@@ -5001,7 +4957,7 @@ function exportSanatci(){
   const odenen=hareketler.filter(h=>h.saTur==='odeme').reduce((a,h)=>a+h.amount,0);
   const giderler=hareketler.filter(h=>h.saTur==='gider').reduce((a,h)=>a+h.amount,0);
   const kalan=toplamPay-odenen-giderler;
-  const fnm=artistName(artistId)||'Sanatci';
+  const fnm=firmName(artistId)||'Sanatci';
   const rows=[
     ['SANATÇI HESAP RAPORU'],
     ['Sanatçı',fnm],
@@ -5561,6 +5517,12 @@ function renderDashboard(){
     ${finVar&&kalanBorc>0?`<div class="stat" style="border-color:var(--red);background:rgba(240,122,122,0.07)"><div class="n">💳 Kalan Borç (benim borcum)</div><div class="v neg">${fmt(kalanBorc)}</div></div>`:''}
     ${finVar&&kalanAlacak>0?`<div class="stat" style="border-color:var(--amber);background:rgba(245,177,61,0.07)"><div class="n">🤝 Kalan Alacak (verdiğim borç)</div><div class="v" style="color:var(--amber)">${fmt(kalanAlacak)}</div></div>`:''}`;
 
+  // ── YENİ DASHBOARD BİLEŞENLERİ (KPI, donut, top konser, son işlemler) ──
+  renderDashKpi({kasaTotal,tahsilEdilen,bekleyen,ay});
+  renderDashDonut({konserAlinan,sirketGelirAlinan});
+  renderDashTopKonser();
+  renderDashSonIslem();
+
   // özet kartları
   let buAyKar=0, acikAlacak=0;
   events.forEach(ev=>{
@@ -5704,36 +5666,198 @@ function renderDashboard(){
     trendWrap.innerHTML='<div class="anEmpty">Tarihli konser yok.</div>';
   }else{
     const trAy=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
-    const maxVal=Math.max(...aylar.map(m=>Math.max(byMonth[m].ciro,byMonth[m].kar)),1);
-    const W=Math.max(aylar.length*90,300), H=240, padB=40, padT=20, padL=10;
-    const grafikH=H-padB-padT;
-    const grupGen=W/aylar.length;
-    const barGen=Math.min(28,grupGen/3);
-    let svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;height:auto" xmlns="http://www.w3.org/2000/svg">`;
-    // yatay ızgara çizgileri
+    const maxRaw=Math.max(...aylar.map(m=>Math.max(byMonth[m].ciro,Math.max(0,byMonth[m].kar))),1);
+    const maxVal=maxRaw*1.12; // tepe noktası tavana yapışmasın
+    // koordinat sistemi
+    const W=820, H=260, padT=20, padB=44, padL=54, padR=16;
+    const gW=W-padL-padR, gH=H-padT-padB;
+    const n=aylar.length;
+    const xOf=i=>padL+(n===1?gW/2:gW*i/(n-1));
+    const yOf=v=>padT+gH-(gH*(v/maxVal));
+    // yumuşak (catmull-rom → bezier) çizgi üret
+    const line=(vals)=>{
+      const pts=vals.map((v,i)=>[xOf(i),yOf(v)]);
+      if(pts.length===1)return `M${pts[0][0]},${pts[0][1]}`;
+      let d=`M${pts[0][0]},${pts[0][1]}`;
+      for(let i=0;i<pts.length-1;i++){
+        const p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||p2;
+        const c1x=p1[0]+(p2[0]-p0[0])/6, c1y=p1[1]+(p2[1]-p0[1])/6;
+        const c2x=p2[0]-(p3[0]-p1[0])/6, c2y=p2[1]-(p3[1]-p1[1])/6;
+        d+=` C${c1x},${c1y} ${c2x},${c2y} ${p2[0]},${p2[1]}`;
+      }
+      return d;
+    };
+    const ciroVals=aylar.map(m=>byMonth[m].ciro);
+    const karVals=aylar.map(m=>Math.max(0,byMonth[m].kar));
+    const ciroPath=line(ciroVals);
+    const karPath=line(karVals);
+    const alanPath=ciroPath+` L${xOf(n-1)},${padT+gH} L${xOf(0)},${padT+gH} Z`;
+    let svg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;overflow:visible" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="ciroGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.28"/>
+          <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>`;
+    // yatay ızgara + y ekseni etiketleri
     for(let i=0;i<=4;i++){
-      const y=padT+grafikH*(i/4);
-      svg+=`<line x1="${padL}" y1="${y}" x2="${W-padL}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
+      const y=padT+gH*(i/4);
+      const val=maxVal*(1-i/4);
+      svg+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="var(--border)" stroke-width="1" stroke-dasharray="${i===4?'0':'4 5'}"/>`;
+      svg+=`<text x="${padL-10}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--muted)">${val>=1000?Math.round(val/1000)+'k':Math.round(val)}</text>`;
     }
+    // dolgu + çizgiler
+    svg+=`<path d="${alanPath}" fill="url(#ciroGrad)"/>`;
+    svg+=`<path d="${karPath}" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>`;
+    svg+=`<path d="${ciroPath}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+    // noktalar + ay etiketleri + hover alanları
     aylar.forEach((m,i)=>{
-      const o=byMonth[m];
-      const cx=i*grupGen+grupGen/2;
-      const ciroH=grafikH*(o.ciro/maxVal);
-      const karH=grafikH*(Math.max(0,o.kar)/maxVal);
-      const cy=padT+grafikH-ciroH;
-      const ky=padT+grafikH-karH;
-      // ciro barı (sol)
-      svg+=`<rect x="${cx-barGen-2}" y="${cy}" width="${barGen}" height="${ciroH}" rx="4" fill="var(--accent)"><title>${trAy[+m.slice(5,7)-1]} ${m.slice(0,4)} — Ciro: ${fmt(o.ciro)}</title></rect>`;
-      // kâr barı (sağ)
-      svg+=`<rect x="${cx+2}" y="${ky}" width="${barGen}" height="${karH}" rx="4" fill="var(--green)"><title>${trAy[+m.slice(5,7)-1]} ${m.slice(0,4)} — Kâr: ${fmt(o.kar)}</title></rect>`;
-      // ay etiketi
       const [yy,mo]=m.split('-');
-      svg+=`<text x="${cx}" y="${H-padB+18}" text-anchor="middle" font-size="12" fill="var(--muted)">${trAy[+mo-1]}</text>`;
-      svg+=`<text x="${cx}" y="${H-padB+32}" text-anchor="middle" font-size="10" fill="var(--muted)">${yy}</text>`;
+      const cx=xOf(i), cyC=yOf(byMonth[m].ciro);
+      svg+=`<circle class="area-dot" cx="${cx}" cy="${cyC}" r="4" fill="var(--surface)" stroke="var(--accent)" stroke-width="2.5"
+        onmouseover="dashTrendTip(event,'${trAy[+mo-1]} ${yy}',${byMonth[m].ciro},${byMonth[m].kar})" onmouseout="dashTrendTipHide()"></circle>`;
+      svg+=`<text x="${cx}" y="${H-padB+20}" text-anchor="middle" font-size="12" fill="var(--muted)">${trAy[+mo-1]}</text>`;
+      svg+=`<rect x="${cx-gW/(2*Math.max(1,n-1))}" y="${padT}" width="${gW/Math.max(1,n-1)}" height="${gH}" fill="transparent"
+        onmouseover="dashTrendTip(event,'${trAy[+mo-1]} ${yy}',${byMonth[m].ciro},${byMonth[m].kar})" onmouseout="dashTrendTipHide()"></rect>`;
     });
-    svg+='</svg>';
+    svg+='</svg><div class="area-tip" id="dashTrendTip"></div>';
     trendWrap.innerHTML=svg;
   }
+}
+// area chart tooltip
+function dashTrendTip(ev,label,ciro,kar){
+  const wrap=document.getElementById('dashTrend');
+  const tip=document.getElementById('dashTrendTip');
+  if(!wrap||!tip)return;
+  const r=wrap.getBoundingClientRect();
+  tip.innerHTML=`<div class="t-lbl">${label}</div>Ciro: ${fmt(ciro)}<br>Kâr: ${fmt(kar)}`;
+  tip.style.left=(ev.clientX-r.left)+'px';
+  tip.style.top=(ev.clientY-r.top)+'px';
+  tip.style.opacity='1';
+}
+function dashTrendTipHide(){const t=document.getElementById('dashTrendTip');if(t)t.style.opacity='0';}
+
+// ── KPI ŞERİDİ (ikonlu kartlar + geçen aya göre değişim) ──
+function dashPctChip(bu,gecen){
+  if(gecen===0||gecen==null||!isFinite(gecen)){
+    if(bu>0)return '<span class="kpi-chip up">▲ yeni</span>';
+    return '<span class="kpi-chip flat">—</span>';
+  }
+  const pct=((bu-gecen)/Math.abs(gecen))*100;
+  if(Math.abs(pct)<0.05)return '<span class="kpi-chip flat">0%</span>';
+  const up=pct>=0;
+  return `<span class="kpi-chip ${up?'up':'down'}">${up?'▲':'▼'} ${up?'+':''}${pct.toFixed(1)}%</span>`;
+}
+function renderDashKpi({kasaTotal,tahsilEdilen,bekleyen,ay}){
+  const el=document.getElementById('dashKpi');if(!el)return;
+  // bu ay / geçen ay kâr ve ciro (yüzde değişim için)
+  const d=new Date(); const gecenAy=new Date(d.getFullYear(),d.getMonth()-1,1).toISOString().slice(0,7);
+  let buAyKar=0,gecenAyKar=0,buAyCiro=0,gecenAyCiro=0;
+  events.forEach(ev=>{
+    const c=computeFor(ev); const m=(ev.tarih||'').slice(0,7);
+    if(m===ay){buAyKar+=c.kar;buAyCiro+=c.ciroNet;}
+    else if(m===gecenAy){gecenAyKar+=c.kar;gecenAyCiro+=c.ciroNet;}
+  });
+  const ic={
+    kasa:'<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>',
+    kar:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+    tahsil:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+    bekle:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'
+  };
+  const card=(color,ico,lbl,val,chip,neg)=>`
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <div class="kpi-ico" style="background:${color}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ico}</svg></div>
+        ${chip}
+      </div>
+      <div>
+        <div class="kpi-lbl">${lbl}</div>
+        <div class="kpi-val ${neg?'neg':''}">${val}</div>
+      </div>
+    </div>`;
+  el.innerHTML=
+    card('linear-gradient(135deg,#4f46e5,#4338ca)',ic.kasa,'Kasa Total',fmt(kasaTotal),dashPctChip(buAyCiro,gecenAyCiro),kasaTotal<0)+
+    card('linear-gradient(135deg,#16a34a,#15803d)',ic.kar,'Bu Ay Kâr',fmt(buAyKar),dashPctChip(buAyKar,gecenAyKar),buAyKar<0)+
+    card('linear-gradient(135deg,#ea580c,#c2410c)',ic.tahsil,'Tahsil Edilen',fmt(tahsilEdilen),'<span class="kpi-chip flat">toplam</span>',false)+
+    card('linear-gradient(135deg,#9333ea,#7e22ce)',ic.bekle,'Bekleyen Alacak',fmt(bekleyen),bekleyen>0.5?'<span class="kpi-chip down">açık</span>':'<span class="kpi-chip up">temiz</span>',false);
+}
+
+// ── GELİR DAĞILIMI (donut) ──
+function renderDashDonut({konserAlinan,sirketGelirAlinan}){
+  const el=document.getElementById('dashDonut');if(!el)return;
+  const dilimler=[
+    {ad:'Konser Geliri',val:Math.max(0,konserAlinan),renk:'#4f46e5'},
+    {ad:'Şirket Geliri',val:Math.max(0,sirketGelirAlinan),renk:'#16a34a'}
+  ].filter(d=>d.val>0);
+  const toplam=dilimler.reduce((a,b)=>a+b.val,0);
+  if(!toplam){el.innerHTML='<div class="anEmpty">Henüz tahsilat yok.</div>';return;}
+  const R=70, sw=26, C=2*Math.PI*R, cx=90, cy=90;
+  let offset=0;
+  let ring='';
+  dilimler.forEach(d=>{
+    const frac=d.val/toplam;
+    const len=C*frac;
+    ring+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${d.renk}" stroke-width="${sw}"
+      stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"
+      stroke-linecap="butt"><title>${d.ad}: ${fmt(d.val)}</title></circle>`;
+    offset+=len;
+  });
+  const legend=dilimler.map(d=>`
+    <div class="donut-leg-item">
+      <span class="donut-leg-dot" style="background:${d.renk}"></span>
+      <span class="donut-leg-name">${d.ad}</span>
+      <span class="donut-leg-val">%${Math.round(d.val/toplam*100)}</span>
+    </div>`).join('');
+  el.innerHTML=`<div class="donut-wrap">
+    <svg viewBox="0 0 180 180" style="width:180px;height:180px;flex-shrink:0">
+      ${ring}
+      <text x="90" y="84" text-anchor="middle" font-size="13" fill="var(--muted)">Toplam</text>
+      <text x="90" y="104" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)">${fmt(toplam)}</text>
+    </svg>
+    <div class="donut-legend">${legend}</div>
+  </div>`;
+}
+
+// ── EN KÂRLI KONSERLER (yatay bar) ──
+function renderDashTopKonser(){
+  const el=document.getElementById('dashTopKonser');if(!el)return;
+  const arr=events.map(ev=>({ev,kar:computeFor(ev).kar})).filter(x=>x.kar>0).sort((a,b)=>b.kar-a.kar).slice(0,5);
+  if(!arr.length){el.innerHTML='<div class="anEmpty">Kârlı konser yok.</div>';return;}
+  const max=Math.max(...arr.map(x=>x.kar),1);
+  const renkler=['#4f46e5','#16a34a','#ea580c','#9333ea','#0ea5e9'];
+  el.innerHTML=arr.map((x,i)=>{
+    const isim=(x.ev.sehir||'')+(x.ev.mekan?' · '+x.ev.mekan:'')||'(konser)';
+    return `<div class="perf-row">
+      <div class="perf-name" title="${esc(isim)}">${esc(isim)}</div>
+      <div class="perf-track"><div class="perf-fill" style="width:${Math.round(x.kar/max*100)}%;background:${renkler[i%renkler.length]}"></div></div>
+      <div class="perf-val">${fmt(x.kar)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── SON İŞLEMLER (tablo) ──
+function renderDashSonIslem(){
+  const el=document.getElementById('dashSonIslem');if(!el)return;
+  const arr=events.slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)).slice(0,6);
+  if(!arr.length){el.innerHTML='<div class="anEmpty">Henüz işlem yok.</div>';return;}
+  let h='<table class="dtable"><thead><tr><th>Konser</th><th>Tarih</th><th style="text-align:right">Ciro</th><th style="text-align:right">Durum</th></tr></thead><tbody>';
+  arr.forEach(ev=>{
+    const c=computeFor(ev), t=tahsilatFor(ev);
+    const isim=(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')||'(konser)';
+    let pill;
+    if(t.durum==='tamam')pill='<span class="pill ok">Tahsil edildi</span>';
+    else if(t.durum==='kismi')pill='<span class="pill wait">Kısmi %'+t.oran+'</span>';
+    else if(t.durum==='bekliyor')pill='<span class="pill late">Bekliyor</span>';
+    else pill='<span class="pill wait">—</span>';
+    h+=`<tr style="cursor:pointer" onclick='restoreById("${ev.id}")'>
+      <td style="font-weight:500">${esc(isim)}</td>
+      <td style="color:var(--muted)">${ev.tarih?trDate(ev.tarih):'—'}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums">${fmt(c.ciroGross)}</td>
+      <td style="text-align:right">${pill}</td>
+    </tr>`;
+  });
+  h+='</tbody></table>';
+  el.innerHTML=h;
 }
 
 function bar(name,numLabel,ratio,neg){
@@ -5963,7 +6087,7 @@ async function toggleKaseOdendi(eventId, kaseIdx){
 let rapDonem='all';
 // bir işin sanatçısını bul (artistId→firma adı, yoksa p1ad)
 function evSanatciAd(ev){
-  if(ev.artistId){const nm=artistName(ev.artistId);if(nm)return nm;}
+  if(ev.artistId){const f=firms.find(x=>x.id===ev.artistId);if(f)return f.name;}
   if(ev.p1ad&&ev.p1ad!=='MAN FEE')return ev.p1ad;
   return '';
 }
@@ -6149,7 +6273,7 @@ function renderAnaliz(){
   const bySan={};
   evs.forEach(({ev,c})=>{
     let ad='—';
-    if(ev.artistId){const nm=artistName(ev.artistId);if(nm)ad=nm;}
+    if(ev.artistId){const f=firms.find(x=>x.id===ev.artistId);if(f)ad=f.name;}
     else if(ev.p1ad&&ev.p1ad!=='MAN FEE')ad=ev.p1ad;
     if(!bySan[ad])bySan[ad]={n:0,ciro:0,kar:0};
     bySan[ad].n++;bySan[ad].ciro+=c.ciroNet;bySan[ad].kar+=c.kar;
@@ -6283,15 +6407,9 @@ function sanatciRaporPdf(){
 function sanatciRaporMail(){
   const r=sanatciRaporHTML();
   if(!r){toast('Önce sanatçı seç');return;}
-  // sanatçı mailini bul (artistId → sanatçı rehberi → firma → mail)
+  // sanatçı mailini bul (artistId → firma → mail)
   let mail='';
-  for(const {ev} of r.evs){
-    if(!ev.artistId)continue;
-    const a=artistList().find(x=>x.id===ev.artistId);
-    if(a&&a.mail){mail=a.mail;break;}
-    const f=firms.find(x=>x.id===ev.artistId);
-    if(f&&f.mail){mail=f.mail;break;}
-  }
+  for(const {ev} of r.evs){if(ev.artistId){const f=firms.find(x=>x.id===ev.artistId);if(f&&f.mail){mail=f.mail;break;}}}
   const firmaAd=document.getElementById('coName')?document.getElementById('coName').value:'';
   const konu=`${r.sec} — Performans Raporu (${rapDonemAd()})`;
   let g=`Merhaba,\n\n${r.sec} için ${rapDonemAd()} dönemi performans özeti:\n\n`;
