@@ -1085,8 +1085,20 @@ select option{background:var(--surface)}
           </div>
 
           <div class="card">
+            <div class="card-title">🗺️ Rota Planı (Duraklar)</div>
+            <div class="hint" style="margin-bottom:14px">Turnenin planlanan şehir/mekan/tarih/organizatör listesi — henüz tam finansal detay girmeden hızlıca rota kur. Netleşince "→" ile tam bir Etkinlik kaydına çevir.</div>
+            <div class="row-head" style="grid-template-columns:1fr 1fr 110px 1fr 110px 70px"><span>Şehir</span><span>Mekan</span><span>Tarih</span><span>Organizatör</span><span>Durum</span><span></span></div>
+            <div id="turDurakRows"></div>
+            <button class="addbtn" onclick="turAddDurak()">+ Durak ekle</button>
+            <div class="actions" style="margin-top:16px">
+              <button class="btn primary" onclick="turDuraklariKaydet()">Rota Planını Kaydet</button>
+            </div>
+            <datalist id="turMekanList"></datalist>
+          </div>
+
+          <div class="card">
             <div class="card-title">İtinerary (Rota)</div>
-            <div class="hint" style="margin-bottom:16px">Bu turneye bağlı konserler, tarih sırasına göre.</div>
+            <div class="hint" style="margin-bottom:16px">Bu turneye bağlı, tam finansal detayı girilmiş konserler, tarih sırasına göre.</div>
             <div id="turItinerary"><div class="anEmpty">Bu turneye henüz konser bağlı değil.</div></div>
           </div>
 
@@ -3489,6 +3501,104 @@ function renderTurDetay(id){
     itWrap.innerHTML=h;
   }
   refreshTurEkleIsPick(id);
+  refreshTurMekanDatalist();
+  document.getElementById('turDurakRows').innerHTML='';
+  (t.duraklar||[]).forEach(d=>turAddDurak(d.sehir,d.mekan,d.tarih,d.firmId,d.durum));
+}
+// ── ROTA PLANI (DURAKLAR) ── henüz tam finansal detayı olmayan planlanan
+// şehir/mekan/tarih/organizatör satırları. Netleşince Etkinlik kaydına çevrilir.
+function turDurakSehirOptionsHTML(){
+  const src=document.getElementById('sehir');
+  return src?src.innerHTML:'<option value="">— Şehir Seç —</option>';
+}
+function turDurakFirmaOptionsHTML(){
+  let h='<option value="">— organizatör seç —</option>';
+  firms.forEach(f=>{h+=`<option value="${f.id}">${esc(f.name)}${f.type?' ('+esc(f.type)+')':''}</option>`;});
+  return h;
+}
+function refreshTurMekanDatalist(){
+  const dl=document.getElementById('turMekanList');if(!dl)return;
+  dl.innerHTML=venues.map(v=>`<option value="${esc(v.name)}">`).join('');
+}
+function turAddDurak(sehir='',mekan='',tarih='',firmId='',durum='planlaniyor'){
+  const wrap=document.getElementById('turDurakRows');if(!wrap)return;
+  const div=document.createElement('div');
+  div.className='row';
+  div.style.gridTemplateColumns='1fr 1fr 110px 1fr 110px 70px';
+  div.style.marginBottom='8px';
+  div.style.alignItems='center';
+  div.innerHTML=`
+    <select class="td-sehir">${turDurakSehirOptionsHTML()}</select>
+    <input class="td-mekan" list="turMekanList" placeholder="Mekan adı" value="${(mekan||'').replace(/"/g,'&quot;')}">
+    <input class="td-tarih" type="date" value="${tarih||''}">
+    <select class="td-firma">${turDurakFirmaOptionsHTML()}</select>
+    <select class="td-durum">
+      <option value="planlaniyor"${durum==='planlaniyor'?' selected':''}>Planlanıyor</option>
+      <option value="teklif"${durum==='teklif'?' selected':''}>Teklif Gönderildi</option>
+      <option value="onaylandi"${durum==='onaylandi'?' selected':''}>Onaylandı</option>
+      <option value="iptal"${durum==='iptal'?' selected':''}>İptal</option>
+    </select>
+    <div style="display:flex;gap:4px">
+      <button class="btn ghost" style="flex:none;min-width:auto;padding:8px 8px;font-size:13px" title="Etkinliğe çevir" onclick="turDurakCevir(this)">→</button>
+      <button class="rm" title="Durağı sil" onclick="this.closest('.row').remove()">×</button>
+    </div>`;
+  div.querySelector('.td-sehir').value=sehir||'';
+  div.querySelector('.td-firma').value=firmId||'';
+  wrap.appendChild(div);
+}
+function turReadDuraklar(){
+  return [...document.querySelectorAll('#turDurakRows .row')].map(r=>({
+    sehir:r.querySelector('.td-sehir').value,
+    mekan:r.querySelector('.td-mekan').value,
+    tarih:r.querySelector('.td-tarih').value,
+    firmId:r.querySelector('.td-firma').value,
+    durum:r.querySelector('.td-durum').value
+  })).filter(d=>d.sehir||d.mekan||d.tarih);
+}
+async function turDuraklariKaydet(){
+  if(!_turDetayId)return;
+  const t=turListesi().find(x=>x.id===_turDetayId);if(!t)return;
+  t.duraklar=turReadDuraklar();
+  try{
+    const res=await apiFetch('/api/acc/'+t.id,{method:'PUT',body:JSON.stringify(t)});
+    if(!res||!res.ok){toast('Kaydedilemedi');return;}
+  }catch(err){toast('Kaydedilemedi');return;}
+  await logAudit('update','tur',t.id,t.ad+' — rota planı güncellendi',{duraklar:t.duraklar.length});
+  await loadAcc();
+  renderTurler();
+  toast('Rota planı kaydedildi');
+}
+async function turDurakCevir(btn){
+  if(!_turDetayId)return;
+  const row=btn.closest('.row');
+  const sehir=row.querySelector('.td-sehir').value;
+  const mekan=row.querySelector('.td-mekan').value;
+  const tarih=row.querySelector('.td-tarih').value;
+  const firmId=row.querySelector('.td-firma').value;
+  if(!sehir&&!mekan){toast('Şehir veya mekan gir');return;}
+  const t=turListesi().find(x=>x.id===_turDetayId);if(!t)return;
+  const yeniEv={
+    id:'e'+Date.now(),savedAt:Date.now(),
+    sehir,mekan,tarih,tip:'ORGANIZATOR',
+    firmId:firmId||'',artistId:t.artistId||'',turId:t.id,
+    kapasite:0,satilan:0,biletAdet:0,biletFiyat:0,komOran:15.75,
+    kdvOran:20,orgBedel:0,kdvOranOrg:20,
+    p1ad:'CAN OZAN',p1pay:75,p2ad:'MAN FEE',p2pay:25,
+    kase:[],gider:[],odemeler:[],vadeler:[]
+  };
+  const cakisan=bookingCakismaKontrol(yeniEv);
+  if(cakisan){
+    const isim=(cakisan.sehir||'')+(cakisan.mekan?' · '+cakisan.mekan:'')||'(başka bir iş)';
+    if(!confirm('⚠ ÇAKIŞMA UYARISI\n\nBu sanatçı zaten '+(tarih?trDate(tarih):'aynı')+' tarihinde "'+isim+'" işine kayıtlı görünüyor.\n\nYine de dönüştürmek istiyor musun?'))return;
+  }
+  await persist(yeniEv);
+  await logAudit('create','event',yeniEv.id,(sehir||'')+(mekan?' · '+mekan:'')+' — durak etkinliğe çevrildi');
+  row.remove();
+  await turDuraklariKaydet();
+  await loadEvents();
+  renderTurDetay(_turDetayId);
+  renderTurler();
+  toast('Etkinliğe çevrildi — Yeni Etkinlik\'te finansal detayları tamamla');
 }
 function turExcelAktar(){
   if(!_turDetayId)return;
