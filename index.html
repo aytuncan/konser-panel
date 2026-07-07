@@ -493,6 +493,9 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabSaved" onclick="showTab(&#39;saved&#39;)">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/></svg> Konserler
       </button>
+      <button class="nav-item" id="tabTurne" onclick="showTab('turne')">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/><path d="M3.5 15.5L1 22l6.5-2.5"/><path d="M20.5 15.5L23 22l-6.5-2.5"/></svg> Turne Yönetimi
+      </button>
       <button class="nav-item" id="tabSimulasyon" onclick="showTab('simulasyon')">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Hızlı Simülasyon
       </button>
@@ -876,8 +879,12 @@ select option{background:var(--surface)}
               <label>Sanatçı / sanatçı firması</label>
               <select id="evArtistPick"><option value="">— sanatçı yok / seç —</option></select>
             </div>
+            <div>
+              <label>Turne (opsiyonel)</label>
+              <select id="evTurPick"><option value="">— tura bağlı değil —</option></select>
+            </div>
           </div>
-          <div class="hint">Organizatör firmayı seçersen alacak/verecek Muhasebe'de o firmanın cari hesabında toplanır. Sanatçıyı seçersen kârın sanatçı payı (%75) o sanatçının hesabına yazılır.</div>
+          <div class="hint">Organizatör firmayı seçersen alacak/verecek Muhasebe'de o firmanın cari hesabında toplanır. Sanatçıyı seçersen kârın sanatçı payı (%75) o sanatçının hesabına yazılır. Turne seçersen bu iş, o turnenin itinerary'sinde otomatik görünür.</div>
         </div>
 
         <div class="card">
@@ -1027,6 +1034,74 @@ select option{background:var(--surface)}
           <button class="btn ghost" onclick="exportAll()">Tümünü Excel'e aktar</button>
         </div>
         <div class="saved-list" id="savedList"></div>
+      </div>
+
+      <div id="view-turne" style="display:none">
+        <div id="turListWrap">
+          <div class="card">
+            <div class="card-title" id="turFormTitle">Yeni Turne</div>
+            <div class="grid">
+              <div><label>Turne adı *</label><input id="turAd" placeholder="CAN OZAN — Yaz Turnesi 2026" autocomplete="off"></div>
+              <div>
+                <label>Sanatçı / sanatçı firması</label>
+                <select id="turArtist"><option value="">— sanatçı seç —</option></select>
+              </div>
+              <div>
+                <label>Durum</label>
+                <select id="turDurum">
+                  <option value="planlaniyor">Planlanıyor</option>
+                  <option value="aktif">Aktif</option>
+                  <option value="tamamlandi">Tamamlandı</option>
+                  <option value="iptal">İptal</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-top:16px"><label>Not</label><input id="turNot" placeholder="Genel notlar..." autocomplete="off"></div>
+            <div class="actions" style="margin-top:24px">
+              <button class="btn primary" onclick="saveTur()" id="turSaveBtn">Turne kaydet</button>
+              <button class="btn ghost" onclick="resetTurForm()">Temizle</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Turneler</div>
+            <input id="turSearch" placeholder="🔍 Turne ara..." autocomplete="off" oninput="renderTurler()" style="margin-bottom:16px">
+            <div class="saved-list" id="turList"></div>
+          </div>
+        </div>
+
+        <div id="turDetayWrap" style="display:none">
+          <div class="card">
+            <div class="actions" style="margin-bottom:8px">
+              <button class="btn ghost" onclick="turDetayKapat()">← Turne listesine dön</button>
+            </div>
+            <div class="card-title" id="turDetayBaslik">Turne Detayı</div>
+            <div class="stat-grid" id="turDetayOzet" style="margin-bottom:16px"></div>
+            <div class="hint" id="turDetayCakisma" style="display:none;margin-bottom:16px;color:var(--red);font-weight:600"></div>
+            <div class="actions">
+              <button class="btn ghost" onclick="turExcelAktar()">Turneyi Excel'e aktar</button>
+              <button class="btn danger" onclick="delTur(_turDetayId)">Turneyi Sil</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">İtinerary (Rota)</div>
+            <div class="hint" style="margin-bottom:16px">Bu turneye bağlı konserler, tarih sırasına göre.</div>
+            <div id="turItinerary"><div class="anEmpty">Bu turneye henüz konser bağlı değil.</div></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Mevcut İşlerden Ekle</div>
+            <div class="hint" style="margin-bottom:16px">Kayıtlı bir işi bu turneye bağla (başka turda ise oradan çıkarılır).</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+              <div style="flex:1;min-width:220px">
+                <label>İş seç</label>
+                <select id="turEkleIsPick"><option value="">— iş seç —</option></select>
+              </div>
+              <button class="btn primary" onclick="turIseEkle()" style="flex:none">Turneye ekle</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div id="view-odeme" style="display:none">
@@ -2229,7 +2304,7 @@ function applyXlsx() {
 }
 
 const PAGE_TITLES={
-  dashboard:'Dashboard',new:'Yeni Etkinlik',saved:'Konserler',odeme:'Muhasebe',mgenel:'Muhasebe — Genel',mgg:'Muhasebe — Gelir/Gider',mcari:'Muhasebe — Cari Durum',mkdv:'Muhasebe — KDV',ekipodeme:'Ekip Ödemeleri',finansman:'Finansman',sanatci:'Sanatçı Hesabı',
+  dashboard:'Dashboard',new:'Yeni Etkinlik',saved:'Konserler',turne:'Turne Yönetimi',odeme:'Muhasebe',mgenel:'Muhasebe — Genel',mgg:'Muhasebe — Gelir/Gider',mcari:'Muhasebe — Cari Durum',mkdv:'Muhasebe — KDV',ekipodeme:'Ekip Ödemeleri',finansman:'Finansman',sanatci:'Sanatçı Hesabı',
   szhazirla:'Sözleşme Hazırla',szyapilan:'Yapılan Sözleşmeler',szrehber:'Sözleşme Rehberi',szfirmam:'Firma Bilgilerim',szsablon:'Sözleşme Şablonu',firms:'Firmalar',venues:'Mekanlar',analiz:'Rapor',
   users:'Kullanıcılar',ayarlar:'Ayarlar',simulasyon:'Hızlı Simülasyon',simdetay:'Detaylı Simülasyon',denetim:'İşlem Geçmişi'
 };
@@ -2249,7 +2324,7 @@ function toggleNavGroup(g){
 // hangi sekme hangi gruba ait (aktif sekmenin grubu otomatik açılır)
 const NAV_TAB_GROUP={
   dashboard:'genel',
-  new:'etkinlik',saved:'etkinlik',simulasyon:'etkinlik',simdetay:'etkinlik',sanatci:'etkinlik',
+  new:'etkinlik',saved:'etkinlik',turne:'etkinlik',simulasyon:'etkinlik',simdetay:'etkinlik',sanatci:'etkinlik',
   mgenel:'muhasebe',mgg:'muhasebe',mcari:'muhasebe',mkdv:'muhasebe',ekipodeme:'muhasebe',finansman:'muhasebe',
   szhazirla:'sozlesme',szyapilan:'sozlesme',szrehber:'sozlesme',szfirmam:'sozlesme',szsablon:'sozlesme',
   firms:'rehber',venues:'rehber',ekip:'rehber',
@@ -2293,7 +2368,7 @@ function showTab(t){
   const muhAlt={mgenel:'genel',mgg:'gg',mcari:'cari',mkdv:'kdv'};
   const isMuh=Object.keys(muhAlt).includes(t);
   const activeView=isMuh?'odeme':t;
-  ['dashboard','new','saved','simulasyon','simdetay','odeme','ekipodeme','finansman','sanatci','szhazirla','szyapilan','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users','ayarlar','denetim'].forEach(id=>{
+  ['dashboard','new','saved','turne','simulasyon','simdetay','odeme','ekipodeme','finansman','sanatci','szhazirla','szyapilan','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users','ayarlar','denetim'].forEach(id=>{
     const v=document.getElementById('view-'+id);
     if(v) v.style.display=(activeView===id)?'':'none';
   });
@@ -2307,8 +2382,9 @@ function showTab(t){
   document.getElementById('pageTitle').textContent=PAGE_TITLES[t]||'';
   closeSidebar();
   if(t==='dashboard'){refreshDashboard();}
-  if(t==='new'){refreshEkipGiderPickers();refreshEvFirmPicker();refreshEvArtistPicker();}
+  if(t==='new'){refreshEkipGiderPickers();refreshEvFirmPicker();refreshEvArtistPicker();refreshEvTurPicker();}
   if(t==='saved')setSavedFilter(savedFilter);
+  if(t==='turne'){turDetayKapat();refreshTurArtistPicker();renderTurler();}
   if(isMuh){refreshAccFirmPicker();renderOdeme();setMtab(muhAlt[t]);}
   if(t==='ekipodeme')renderEkipOdeme();
   if(t==='finansman')renderFinansman();
@@ -2577,6 +2653,7 @@ function gather(){
     venueId:document.getElementById('mekanPick').value||'',
     firmId:document.getElementById('evFirmPick').value||'',
     artistId:document.getElementById('evArtistPick').value||'',
+    turId:document.getElementById('evTurPick').value||'',
     kapasite:+document.getElementById('kapasite').value||0,
     satilan:+document.getElementById('satilan').value||0,
     biletAdet:+document.getElementById('biletAdet').value||0,
@@ -2607,6 +2684,8 @@ function restore(ev){
   document.getElementById('evFirmPick').value=ev.firmId||'';
   refreshEvArtistPicker();
   document.getElementById('evArtistPick').value=ev.artistId||'';
+  refreshEvTurPicker();
+  document.getElementById('evTurPick').value=ev.turId||'';
   if(ev.venueId){['mekan','sehir','kapasite'].forEach(id=>{const e=document.getElementById(id);e.readOnly=true;e.style.opacity='.7';});}
   else{['mekan','sehir','kapasite'].forEach(id=>{const e=document.getElementById(id);e.readOnly=false;e.style.opacity='1';});}
   document.getElementById('biletAdet').value=ev.biletAdet||'';
@@ -2640,6 +2719,7 @@ function resetForm(){
   const mp=document.getElementById('mekanPick');if(mp)mp.value='';
   const efp=document.getElementById('evFirmPick');if(efp)efp.value='';
   const eap=document.getElementById('evArtistPick');if(eap)eap.value='';
+  const etp=document.getElementById('evTurPick');if(etp)etp.value='';
   ['mekan','sehir','kapasite'].forEach(id=>{const e=document.getElementById(id);e.readOnly=false;e.style.opacity='1';});
   document.getElementById('komOran').value=15.75;
   document.getElementById('kdvOran').value=20;document.getElementById('kdvOranOrg').value=20;
@@ -2655,6 +2735,12 @@ function resetForm(){
 async function saveEvent(){
   const ev=gather();
   if(!ev.sehir&&!ev.mekan){toast('Şehir veya mekan gir');return;}
+  const cakisan=bookingCakismaKontrol(ev);
+  if(cakisan){
+    const isim=(cakisan.sehir||'')+(cakisan.mekan?' · '+cakisan.mekan:'')||'(başka bir iş)';
+    const sanatciAd=ev.artistId?firmName(ev.artistId):'Bu sanatçı';
+    if(!confirm('⚠ ÇAKIŞMA UYARISI\n\n'+sanatciAd+' zaten '+trDate(ev.tarih)+' tarihinde "'+isim+'" işine kayıtlı görünüyor.\n\nYine de kaydetmek istiyor musun?'))return;
+  }
   const wasExisting=!!editingId;
   await persist(ev);
   await logAudit(wasExisting?'update':'create','event',ev.id,(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:''));
@@ -3190,6 +3276,243 @@ function refreshEvArtistPicker(){
   firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');sel.appendChild(o);});
   sel.value=cur;
 }
+
+// ── TURNE / BOOKING YÖNETİMİ ──────────────────────────────
+// Turneler jenerik /api/acc üzerinde type:'tur' olarak saklanır.
+// Bir konser (event) turId alanıyla bir turneye bağlanabilir (opsiyonel).
+const TUR_DURUMLAR={
+  planlaniyor:{ad:'Planlanıyor',renk:'bekliyor'},
+  aktif:{ad:'Aktif',renk:'warn'},
+  tamamlandi:{ad:'Tamamlandı',renk:'pos'},
+  iptal:{ad:'İptal',renk:'neg'}
+};
+function turListesi(){ return accEntries.filter(e=>e.type==='tur'); }
+function turEventleri(turId){ return events.filter(ev=>ev.turId===turId); }
+function refreshEvTurPicker(){
+  const sel=document.getElementById('evTurPick');if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— tura bağlı değil —</option>';
+  turListesi().sort((a,b)=>(a.ad||'').localeCompare(b.ad||'','tr')).forEach(t=>{
+    const o=document.createElement('option');o.value=t.id;o.textContent=t.ad;sel.appendChild(o);
+  });
+  sel.value=cur;
+}
+function refreshTurArtistPicker(){
+  const sel=document.getElementById('turArtist');if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— sanatçı seç —</option>';
+  firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');sel.appendChild(o);});
+  sel.value=cur;
+}
+let editingTurId=null;
+function resetTurForm(){
+  editingTurId=null;
+  document.getElementById('turAd').value='';
+  document.getElementById('turArtist').value='';
+  document.getElementById('turDurum').value='planlaniyor';
+  document.getElementById('turNot').value='';
+  document.getElementById('turFormTitle').textContent='Yeni Turne';
+  document.getElementById('turSaveBtn').textContent='Turne kaydet';
+}
+async function saveTur(){
+  const ad=document.getElementById('turAd').value.trim();
+  if(!ad){toast('Turne adı gerekli');return;}
+  const t={
+    id:editingTurId||('tur'+Date.now()),
+    type:'tur',
+    ad,
+    artistId:document.getElementById('turArtist').value||'',
+    durum:document.getElementById('turDurum').value||'planlaniyor',
+    notlar:document.getElementById('turNot').value||''
+  };
+  const wasExisting=!!editingTurId;
+  try{
+    const res=await apiFetch('/api/acc'+(wasExisting?'/'+t.id:''),{method:wasExisting?'PUT':'POST',body:JSON.stringify(t)});
+    if(!res||!res.ok){toast('Kaydedilemedi');return;}
+  }catch(err){toast('Kaydedilemedi');return;}
+  await logAudit(wasExisting?'update':'create','tur',t.id,t.ad);
+  await loadAcc();
+  resetTurForm();
+  refreshEvTurPicker();
+  renderTurler();
+  toast('Turne kaydedildi');
+}
+function editTur(id){
+  const t=turListesi().find(x=>x.id===id);if(!t)return;
+  editingTurId=t.id;
+  document.getElementById('turAd').value=t.ad||'';
+  refreshTurArtistPicker();
+  document.getElementById('turArtist').value=t.artistId||'';
+  document.getElementById('turDurum').value=t.durum||'planlaniyor';
+  document.getElementById('turNot').value=t.notlar||'';
+  document.getElementById('turFormTitle').textContent='Turne Düzenle';
+  document.getElementById('turSaveBtn').textContent='Değişiklikleri kaydet';
+  document.getElementById('turFormTitle').scrollIntoView({behavior:'smooth'});
+}
+async function delTur(id){
+  if(!id)return;
+  if(!confirm('Bu turneyi silmek istiyor musun? Bağlı konserler silinmez, sadece turdan çıkarılır.'))return;
+  const t=turListesi().find(x=>x.id===id);
+  const bagli=turEventleri(id);
+  for(const ev of bagli){ev.turId='';await persist(ev);}
+  if(bagli.length)await loadEvents();
+  await logAudit('delete','tur',id,t?.ad||'',t);
+  try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
+  await loadAcc();
+  refreshEvTurPicker();
+  turDetayKapat();
+  renderTurler();
+  toast('Turne silindi');
+}
+function renderTurler(){
+  const wrap=document.getElementById('turList');if(!wrap)return;
+  const q=(document.getElementById('turSearch')?.value||'').toLocaleLowerCase('tr');
+  const all=turListesi();
+  const list=all.filter(t=>!q||(t.ad||'').toLocaleLowerCase('tr').includes(q));
+  if(!list.length){wrap.innerHTML='<div class="empty"><div class="big">🎪</div>'+(all.length?'Eşleşen turne yok.':'Henüz turne yok. Yukarıdan ekle.')+'</div>';return;}
+  wrap.innerHTML='';
+  list.sort((a,b)=>(b.ad||'').localeCompare(a.ad||'','tr')).forEach(t=>{
+    const evs=turEventleri(t.id);
+    const tarihler=evs.map(e=>e.tarih).filter(Boolean).sort();
+    const aralik=tarihler.length?trDate(tarihler[0])+(tarihler.length>1?' → '+trDate(tarihler[tarihler.length-1]):''):'tarihsiz';
+    const toplamKar=evs.reduce((a,e)=>a+computeFor(e).kar,0);
+    const sanatciAd=t.artistId?firmName(t.artistId):'';
+    const di=TUR_DURUMLAR[t.durum]||TUR_DURUMLAR.planlaniyor;
+    const d=document.createElement('div');
+    d.className='saved-item';
+    d.onclick=(ev)=>{if(ev.target.classList.contains('del'))return;turDetayAc(t.id);};
+    d.innerHTML=`
+      <div class="info">
+        <div class="ttl">${esc(t.ad)}<span class="vbadge ${di.renk}">${di.ad}</span></div>
+        <div class="sub">${sanatciAd?esc(sanatciAd)+' · ':''}${evs.length} konser · ${aralik}</div>
+      </div>
+      <div class="pnl"><div class="a ${toplamKar>=0?'pos':'neg'}">${fmt(toplamKar)}</div></div>
+      <button class="del" title="Sil" onclick="delTur('${t.id}')">🗑</button>`;
+    wrap.appendChild(d);
+  });
+}
+let _turDetayId=null;
+function turDetayAc(id){
+  _turDetayId=id;
+  document.getElementById('turListWrap').style.display='none';
+  document.getElementById('turDetayWrap').style.display='block';
+  renderTurDetay(id);
+}
+function turDetayKapat(){
+  _turDetayId=null;
+  const lw=document.getElementById('turListWrap');if(lw)lw.style.display='';
+  const dw=document.getElementById('turDetayWrap');if(dw)dw.style.display='none';
+}
+function refreshTurEkleIsPick(turId){
+  const sel=document.getElementById('turEkleIsPick');if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— iş seç —</option>';
+  events.filter(ev=>ev.turId!==turId).sort((a,b)=>(a.tarih||'9999').localeCompare(b.tarih||'9999')).forEach(ev=>{
+    const isim=(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')||'(iş)';
+    const o=document.createElement('option');o.value=ev.id;
+    o.textContent=isim+(ev.tarih?' · '+trDate(ev.tarih):'')+(ev.turId?' (başka turda)':'');
+    sel.appendChild(o);
+  });
+  sel.value=cur;
+}
+async function turIseEkle(){
+  const evId=document.getElementById('turEkleIsPick').value;
+  if(!evId||!_turDetayId){toast('Önce iş seç');return;}
+  const ev=events.find(x=>x.id===evId);if(!ev)return;
+  ev.turId=_turDetayId;
+  await persist(ev);
+  await logAudit('update','event',ev.id,(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')+' — turneye eklendi');
+  await loadEvents();
+  renderTurDetay(_turDetayId);
+  renderTurler();
+  toast('Turneye eklendi');
+}
+async function turDenCikar(evId){
+  if(!confirm('Bu işi turneden çıkarmak istiyor musun? İş silinmez, sadece bağlantısı kalkar.'))return;
+  const ev=events.find(x=>x.id===evId);if(!ev)return;
+  ev.turId='';
+  await persist(ev);
+  await logAudit('update','event',ev.id,(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')+' — turneden çıkarıldı');
+  await loadEvents();
+  renderTurDetay(_turDetayId);
+  renderTurler();
+  toast('Turneden çıkarıldı');
+}
+function renderTurDetay(id){
+  const t=turListesi().find(x=>x.id===id);
+  if(!t){turDetayKapat();return;}
+  const evs=turEventleri(id).slice().sort((a,b)=>(a.tarih||'9999').localeCompare(b.tarih||'9999'));
+  const sanatciAd=t.artistId?firmName(t.artistId):'';
+  document.getElementById('turDetayBaslik').textContent='🎪 '+t.ad+(sanatciAd?' — '+sanatciAd:'');
+  const toplamCiro=evs.reduce((a,e)=>a+computeFor(e).ciroNet,0);
+  const toplamKar=evs.reduce((a,e)=>a+computeFor(e).kar,0);
+  const sehirler=new Set(evs.map(e=>(e.sehir||'').toUpperCase().trim()).filter(Boolean));
+  const tarihler=evs.map(e=>e.tarih).filter(Boolean).sort();
+  const di=TUR_DURUMLAR[t.durum]||TUR_DURUMLAR.planlaniyor;
+  document.getElementById('turDetayOzet').innerHTML=`
+    <div class="stat"><div class="n">Durum</div><div class="v"><span class="vbadge ${di.renk}">${di.ad}</span></div></div>
+    <div class="stat"><div class="n">Konser Sayısı</div><div class="v">${evs.length}</div></div>
+    <div class="stat"><div class="n">Şehir Sayısı</div><div class="v">${sehirler.size}</div></div>
+    <div class="stat"><div class="n">Tarih Aralığı</div><div class="v" style="font-size:15px">${tarihler.length?trDate(tarihler[0])+(tarihler.length>1?' → '+trDate(tarihler[tarihler.length-1]):''):'—'}</div></div>
+    <div class="stat"><div class="n">Toplam Ciro (net)</div><div class="v">${fmt(toplamCiro)}</div></div>
+    <div class="stat" style="border-color:${toplamKar>=0?'var(--green)':'var(--red)'};background:${toplamKar>=0?'rgba(90,209,154,0.07)':'rgba(240,122,122,0.07)'}"><div class="n">Toplam Kâr</div><div class="v ${toplamKar>=0?'pos':'neg'}">${fmt(toplamKar)}</div></div>`;
+
+  const tarihSayim={};
+  evs.forEach(e=>{if(e.tarih){tarihSayim[e.tarih]=(tarihSayim[e.tarih]||0)+1;}});
+  const cakisan=Object.entries(tarihSayim).filter(([,n])=>n>1).map(([d])=>d);
+  const cakismaEl=document.getElementById('turDetayCakisma');
+  if(cakisan.length){
+    cakismaEl.style.display='block';
+    cakismaEl.textContent='⚠ Çakışma: '+cakisan.map(d=>trDate(d)).join(', ')+' tarihinde birden fazla konser bu turneye bağlı.';
+  }else if(cakismaEl)cakismaEl.style.display='none';
+
+  const itWrap=document.getElementById('turItinerary');
+  if(!evs.length){
+    itWrap.innerHTML='<div class="anEmpty">Bu turneye henüz konser bağlı değil.</div>';
+  }else{
+    let h='<table class="dtable"><thead><tr><th>Tarih</th><th>Şehir</th><th>Mekan</th><th style="text-align:right">Ciro</th><th style="text-align:right">Kâr</th><th style="text-align:right">Durum</th><th></th></tr></thead><tbody>';
+    evs.forEach(ev=>{
+      const c=computeFor(ev);
+      const t2=tahsilatFor(ev);
+      const pill=t2.durum==='tamam'?'<span class="pill ok">Tahsil edildi</span>':t2.durum==='kismi'?'<span class="pill wait">Kısmi</span>':t2.durum==='bekliyor'?'<span class="pill late">Bekliyor</span>':'<span class="pill wait">—</span>';
+      h+=`<tr>
+        <td style="cursor:pointer" onclick="restoreById('${ev.id}')">${ev.tarih?trDate(ev.tarih):'—'}</td>
+        <td style="cursor:pointer" onclick="restoreById('${ev.id}')">${esc(ev.sehir||'')}</td>
+        <td style="cursor:pointer" onclick="restoreById('${ev.id}')">${esc(ev.mekan||'')}</td>
+        <td style="text-align:right">${fmt(c.ciroNet)}</td>
+        <td style="text-align:right" class="${c.kar>=0?'':'neg'}">${fmt(c.kar)}</td>
+        <td style="text-align:right">${pill}</td>
+        <td style="text-align:right"><button class="del" title="Turneden çıkar" onclick="turDenCikar('${ev.id}')">🗑</button></td>
+      </tr>`;
+    });
+    h+='</tbody></table>';
+    itWrap.innerHTML=h;
+  }
+  refreshTurEkleIsPick(id);
+}
+function turExcelAktar(){
+  if(!_turDetayId)return;
+  const t=turListesi().find(x=>x.id===_turDetayId);if(!t)return;
+  const evs=turEventleri(_turDetayId).slice().sort((a,b)=>(a.tarih||'9999').localeCompare(b.tarih||'9999'));
+  if(!evs.length){toast('Bu turneye bağlı konser yok');return;}
+  const rows=[['TURNE',t.ad],['Sanatçı',t.artistId?firmName(t.artistId):''],['Durum',(TUR_DURUMLAR[t.durum]||{}).ad||t.durum],[],
+    ['Tarih','Şehir','Mekan','Ciro (net)','Kâr']];
+  evs.forEach(ev=>{const c=computeFor(ev);rows.push([ev.tarih||'',ev.sehir||'',ev.mekan||'',Math.round(c.ciroNet),Math.round(c.kar)]);});
+  const toplamCiro=evs.reduce((a,e)=>a+computeFor(e).ciroNet,0);
+  const toplamKar=evs.reduce((a,e)=>a+computeFor(e).kar,0);
+  rows.push([],['TOPLAM','','',Math.round(toplamCiro),Math.round(toplamKar)]);
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:14},{wch:16},{wch:20},{wch:14},{wch:14}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'TURNE');
+  XLSX.writeFile(wb,safeName(t.ad)+'.xlsx');
+  toast('Turne Excel\'e aktarıldı');
+}
+// aynı sanatçının aynı tarihte başka bir işi var mı (booking çakışması)
+function bookingCakismaKontrol(ev){
+  if(!ev.artistId||!ev.tarih)return null;
+  return events.find(x=>x.id!==ev.id && x.artistId===ev.artistId && x.tarih===ev.tarih)||null;
+}
 function fillClientFromFirm(){
   const id=document.getElementById('dFirmPick').value;if(!id)return;
   const f=firms.find(x=>x.id===id);if(!f)return;
@@ -3722,7 +4045,7 @@ const DEN_ENTITY_AD={
   event:'Konser',firm:'Firma',venue:'Mekan',dc:'Karşı Taraf',kdvodeme:'KDV Ödemesi',
   finansman:'Finansman',sabitOdeme:'Sabit Ödeme',acc:'Gelir/Gider',kase:'Kaşe Ödeme Durumu',
   kaseTopluOdeme:'Toplu Kaşe Ödemesi',kaseTanim:'Kaşe Tanımı',ekip:'Ekip',giderTanim:'Sabit Gider Tanımı',
-  sanatciHareket:'Sanatçı Hareketi',sozlesme:'Sözleşme',simulasyon:'Simülasyon',user:'Kullanıcı'
+  sanatciHareket:'Sanatçı Hareketi',sozlesme:'Sözleşme',simulasyon:'Simülasyon',user:'Kullanıcı',tur:'Turne'
 };
 const DEN_AKSIYON_AD={create:'Oluşturuldu',update:'Güncellendi',delete:'Silindi'};
 const DEN_AKSIYON_RENK={create:'pos',update:'warn',delete:'neg'};
@@ -4257,7 +4580,7 @@ function accAggregate(ayFilter){
     if(e.recurring)return; // sabit ödeme tanımları ayrı yönetilir
     if(e.artistPay)return; // sanatçı hesabı hareketleri ayrı yönetilir
     if(e.docClient)return; // karşı taraf rehberi ayrı
-    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog')return; // ayar/rehber + kdv ödeme + denetim kayıtları
+    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.type==='tur')return; // ayar/rehber + kdv ödeme + denetim kayıtları
     if(!ayUyar(e.date))return;
     const oran=Math.abs(e.kdv||0);
     const haric=(e.kdv||0)<0;            // negatif = "+ Ekle" (tutar KDV hariç)
@@ -4370,7 +4693,7 @@ function muhasebeExcelAktar(){
     // 2) GELİR / GİDER (ham işlemler — konser dışı, elle girilenler)
     const gg=[['Tarih','Açıklama','Yön','Tutar (KDV dahil)','KDV %','Net','Durum','Firma']];
     accEntries.forEach(e=>{
-      if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.recurring||e.artistPay||e.docClient)return;
+      if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.type==='tur'||e.recurring||e.artistPay||e.docClient)return;
       const oran=Math.abs(e.kdv||0);
       const haric=(e.kdv||0)<0;
       const net=oran>0?(haric?(e.amount||0):(e.amount||0)/(1+oran/100)):(e.amount||0);
@@ -4578,7 +4901,7 @@ function renderAcc(){
     if(e.recurring)return; // sabit ödemeler kendi kartında
     if(e.artistPay)return; // sanatçı hesabı kendi ekranında
     if(e.docClient)return; // karşı taraf rehberi kendi kartında
-    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog')return; // ayar/rehber + kdv ödeme + finansman + denetim (ayrı bölüm)
+    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.type==='tur')return; // ayar/rehber + kdv ödeme + finansman + denetim (ayrı bölüm)
     items.push({kind:'M',id:e.id,date:e.date||'',title:e.desc,
       sub:[e.firmId?firmName(e.firmId):'',e.kdv?'KDV %'+Math.abs(e.kdv)+((e.kdv||0)<0?' +ekle':' dahil'):'KDV yok'].filter(Boolean).join(' · '),
       amount:e.amount,yon:e.yon,status:e.status||'bekliyor',fisLink:e.fisLink||'',faturaLink:e.faturaLink||''});
@@ -5755,7 +6078,7 @@ function renderDashboard(){
   // Şirket gelir/gider (acc): tahsil edilen gelir / ödenen gider, ve bekleyenler
   let sirketGelirAlinan=0, sirketGiderOdenen=0, sirketGelirBekleyen=0, sirketGiderBekleyen=0;
   accEntries.forEach(e=>{
-    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.recurring||e.artistPay||e.docClient)return; // sadece normal gelir/gider
+    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.type==='tur'||e.recurring||e.artistPay||e.docClient)return; // sadece normal gelir/gider
     const oran=Math.abs(e.kdv||0); const haric=(e.kdv||0)<0;
     const tutar=(oran>0&&haric)?(e.amount||0)*(1+oran/100):(e.amount||0); // hariç ise kasaya brüt girer
     if(e.yon==='gelir'){
@@ -5791,7 +6114,7 @@ function renderDashboard(){
   // Tahsil edilen şirket gelirinin KDV'si (kdv oranına göre içinden ayrıştır)
   let sirketKdv=0;
   accEntries.forEach(e=>{
-    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.recurring||e.artistPay||e.docClient)return;
+    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.type==='tur'||e.recurring||e.artistPay||e.docClient)return;
     if(e.yon==='gelir'&&e.status==='tamam'){
       const oran=Math.abs(e.kdv||0); const haric=(e.kdv||0)<0;
       if(oran>0){ sirketKdv+= haric ? (e.amount||0)*oran/100 : (e.amount||0)-(e.amount||0)/(1+oran/100); }
