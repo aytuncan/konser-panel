@@ -1098,6 +1098,17 @@ select option{background:var(--surface)}
           </div>
 
           <div class="card">
+            <div class="card-title">💸 Turne Ekstra Giderleri</div>
+            <div class="hint" style="margin-bottom:14px">Tek bir konsere değil, turnenin tamamına ait giderler (turne otobüsü, genel prodüksiyon, ortak ulaşım vb.). Bu tutarlar hem turnenin net kârından hem de genel Muhasebe'deki toplam giderden düşülür.</div>
+            <div class="row-head kase"><span>Açıklama</span><span>Tutar ₺</span><span>KDV?</span><span></span></div>
+            <div class="rows" id="turGiderRows"></div>
+            <button class="addbtn" onclick="turAddGider()">+ Gider ekle</button>
+            <div class="actions" style="margin-top:16px">
+              <button class="btn primary" onclick="turGiderleriKaydet()">Giderleri Kaydet</button>
+            </div>
+          </div>
+
+          <div class="card">
             <div class="card-title">İtinerary (Rota)</div>
             <div class="hint" style="margin-bottom:16px">Bu turneye bağlı, tam finansal detayı girilmiş konserler, tarih sırasına göre.</div>
             <div id="turItinerary"><div class="anEmpty">Bu turneye henüz konser bağlı değil.</div></div>
@@ -3375,6 +3386,13 @@ async function delTur(id){
   renderTurler();
   toast('Turne silindi');
 }
+function turGiderNetToplam(t){
+  return (t.giderler||[]).reduce((a,g)=>a+(g.amount-(g.kdv?g.amount-g.amount/1.2:0)),0);
+}
+function turNetKar(t){
+  const karEvents=turEventleri(t.id).reduce((a,e)=>a+computeFor(e).kar,0);
+  return karEvents-turGiderNetToplam(t);
+}
 function renderTurler(){
   const wrap=document.getElementById('turList');if(!wrap)return;
   const q=(document.getElementById('turSearch')?.value||'').toLocaleLowerCase('tr');
@@ -3386,7 +3404,7 @@ function renderTurler(){
     const evs=turEventleri(t.id);
     const tarihler=evs.map(e=>e.tarih).filter(Boolean).sort();
     const aralik=tarihler.length?trDate(tarihler[0])+(tarihler.length>1?' → '+trDate(tarihler[tarihler.length-1]):''):'tarihsiz';
-    const toplamKar=evs.reduce((a,e)=>a+computeFor(e).kar,0);
+    const toplamKar=turNetKar(t);
     const sanatciAd=t.artistId?firmName(t.artistId):'';
     const di=TUR_DURUMLAR[t.durum]||TUR_DURUMLAR.planlaniyor;
     const d=document.createElement('div');
@@ -3465,6 +3483,9 @@ function renderTurDetay(id){
   document.getElementById('turDetayBaslik').textContent='🎪 '+t.ad+(sanatciAd?' — '+sanatciAd:'');
   const toplamCiro=evs.reduce((a,e)=>a+computeFor(e).ciroNet,0);
   const toplamKar=evs.reduce((a,e)=>a+computeFor(e).kar,0);
+  const turGiderler=t.giderler||[];
+  const turGiderNet=turGiderNetToplam(t);
+  const netTurneKari=toplamKar-turGiderNet;
   const sehirler=new Set(evs.map(e=>(e.sehir||'').toUpperCase().trim()).filter(Boolean));
   const tarihler=evs.map(e=>e.tarih).filter(Boolean).sort();
   const di=TUR_DURUMLAR[t.durum]||TUR_DURUMLAR.planlaniyor;
@@ -3474,7 +3495,9 @@ function renderTurDetay(id){
     <div class="stat"><div class="n">Şehir Sayısı</div><div class="v">${sehirler.size}</div></div>
     <div class="stat"><div class="n">Tarih Aralığı</div><div class="v" style="font-size:15px">${tarihler.length?trDate(tarihler[0])+(tarihler.length>1?' → '+trDate(tarihler[tarihler.length-1]):''):'—'}</div></div>
     <div class="stat"><div class="n">Toplam Ciro (net)</div><div class="v">${fmt(toplamCiro)}</div></div>
-    <div class="stat" style="border-color:${toplamKar>=0?'var(--green)':'var(--red)'};background:${toplamKar>=0?'rgba(90,209,154,0.07)':'rgba(240,122,122,0.07)'}"><div class="n">Toplam Kâr</div><div class="v ${toplamKar>=0?'pos':'neg'}">${fmt(toplamKar)}</div></div>`;
+    <div class="stat"><div class="n">Konserlerden Kâr</div><div class="v ${toplamKar>=0?'':'neg'}">${fmt(toplamKar)}</div></div>
+    <div class="stat"><div class="n">Turne Ekstra Gideri</div><div class="v ${turGiderNet>0?'neg':''}">${fmt(turGiderNet)}</div></div>
+    <div class="stat" style="border-color:${netTurneKari>=0?'var(--green)':'var(--red)'};background:${netTurneKari>=0?'rgba(90,209,154,0.07)':'rgba(240,122,122,0.07)'}"><div class="n">Net Turne Kârı</div><div class="v ${netTurneKari>=0?'pos':'neg'}">${fmt(netTurneKari)}</div></div>`;
 
   const tarihSayim={};
   evs.forEach(e=>{if(e.tarih){tarihSayim[e.tarih]=(tarihSayim[e.tarih]||0)+1;}});
@@ -3511,6 +3534,41 @@ function renderTurDetay(id){
   refreshTurMekanDatalist();
   document.getElementById('turDurakRows').innerHTML='';
   (t.duraklar||[]).forEach(d=>turAddDurak(d.sehir,d.mekan,d.tarih,d.firmId,d.durum));
+  document.getElementById('turGiderRows').innerHTML='';
+  turGiderler.forEach(g=>turAddGider(g.name,g.amount,g.kdv));
+}
+// ── TURNE EKSTRA GİDERLERİ ── tek bir konsere değil turnenin tamamına ait giderler
+function turAddGider(name='',amount='',kdv=false){
+  const wrap=document.getElementById('turGiderRows');if(!wrap)return;
+  const div=document.createElement('div');
+  div.className='row kase';
+  div.innerHTML=`
+    <input placeholder="Açıklama" value="${(name||'').replace(/"/g,'&quot;')}" autocomplete="off">
+    <input type="number" min="0" placeholder="0" value="${amount}">
+    <select><option value="0"${!kdv?' selected':''}>Yok</option><option value="1"${kdv?' selected':''}>Var</option></select>
+    <button class="rm" onclick="this.parentElement.remove()">×</button>`;
+  wrap.appendChild(div);
+}
+function turReadGiderler(){
+  const wrap=document.getElementById('turGiderRows');if(!wrap)return[];
+  return [...wrap.children].map(r=>{
+    const i=r.querySelectorAll('input'),s=r.querySelector('select');
+    return {name:i[0].value,amount:+i[1].value||0,kdv:s.value==='1'};
+  }).filter(x=>x.name||x.amount);
+}
+async function turGiderleriKaydet(){
+  if(!_turDetayId)return;
+  const t=turListesi().find(x=>x.id===_turDetayId);if(!t)return;
+  t.giderler=turReadGiderler();
+  try{
+    const res=await apiFetch('/api/acc/'+t.id,{method:'PUT',body:JSON.stringify(t)});
+    if(!res||!res.ok){toast('Kaydedilemedi');return;}
+  }catch(err){toast('Kaydedilemedi');return;}
+  await logAudit('update','tur',t.id,t.ad+' — ekstra giderler güncellendi',{giderSayisi:t.giderler.length});
+  await loadAcc();
+  renderTurler();
+  renderTurDetay(_turDetayId);
+  toast('Turne giderleri kaydedildi');
 }
 // ── ROTA PLANI (DURAKLAR) ── henüz tam finansal detayı olmayan planlanan
 // şehir/mekan/tarih/organizatör satırları. Netleşince Etkinlik kaydına çevrilir.
@@ -3647,10 +3705,17 @@ function turExcelAktar(){
     ['Tarih','Şehir','Mekan','Ciro (net)','Kâr']];
   evs.forEach(ev=>{const c=computeFor(ev);rows.push([ev.tarih||'',ev.sehir||'',ev.mekan||'',Math.round(c.ciroNet),Math.round(c.kar)]);});
   const toplamCiro=evs.reduce((a,e)=>a+computeFor(e).ciroNet,0);
-  const toplamKar=evs.reduce((a,e)=>a+computeFor(e).kar,0);
-  rows.push([],['TOPLAM','','',Math.round(toplamCiro),Math.round(toplamKar)]);
+  const toplamKarEvents=evs.reduce((a,e)=>a+computeFor(e).kar,0);
+  const turGiderNet=turGiderNetToplam(t);
+  rows.push([],['TOPLAM (konserler)','','',Math.round(toplamCiro),Math.round(toplamKarEvents)]);
+  if((t.giderler||[]).length){
+    rows.push([],['TURNE EKSTRA GİDERLERİ','Tutar']);
+    t.giderler.forEach(g=>rows.push([g.name,Math.round(g.amount)]));
+    rows.push(['Turne gideri toplamı (net)',Math.round(turGiderNet)]);
+  }
+  rows.push([],['NET TURNE KÂRI','','','',Math.round(toplamKarEvents-turGiderNet)]);
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:14},{wch:16},{wch:20},{wch:14},{wch:14}];
+  ws['!cols']=[{wch:20},{wch:16},{wch:20},{wch:14},{wch:14}];
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'TURNE');
   XLSX.writeFile(wb,safeName(t.ad)+'.xlsx');
@@ -4747,6 +4812,17 @@ function accAggregate(ayFilter){
       if(e.status!=='tamam'){borc+=brut;ensureCari(e.firmId,firmName(e.firmId)).borc+=brut;}
     }
   });
+
+  // turne ekstra giderleri: tarihsiz olduğu için sadece genel (ay filtresiz) görünümde sayılır
+  if(!ayFilter){
+    turListesi().forEach(t=>{
+      (t.giderler||[]).forEach(g=>{
+        const kdvTutar=g.kdv?g.amount-g.amount/1.2:0;
+        indirilecekKdv+=kdvTutar;
+        toplamGider+=(g.amount-kdvTutar);
+      });
+    });
+  }
 
   return {hesaplananKdv,indirilecekKdv,netKdv:hesaplananKdv-indirilecekKdv,
           toplamGelir,toplamGider,netKar:toplamGelir-toplamGider,
