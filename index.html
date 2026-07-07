@@ -1079,6 +1079,7 @@ select option{background:var(--surface)}
             <div class="stat-grid" id="turDetayOzet" style="margin-bottom:16px"></div>
             <div class="hint" id="turDetayCakisma" style="display:none;margin-bottom:16px;color:var(--red);font-weight:600"></div>
             <div class="actions">
+              <button class="btn primary" onclick="turYeniEtkinlik()">+ Yeni Etkinlik Ekle</button>
               <button class="btn ghost" onclick="turExcelAktar()">Turneyi Excel'e aktar</button>
               <button class="btn danger" onclick="delTur(_turDetayId)">Turneyi Sil</button>
             </div>
@@ -1086,8 +1087,8 @@ select option{background:var(--surface)}
 
           <div class="card">
             <div class="card-title">🗺️ Rota Planı (Duraklar)</div>
-            <div class="hint" style="margin-bottom:14px">Turnenin planlanan şehir/mekan/tarih/organizatör listesi — henüz tam finansal detay girmeden hızlıca rota kur. Netleşince "→" ile tam bir Etkinlik kaydına çevir.</div>
-            <div class="row-head" style="grid-template-columns:1fr 1fr 110px 1fr 110px 70px"><span>Şehir</span><span>Mekan</span><span>Tarih</span><span>Organizatör</span><span>Durum</span><span></span></div>
+            <div class="hint" style="margin-bottom:14px">Turnenin planlanan şehir/mekan/tarih/organizatör listesi — henüz tam finansal detay girmeden hızlıca rota kur. "Kayıtlı İş"ten seçersen satır otomatik dolar. Netleşince "→" ile tam bir Etkinlik kaydına çevir.</div>
+            <div class="row-head" style="grid-template-columns:150px 1fr 1fr 110px 1fr 110px 70px"><span>Kayıtlı İş</span><span>Şehir</span><span>Mekan</span><span>Tarih</span><span>Organizatör</span><span>Durum</span><span></span></div>
             <div id="turDurakRows"></div>
             <button class="addbtn" onclick="turAddDurak()">+ Durak ekle</button>
             <div class="actions" style="margin-top:16px">
@@ -1104,13 +1105,11 @@ select option{background:var(--surface)}
 
           <div class="card">
             <div class="card-title">Mevcut İşlerden Ekle</div>
-            <div class="hint" style="margin-bottom:16px">Kayıtlı bir işi bu turneye bağla (başka turda ise oradan çıkarılır).</div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-              <div style="flex:1;min-width:220px">
-                <label>İş seç</label>
-                <select id="turEkleIsPick"><option value="">— iş seç —</option></select>
-              </div>
-              <button class="btn primary" onclick="turIseEkle()" style="flex:none">Turneye ekle</button>
+            <div class="hint" style="margin-bottom:14px">Kayıtlı işlerden birden fazlasını seç, tek seferde bu turneye bağla (başka turda olanlar oradan çıkarılır).</div>
+            <input id="turEkleArama" placeholder="🔍 İş ara: şehir, mekan..." autocomplete="off" oninput="renderTurEkleListe()" style="margin-bottom:12px">
+            <div id="turEkleListe"><div class="anEmpty">Bağlanabilecek iş yok.</div></div>
+            <div class="actions" style="margin-top:14px">
+              <button class="btn primary" onclick="turSecilenleriEkle()">Seçilenleri Turneye Ekle</button>
             </div>
           </div>
         </div>
@@ -3415,29 +3414,37 @@ function turDetayKapat(){
   const lw=document.getElementById('turListWrap');if(lw)lw.style.display='';
   const dw=document.getElementById('turDetayWrap');if(dw)dw.style.display='none';
 }
-function refreshTurEkleIsPick(turId){
-  const sel=document.getElementById('turEkleIsPick');if(!sel)return;
-  const cur=sel.value;
-  sel.innerHTML='<option value="">— iş seç —</option>';
-  events.filter(ev=>ev.turId!==turId).sort((a,b)=>(a.tarih||'9999').localeCompare(b.tarih||'9999')).forEach(ev=>{
+function renderTurEkleListe(){
+  const wrap=document.getElementById('turEkleListe');if(!wrap||!_turDetayId)return;
+  const q=(document.getElementById('turEkleArama')?.value||'').toLocaleLowerCase('tr');
+  let list=events.filter(ev=>ev.turId!==_turDetayId);
+  if(q)list=list.filter(ev=>[ev.sehir,ev.mekan].some(v=>(v||'').toLocaleLowerCase('tr').includes(q)));
+  list.sort((a,b)=>(a.tarih||'9999').localeCompare(b.tarih||'9999'));
+  if(!list.length){wrap.innerHTML='<div class="anEmpty">'+(events.length?'Bağlanabilecek iş yok.':'Henüz kayıtlı iş yok.')+'</div>';return;}
+  wrap.innerHTML=list.map(ev=>{
     const isim=(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')||'(iş)';
-    const o=document.createElement('option');o.value=ev.id;
-    o.textContent=isim+(ev.tarih?' · '+trDate(ev.tarih):'')+(ev.turId?' (başka turda)':'');
-    sel.appendChild(o);
-  });
-  sel.value=cur;
+    return `<label style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-bottom:1px solid var(--border);cursor:pointer">
+      <input type="checkbox" class="turEkleCheck" value="${ev.id}" style="width:18px;height:18px;flex:none;accent-color:var(--accent)">
+      <span style="flex:1;font-size:13.5px">${esc(isim)}${ev.tarih?' · '+trDate(ev.tarih):''}</span>
+      ${ev.turId?'<span class="badge">başka turda</span>':''}
+    </label>`;
+  }).join('');
 }
-async function turIseEkle(){
-  const evId=document.getElementById('turEkleIsPick').value;
-  if(!evId||!_turDetayId){toast('Önce iş seç');return;}
-  const ev=events.find(x=>x.id===evId);if(!ev)return;
-  ev.turId=_turDetayId;
-  await persist(ev);
-  await logAudit('update','event',ev.id,(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')+' — turneye eklendi');
+async function turSecilenleriEkle(){
+  const checks=[...document.querySelectorAll('.turEkleCheck:checked')];
+  if(!checks.length){toast('Önce en az bir iş seç');return;}
+  if(!_turDetayId)return;
+  for(const c of checks){
+    const ev=events.find(x=>x.id===c.value);
+    if(!ev)continue;
+    ev.turId=_turDetayId;
+    await persist(ev);
+  }
+  await logAudit('update','tur',_turDetayId,checks.length+' iş turneye eklendi');
   await loadEvents();
   renderTurDetay(_turDetayId);
   renderTurler();
-  toast('Turneye eklendi');
+  toast(checks.length+' iş turneye eklendi');
 }
 async function turDenCikar(evId){
   if(!confirm('Bu işi turneden çıkarmak istiyor musun? İş silinmez, sadece bağlantısı kalkar.'))return;
@@ -3500,7 +3507,7 @@ function renderTurDetay(id){
     h+='</tbody></table>';
     itWrap.innerHTML=h;
   }
-  refreshTurEkleIsPick(id);
+  renderTurEkleListe();
   refreshTurMekanDatalist();
   document.getElementById('turDurakRows').innerHTML='';
   (t.duraklar||[]).forEach(d=>turAddDurak(d.sehir,d.mekan,d.tarih,d.firmId,d.durum));
@@ -3520,14 +3527,34 @@ function refreshTurMekanDatalist(){
   const dl=document.getElementById('turMekanList');if(!dl)return;
   dl.innerHTML=venues.map(v=>`<option value="${esc(v.name)}">`).join('');
 }
+function turDurakEventOptionsHTML(){
+  let h='<option value="">— kayıtlı işten doldur —</option>';
+  events.slice().sort((a,b)=>(a.tarih||'9999').localeCompare(b.tarih||'9999')).forEach(ev=>{
+    const isim=(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')||'(iş)';
+    h+=`<option value="${ev.id}">${esc(isim)}${ev.tarih?' · '+trDate(ev.tarih):''}</option>`;
+  });
+  return h;
+}
+function turDurakDoldur(sel){
+  const ev=events.find(x=>x.id===sel.value);
+  sel.value='';
+  if(!ev)return;
+  const row=sel.closest('.row');
+  row.querySelector('.td-sehir').value=ev.sehir||'';
+  row.querySelector('.td-mekan').value=ev.mekan||'';
+  row.querySelector('.td-tarih').value=ev.tarih||'';
+  if(ev.firmId)row.querySelector('.td-firma').value=ev.firmId;
+  toast('Satır dolduruldu');
+}
 function turAddDurak(sehir='',mekan='',tarih='',firmId='',durum='planlaniyor'){
   const wrap=document.getElementById('turDurakRows');if(!wrap)return;
   const div=document.createElement('div');
   div.className='row';
-  div.style.gridTemplateColumns='1fr 1fr 110px 1fr 110px 70px';
+  div.style.gridTemplateColumns='150px 1fr 1fr 110px 1fr 110px 70px';
   div.style.marginBottom='8px';
   div.style.alignItems='center';
   div.innerHTML=`
+    <select class="td-doldur" onchange="turDurakDoldur(this)">${turDurakEventOptionsHTML()}</select>
     <select class="td-sehir">${turDurakSehirOptionsHTML()}</select>
     <input class="td-mekan" list="turMekanList" placeholder="Mekan adı" value="${(mekan||'').replace(/"/g,'&quot;')}">
     <input class="td-tarih" type="date" value="${tarih||''}">
@@ -3599,6 +3626,17 @@ async function turDurakCevir(btn){
   renderTurDetay(_turDetayId);
   renderTurler();
   toast('Etkinliğe çevrildi — Yeni Etkinlik\'te finansal detayları tamamla');
+}
+// turne detayından: Yeni Etkinlik formunu bu turneye (ve varsa sanatçısına) önceden bağlı aç
+function turYeniEtkinlik(){
+  if(!_turDetayId)return;
+  const turId=_turDetayId;
+  const t=turListesi().find(x=>x.id===turId);
+  resetForm();
+  showTab('new');
+  document.getElementById('evTurPick').value=turId;
+  if(t&&t.artistId)document.getElementById('evArtistPick').value=t.artistId;
+  toast('Turne otomatik seçildi — bilgileri doldurup kaydet');
 }
 function turExcelAktar(){
   if(!_turDetayId)return;
