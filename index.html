@@ -579,6 +579,9 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabAyarlar" onclick="showTab('ayarlar')" style="display: flex;">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Ayarlar
       </button>
+      <button class="nav-item" id="tabDenetim" onclick="showTab('denetim')" style="display: flex;">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> İşlem Geçmişi
+      </button>
       </div></div>
     </nav>
 
@@ -593,6 +596,18 @@ select option{background:var(--surface)}
         <div class="topbar-title" id="pageTitle">Dashboard</div>
       </div>
       <div class="topbar-user">
+        <div style="position:relative;flex:none">
+          <button class="btn ghost" id="notifBellBtn" style="flex:none;min-width:auto;padding:8px 12px;font-size:16px;position:relative" onclick="toggleNotifPanel()" title="Bildirimler">
+            🔔<span id="notifBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--red);color:#fff;font-size:10px;font-weight:700;border-radius:10px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px">0</span>
+          </button>
+          <div id="notifPanel" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:360px;max-width:88vw;max-height:70vh;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:0 12px 40px rgba(0,0,0,.18);z-index:90">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center">
+              <span>Bildirimler</span>
+              <button onclick="closeNotifPanel()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0 4px">×</button>
+            </div>
+            <div id="notifList" style="padding:8px"></div>
+          </div>
+        </div>
         <div class="user-avatar" id="userAvatar">AC</div>
         <div class="user-info">
           <div class="name" id="userName">Aytun CAN</div>
@@ -1889,6 +1904,27 @@ Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
         </div>
       </div>
 
+      <div id="view-denetim" style="display:none">
+        <div class="card">
+          <div class="card-title">🕵 İşlem Geçmişi (Denetim İzi)</div>
+          <div class="hint" style="margin-bottom:16px">Silme ve kritik değişiklik (kaşe ödeme, kullanıcı yetkisi, finansman, sözleşme durumu vb.) işlemleri burada kalıcı olarak kaydedilir — kim, ne zaman, ne yaptı. Silinen kayıtların anlık görüntüsü "Detay"da tutulur.</div>
+          <div class="stat-grid" id="denOzet" style="margin-bottom:20px"></div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+            <input id="denSearch" placeholder="🔍 Ara: kullanıcı, etiket, varlık..." oninput="renderDenetim()" style="flex:1;min-width:220px">
+            <select id="denAksiyon" onchange="renderDenetim()" style="width:auto;min-width:160px">
+              <option value="">Tüm işlemler</option>
+              <option value="delete">Silme</option>
+              <option value="update">Güncelleme</option>
+              <option value="create">Oluşturma</option>
+            </select>
+            <select id="denVarlik" onchange="renderDenetim()" style="width:auto;min-width:170px">
+              <option value="">Tüm varlıklar</option>
+            </select>
+          </div>
+          <div id="denListe"><div class="anEmpty">Henüz kayıtlı işlem yok.</div></div>
+        </div>
+      </div>
+
     </div></div></div></div><div id="changePassModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;align-items:center;justify-content:center;padding:16px">
   <div class="card" style="max-width:400px;width:100%;margin:0;padding:32px">
     <div class="card-title">Şifre Değiştir</div>
@@ -2195,7 +2231,7 @@ function applyXlsx() {
 const PAGE_TITLES={
   dashboard:'Dashboard',new:'Yeni Etkinlik',saved:'Konserler',odeme:'Muhasebe',mgenel:'Muhasebe — Genel',mgg:'Muhasebe — Gelir/Gider',mcari:'Muhasebe — Cari Durum',mkdv:'Muhasebe — KDV',ekipodeme:'Ekip Ödemeleri',finansman:'Finansman',sanatci:'Sanatçı Hesabı',
   szhazirla:'Sözleşme Hazırla',szyapilan:'Yapılan Sözleşmeler',szrehber:'Sözleşme Rehberi',szfirmam:'Firma Bilgilerim',szsablon:'Sözleşme Şablonu',firms:'Firmalar',venues:'Mekanlar',analiz:'Rapor',
-  users:'Kullanıcılar',ayarlar:'Ayarlar',simulasyon:'Hızlı Simülasyon',simdetay:'Detaylı Simülasyon'
+  users:'Kullanıcılar',ayarlar:'Ayarlar',simulasyon:'Hızlı Simülasyon',simdetay:'Detaylı Simülasyon',denetim:'İşlem Geçmişi'
 };
 function openSidebar(){
   document.getElementById('sidebar').classList.add('open');
@@ -2218,7 +2254,7 @@ const NAV_TAB_GROUP={
   szhazirla:'sozlesme',szyapilan:'sozlesme',szrehber:'sozlesme',szfirmam:'sozlesme',szsablon:'sozlesme',
   firms:'rehber',venues:'rehber',ekip:'rehber',
   analiz:'rapor',
-  users:'yonetim',ayarlar:'yonetim'
+  users:'yonetim',ayarlar:'yonetim',denetim:'yonetim'
 };
 function openNavGroupFor(t){
   const g=NAV_TAB_GROUP[t];
@@ -2257,7 +2293,7 @@ function showTab(t){
   const muhAlt={mgenel:'genel',mgg:'gg',mcari:'cari',mkdv:'kdv'};
   const isMuh=Object.keys(muhAlt).includes(t);
   const activeView=isMuh?'odeme':t;
-  ['dashboard','new','saved','simulasyon','simdetay','odeme','ekipodeme','finansman','sanatci','szhazirla','szyapilan','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users','ayarlar'].forEach(id=>{
+  ['dashboard','new','saved','simulasyon','simdetay','odeme','ekipodeme','finansman','sanatci','szhazirla','szyapilan','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users','ayarlar','denetim'].forEach(id=>{
     const v=document.getElementById('view-'+id);
     if(v) v.style.display=(activeView===id)?'':'none';
   });
@@ -2299,6 +2335,7 @@ function showTab(t){
   if(t==='ekip')renderEkip();
   if(t==='analiz')renderAnaliz();
   if(t==='users')renderUsers();
+  if(t==='denetim'){loadAcc().then(renderDenetim);}
 }
 function setTip(t){
   tip=t;
@@ -2618,8 +2655,11 @@ function resetForm(){
 async function saveEvent(){
   const ev=gather();
   if(!ev.sehir&&!ev.mekan){toast('Şehir veya mekan gir');return;}
+  const wasExisting=!!editingId;
   await persist(ev);
+  await logAudit(wasExisting?'update':'create','event',ev.id,(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:''));
   await loadEvents();
+  renderNotifPanel();
   editingId=null;
   toast('Kaydedildi');
   showTab('saved');
@@ -2691,9 +2731,12 @@ function renderSaved(){
 }
 async function delEvent(id){
   if(!confirm('Bu kaydı silmek istiyor musun?'))return;
+  const ev=events.find(x=>x.id===id);
+  await logAudit('delete','event',id,(ev?.sehir||'')+(ev?.mekan?' · '+ev.mekan:''),ev);
   await removeStored(id);
   await loadEvents();
   renderSaved();
+  renderNotifPanel();
   toast('Silindi');
 }
 
@@ -2966,6 +3009,8 @@ function editDc(id){
 }
 async function delDc(id){
   if(!confirm('Bu karşı tarafı silmek istiyor musun?'))return;
+  const dc=accEntries.find(x=>x.id===id);
+  await logAudit('delete','dc',id,dc?.name||'',dc);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();renderDcList();refreshDcPicker();toast('Silindi');
 }
@@ -2992,6 +3037,8 @@ async function kdvOdemeEkle(){
 }
 async function kdvOdemeSil(id){
   if(!confirm('Bu KDV ödemesini silmek istiyor musun?'))return;
+  const o=accEntries.find(x=>x.id===id);
+  await logAudit('delete','kdvodeme',id,(o?.donem||'')+' — '+fmt(o?.amount||0),o);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();renderAcc();renderDashboard();toast('Silindi');
 }
@@ -3098,6 +3145,8 @@ function editFirm(id){
 }
 async function delFirm(id){
   if(!confirm('Bu firmayı silmek istiyor musun?'))return;
+  const f=firms.find(x=>x.id===id);
+  await logAudit('delete','firm',id,f?.name||'',f);
   try{await apiFetch('/api/firms/'+id,{method:'DELETE'});}catch(e){}
   await loadFirms();renderFirms();toast('Silindi');
 }
@@ -3183,6 +3232,8 @@ function editVenue(id){
 }
 async function delVenue(id){
   if(!confirm('Bu mekanı silmek istiyor musun?'))return;
+  const v=venues.find(x=>x.id===id);
+  await logAudit('delete','venue',id,v?.name||'',v);
   try{await apiFetch('/api/venues/'+id,{method:'DELETE'});}catch(e){}
   await loadVenues();renderVenues();toast('Silindi');
 }
@@ -3536,6 +3587,8 @@ function szMailYolla(idOrNull){
 
 async function szSil(id){
   if(!confirm('Bu kayıtlı sözleşmeyi silmek istiyor musun?'))return;
+  const e=accEntries.find(x=>x.id===id);
+  await logAudit('delete','sozlesme',id,e?.desc||'',e);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();szRenderKayitli();szRenderYapilan();toast('Silindi');
 }
@@ -3559,10 +3612,12 @@ function szSetFiltre(f){
 }
 async function szDurumDegistir(id,yeniDurum){
   const e=accEntries.find(x=>x.id===id);if(!e)return;
+  const eskiDurum=e.durum;
   e.durum=yeniDurum;
   try{
     await apiFetch('/api/acc/'+id,{method:'PUT',body:JSON.stringify(e)});
   }catch(err){toast('Güncellenemedi');return;}
+  await logAudit('update','sozlesme',id,e.desc||'',{eskiDurum,yeniDurum});
   szRenderYapilan();
   toast('Durum güncellendi: '+SZ_DURUMLAR[yeniDurum].ad);
 }
@@ -3641,6 +3696,88 @@ let accYon='gelir';
 async function loadAcc(){
   try{const res=await apiFetch('/api/acc');if(!res){accEntries=[];return;}accEntries=await res.json();}catch(e){accEntries=[];}
 }
+
+// ── DENETİM İZİ (audit log) ──────────────────────────────
+// Her silme ve kritik güncelleme burada kaydedilir: kim, ne zaman, ne yaptı.
+// meta: silinen/değişen kaydın anlık görüntüsü (geri getirmek için elle kullanılabilir).
+async function logAudit(action,entity,entityId,label,meta){
+  const e={
+    id:'aud'+Date.now()+Math.random().toString(36).slice(2,7),
+    type:'auditlog',
+    action,        // 'create' | 'update' | 'delete'
+    entity,        // 'event' | 'firm' | 'venue' | 'acc' | 'kase' | 'user' | ...
+    entityId:entityId||'',
+    label:label||'',
+    userName:_user?_user.name:'Bilinmiyor',
+    userEmail:_user?_user.email:'',
+    ts:Date.now(),
+    meta:meta!=null?meta:null
+  };
+  try{await apiFetch('/api/acc',{method:'POST',body:JSON.stringify(e)});}catch(err){}
+}
+function auditList(){
+  return accEntries.filter(e=>e.type==='auditlog').sort((a,b)=>(b.ts||0)-(a.ts||0));
+}
+const DEN_ENTITY_AD={
+  event:'Konser',firm:'Firma',venue:'Mekan',dc:'Karşı Taraf',kdvodeme:'KDV Ödemesi',
+  finansman:'Finansman',sabitOdeme:'Sabit Ödeme',acc:'Gelir/Gider',kase:'Kaşe Ödeme Durumu',
+  kaseTopluOdeme:'Toplu Kaşe Ödemesi',kaseTanim:'Kaşe Tanımı',ekip:'Ekip',giderTanim:'Sabit Gider Tanımı',
+  sanatciHareket:'Sanatçı Hareketi',sozlesme:'Sözleşme',simulasyon:'Simülasyon',user:'Kullanıcı'
+};
+const DEN_AKSIYON_AD={create:'Oluşturuldu',update:'Güncellendi',delete:'Silindi'};
+const DEN_AKSIYON_RENK={create:'pos',update:'warn',delete:'neg'};
+function denRefreshVarlikPicker(list){
+  const sel=document.getElementById('denVarlik');if(!sel)return;
+  const cur=sel.value;
+  const varliklar=[...new Set(list.map(e=>e.entity))].sort();
+  sel.innerHTML='<option value="">Tüm varlıklar</option>'+varliklar.map(v=>`<option value="${esc(v)}">${esc(DEN_ENTITY_AD[v]||v)}</option>`).join('');
+  sel.value=cur;
+}
+function denToggle(rid){
+  const row=document.getElementById(rid);
+  if(row)row.style.display=row.style.display==='none'?'table-row':'none';
+}
+function renderDenetim(){
+  const list=auditList();
+  denRefreshVarlikPicker(list);
+  const ozet=document.getElementById('denOzet');
+  if(ozet){
+    const son24=list.filter(e=>Date.now()-(e.ts||0)<86400000).length;
+    const silme=list.filter(e=>e.action==='delete').length;
+    ozet.innerHTML=`
+      <div class="stat"><div class="n">Toplam Kayıt</div><div class="v">${list.length}</div></div>
+      <div class="stat"><div class="n">Son 24 Saat</div><div class="v">${son24}</div></div>
+      <div class="stat"><div class="n">Toplam Silme</div><div class="v ${silme?'neg':''}">${silme}</div></div>`;
+  }
+  const q=(document.getElementById('denSearch')?.value||'').toLocaleLowerCase('tr');
+  const aksF=document.getElementById('denAksiyon')?.value||'';
+  const varF=document.getElementById('denVarlik')?.value||'';
+  let filt=list;
+  if(aksF)filt=filt.filter(e=>e.action===aksF);
+  if(varF)filt=filt.filter(e=>e.entity===varF);
+  if(q)filt=filt.filter(e=>[e.userName,e.label,DEN_ENTITY_AD[e.entity]||e.entity].some(v=>(v||'').toLocaleLowerCase('tr').includes(q)));
+  const wrap=document.getElementById('denListe');
+  if(!wrap)return;
+  if(!filt.length){wrap.innerHTML='<div class="anEmpty">'+(list.length?'Eşleşen kayıt yok.':'Henüz kayıtlı işlem yok.')+'</div>';return;}
+  let h='<table class="dtable"><thead><tr><th>Tarih</th><th>Kullanıcı</th><th>İşlem</th><th>Varlık</th><th>Etiket</th><th></th></tr></thead><tbody>';
+  filt.forEach((e,i)=>{
+    const tarih=e.ts?new Date(e.ts).toLocaleString('tr-TR'):'—';
+    const rid='den_'+i;
+    h+=`<tr style="${e.meta!=null?'cursor:pointer':''}" ${e.meta!=null?`onclick="denToggle('${rid}')"`:''}>
+      <td style="white-space:nowrap;color:var(--muted)">${tarih}</td>
+      <td>${esc(e.userName||'—')}</td>
+      <td><span class="vbadge ${DEN_AKSIYON_RENK[e.action]||'bekliyor'}">${esc(DEN_AKSIYON_AD[e.action]||e.action)}</span></td>
+      <td>${esc(DEN_ENTITY_AD[e.entity]||e.entity)}</td>
+      <td>${esc(e.label||'')}</td>
+      <td style="color:var(--accent);white-space:nowrap">${e.meta!=null?'▸ detay':''}</td>
+    </tr>`;
+    if(e.meta!=null){
+      h+=`<tr id="${rid}" style="display:none"><td colspan="6" style="background:var(--surface2)"><pre style="white-space:pre-wrap;word-break:break-all;font-size:11px;margin:0;padding:4px 8px">${esc(JSON.stringify(e.meta,null,2))}</pre></td></tr>`;
+    }
+  });
+  h+='</tbody></table>';
+  wrap.innerHTML=h;
+}
 function setAccYon(y){
   accYon=y;
   document.getElementById('accYonGelir').classList.toggle('on',y==='gelir');
@@ -3695,11 +3832,14 @@ async function saveFin(){
     link:document.getElementById('finLink').value.trim()||'',
     status:'tamam',kdv:0
   };
+  let wasExisting=false;
   try{
     const exists=accEntries.find(x=>x.id===e.id);
+    wasExisting=!!exists;
     const res=await apiFetch('/api/acc'+(exists?'/'+e.id:''),{method:exists?'PUT':'POST',body:JSON.stringify(e)});
     if(!res||!res.ok){toast('Kaydedilemedi');return;}
   }catch(err){toast('Kaydedilemedi');return;}
+  await logAudit(wasExisting?'update':'create','finansman',e.id,e.desc+' — '+fmt(e.amount),e);
   await loadAcc();
   resetFinForm();
   renderFinansman();
@@ -3722,6 +3862,8 @@ function editFin(id){
 }
 async function delFin(id){
   if(!confirm('Bu finansman hareketini silmek istiyor musun?'))return;
+  const e=accEntries.find(x=>x.id===id);
+  await logAudit('delete','finansman',id,(e?.desc||'')+' — '+fmt(e?.amount||0),e);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();renderFinansman();renderDashboard();toast('Silindi');
 }
@@ -3838,6 +3980,8 @@ function editSabit(id){
 }
 async function delSabit(id){
   if(!confirm('Bu sabit ödemeyi silmek istiyor musun?'))return;
+  const e=accEntries.find(x=>x.id===id);
+  await logAudit('delete','sabitOdeme',id,e?.desc||'',e);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();renderOdeme();toast('Silindi');
 }
@@ -3851,7 +3995,7 @@ async function toggleSabitOdendi(id, ayKey){
   if(pm.has(ayKey))pm.delete(ayKey); else pm.add(ayKey);
   e.paidMonths=[...pm];
   try{await apiFetch('/api/acc/'+id,{method:'PUT',body:JSON.stringify(e)});}catch(err){toast('Kaydedilemedi');return;}
-  await loadAcc();renderOdeme();
+  await loadAcc();renderOdeme();renderNotifPanel();
   toast(pm.has(ayKey)?'Ödendi işaretlendi':'Geri alındı');
 }
 function renderSabit(){
@@ -4055,6 +4199,8 @@ function editAcc(id){
 }
 async function delAcc(id){
   if(!confirm('Bu işlemi silmek istiyor musun?'))return;
+  const e=accEntries.find(x=>x.id===id);
+  await logAudit('delete','acc',id,(e?.desc||'')+' — '+fmt(e?.amount||0),e);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();renderOdeme();toast('Silindi');
 }
@@ -4111,7 +4257,7 @@ function accAggregate(ayFilter){
     if(e.recurring)return; // sabit ödeme tanımları ayrı yönetilir
     if(e.artistPay)return; // sanatçı hesabı hareketleri ayrı yönetilir
     if(e.docClient)return; // karşı taraf rehberi ayrı
-    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman')return; // ayar/rehber + kdv ödeme kayıtları
+    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog')return; // ayar/rehber + kdv ödeme + denetim kayıtları
     if(!ayUyar(e.date))return;
     const oran=Math.abs(e.kdv||0);
     const haric=(e.kdv||0)<0;            // negatif = "+ Ekle" (tutar KDV hariç)
@@ -4224,7 +4370,7 @@ function muhasebeExcelAktar(){
     // 2) GELİR / GİDER (ham işlemler — konser dışı, elle girilenler)
     const gg=[['Tarih','Açıklama','Yön','Tutar (KDV dahil)','KDV %','Net','Durum','Firma']];
     accEntries.forEach(e=>{
-      if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.recurring||e.artistPay||e.docClient)return;
+      if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.recurring||e.artistPay||e.docClient)return;
       const oran=Math.abs(e.kdv||0);
       const haric=(e.kdv||0)<0;
       const net=oran>0?(haric?(e.amount||0):(e.amount||0)/(1+oran/100)):(e.amount||0);
@@ -4432,7 +4578,7 @@ function renderAcc(){
     if(e.recurring)return; // sabit ödemeler kendi kartında
     if(e.artistPay)return; // sanatçı hesabı kendi ekranında
     if(e.docClient)return; // karşı taraf rehberi kendi kartında
-    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman')return; // ayar/rehber + kdv ödeme + finansman (ayrı bölüm)
+    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog')return; // ayar/rehber + kdv ödeme + finansman + denetim (ayrı bölüm)
     items.push({kind:'M',id:e.id,date:e.date||'',title:e.desc,
       sub:[e.firmId?firmName(e.firmId):'',e.kdv?'KDV %'+Math.abs(e.kdv)+((e.kdv||0)<0?' +ekle':' dahil'):'KDV yok'].filter(Boolean).join(' · '),
       amount:e.amount,yon:e.yon,status:e.status||'bekliyor',fisLink:e.fisLink||'',faturaLink:e.faturaLink||''});
@@ -4554,6 +4700,8 @@ function editKase(id){
 }
 async function delKase(id){
   if(!confirm('Bu kaşeyi silmek istiyor musun?'))return;
+  const k=kases.find(x=>x.id===id);
+  await logAudit('delete','kaseTanim',id,k?.name||'',k);
   kases=kases.filter(x=>x.id!==id);await saveKasesLocal();
   await loadKases();
   renderKases();
@@ -4637,6 +4785,8 @@ function editEkip(id){
 }
 async function delEkip(id){
   if(!confirm('Bu ekibi silmek istiyor musun?'))return;
+  const ek=ekipler.find(x=>x.id===id);
+  await logAudit('delete','ekip',id,ek?.name||'',ek);
   ekipler=ekipler.filter(x=>x.id!==id);await saveEkiplerLocal();
   await loadEkipler();
   renderEkipler();
@@ -4694,6 +4844,8 @@ function editGider(id){
 }
 async function delGider(id){
   if(!confirm('Bu gideri silmek istiyor musun?'))return;
+  const g=giderler.find(x=>x.id===id);
+  await logAudit('delete','giderTanim',id,g?.name||'',g);
   giderler=giderler.filter(x=>x.id!==id);await saveGiderlerLocal();
   await loadGiderler();
   renderGiderler();
@@ -4850,6 +5002,8 @@ function editSaHareket(id){
 }
 async function delSaHareket(id){
   if(!confirm('Bu kaydı silmek istiyor musun?'))return;
+  const e=accEntries.find(x=>x.id===id);
+  await logAudit('delete','sanatciHareket',id,(e?.desc||'')+' — '+fmt(e?.amount||0),e);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();renderSanatci();toast('Silindi');
 }
@@ -4987,7 +5141,160 @@ async function refreshDashboard(){
   // önce backend'den taze veriyi çek, SONRA render et (eski-veri titreşimini önler)
   await Promise.all([loadEvents(),loadAcc()]);
   renderDashboard();
+  refreshNotifications();
 }
+
+// ── BİLDİRİM MERKEZİ ──────────────────────────────────
+// Not: Gerçek e-posta/SMS/push bildirimi backend tarafında bir servis gerektirir
+// (bu depo sadece arayüz, backend ayrı bir serviste) — burada sekme açıkken
+// uygulama içi bildirim listesi + tarayıcı bildirimi (Notification API) var.
+function getNotifications(){
+  const out=[];
+  const bugun=new Date();bugun.setHours(0,0,0,0);
+  const bugunStr=bugun.toISOString().slice(0,10);
+  events.forEach(ev=>{
+    const t=tahsilatFor(ev);
+    const isim=(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')||'(konser)';
+    (t.geciken||[]).forEach(v=>{
+      out.push({id:'vade_'+ev.id+'_'+(v.name||'')+'_'+(v.date||''),sev:'high',ico:'⏰',
+        title:'Gecikmiş vade — '+isim,
+        detail:(v.name||'Taksit')+' · '+fmt(v.acik)+(v.date?' · '+trDate(v.date):''),
+        onClick:()=>restoreById(ev.id)});
+    });
+    (t.yaklasan||[]).forEach(v=>{
+      out.push({id:'vadey_'+ev.id+'_'+(v.name||'')+'_'+(v.date||''),sev:'med',ico:'⏳',
+        title:'Yaklaşan vade — '+isim,
+        detail:(v.name||'Taksit')+' · '+fmt(v.acik)+(v.date?' · '+trDate(v.date):''),
+        onClick:()=>restoreById(ev.id)});
+    });
+    if(ev.tarih){
+      const gf=gunFarki(ev.tarih);
+      if(gf===0||gf===1){
+        out.push({id:'etk_'+ev.id+'_'+gf,sev:gf===0?'high':'med',ico:'🎤',
+          title:(gf===0?'Bugün etkinlik: ':'Yarın etkinlik: ')+isim,
+          detail:trDate(ev.tarih),
+          onClick:()=>restoreById(ev.id)});
+      }
+    }
+  });
+  tumKaseler().forEach(k=>{
+    if(k.odendi)return;
+    if(!k.ev.tarih||k.ev.tarih>=bugunStr)return; // sadece geçmişte kalmış (yapılmış) işler
+    const isim=(k.ev.sehir||'')+(k.ev.mekan?' · '+k.ev.mekan:'')||'(konser)';
+    out.push({id:'kase_'+k.ev.id+'_'+k.idx,sev:'med',ico:'💳',
+      title:'Ödenmemiş kaşe — '+k.name,
+      detail:isim+' · '+fmt(k.amount),
+      onClick:()=>showTab('ekipodeme')});
+  });
+  const ayKey=buAyKey();
+  const bugunGun=bugun.getDate();
+  sabitList().forEach(e=>{
+    if(sabitOdendiMi(e,ayKey))return;
+    const gun=e.gunu||1;
+    if(bugunGun>gun){
+      out.push({id:'sabit_'+e.id+'_'+ayKey,sev:'high',ico:'📌',
+        title:'Gecikmiş sabit ödeme — '+e.desc,
+        detail:fmt(e.amount)+' · her ayın '+gun+'.',
+        onClick:()=>showTab('mgg')});
+    }else if(gun-bugunGun<=3){
+      out.push({id:'sabity_'+e.id+'_'+ayKey,sev:'med',ico:'📌',
+        title:'Yaklaşan sabit ödeme — '+e.desc,
+        detail:fmt(e.amount)+' · her ayın '+gun+'.',
+        onClick:()=>showTab('mgg')});
+    }
+  });
+  out.sort((a,b)=>(a.sev==='high'?0:1)-(b.sev==='high'?0:1));
+  return out;
+}
+let _lastNotifs=[];
+function renderNotifPanel(){
+  const notifs=getNotifications();
+  _lastNotifs=notifs;
+  const badge=document.getElementById('notifBadge');
+  if(badge){
+    const highCount=notifs.filter(n=>n.sev==='high').length;
+    if(notifs.length){
+      badge.style.display='flex';badge.style.alignItems='center';badge.style.justifyContent='center';
+      badge.textContent=notifs.length>9?'9+':notifs.length;
+      badge.style.background=highCount>0?'var(--red)':'var(--amber)';
+    }else badge.style.display='none';
+  }
+  const wrap=document.getElementById('notifList');
+  if(!wrap)return;
+  if(!notifs.length){wrap.innerHTML='<div class="anEmpty" style="padding:24px 12px">Her şey yolunda 🎉</div>';return;}
+  wrap.innerHTML=notifs.map((n,i)=>`
+    <div onclick="notifClick(${i})" style="display:flex;gap:10px;padding:11px 12px;border-radius:8px;cursor:pointer;align-items:flex-start"
+      onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
+      <div style="font-size:17px;flex-shrink:0;line-height:1.3">${n.ico}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(n.title)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(n.detail)}</div>
+      </div>
+      <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;background:${n.sev==='high'?'var(--red)':'var(--amber)'}"></div>
+    </div>`).join('');
+}
+function notifClick(i){
+  const n=_lastNotifs[i];if(!n)return;
+  closeNotifPanel();
+  if(n.onClick)n.onClick();
+}
+function toggleNotifPanel(){
+  const p=document.getElementById('notifPanel');if(!p)return;
+  const open=p.style.display==='block';
+  if(!open){renderNotifPanel();p.style.display='block';}
+  else p.style.display='none';
+}
+function closeNotifPanel(){
+  const p=document.getElementById('notifPanel');if(p)p.style.display='none';
+}
+document.addEventListener('click',function(ev){
+  const p=document.getElementById('notifPanel');
+  const btn=document.getElementById('notifBellBtn');
+  if(!p||p.style.display!=='block')return;
+  if(p.contains(ev.target)||(btn&&btn.contains(ev.target)))return;
+  closeNotifPanel();
+});
+
+// ── Tarayıcı bildirimi (Notification API) — sadece sekme açıkken çalışır ──
+function notifSeenKey(){ return 'konser_notified_'+(_user?(_user.id||_user.email):'anon'); }
+function getSeenNotifIds(){
+  try{return new Set(JSON.parse(localStorage.getItem(notifSeenKey())||'[]'));}catch(e){return new Set();}
+}
+function saveSeenNotifIds(set){
+  try{
+    // sınırsız büyümesin: en fazla son 500 id tutulur
+    const arr=[...set].slice(-500);
+    localStorage.setItem(notifSeenKey(),JSON.stringify(arr));
+  }catch(e){}
+}
+async function checkBrowserNotifications(notifs){
+  if(!('Notification' in window))return;
+  if(Notification.permission==='default'){
+    try{await Notification.requestPermission();}catch(e){return;}
+  }
+  if(Notification.permission!=='granted')return;
+  const seen=getSeenNotifIds();
+  const kritik=notifs.filter(n=>n.sev==='high'&&!seen.has(n.id));
+  if(!kritik.length)return;
+  kritik.slice(0,5).forEach(n=>{
+    try{
+      const brw=new Notification(n.title,{body:n.detail,tag:n.id});
+      brw.onclick=()=>{window.focus();closeNotifPanel();if(n.onClick)n.onClick();};
+    }catch(e){}
+    seen.add(n.id);
+  });
+  saveSeenNotifIds(seen);
+}
+function refreshNotifications(){
+  renderNotifPanel();
+  checkBrowserNotifications(_lastNotifs);
+}
+// sekme açıkken periyodik kontrol (20 dk) — kapalı sekmeye/e-postaya push atamaz,
+// bu ancak backend'de bir servis eklenirse mümkün olur.
+setInterval(()=>{
+  if(!_token||!_user)return;
+  Promise.all([loadEvents(),loadAcc()]).then(refreshNotifications);
+},20*60*1000);
 // ── ETKİNLİK SİMÜLASYONU ──────────────────────────────
 function simHesapla(deger){
   const tip=document.getElementById('simTip').value;
@@ -5356,6 +5663,8 @@ function sdAcProje(id){
 }
 async function sdSil(id){
   if(!confirm('Bu kayıtlı simülasyonu silmek istiyor musun?'))return;
+  const e=accEntries.find(x=>x.id===id);
+  await logAudit('delete','simulasyon',id,e?.desc||'',e);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();sdRenderKayitli();toast('Silindi');
 }
@@ -5446,7 +5755,7 @@ function renderDashboard(){
   // Şirket gelir/gider (acc): tahsil edilen gelir / ödenen gider, ve bekleyenler
   let sirketGelirAlinan=0, sirketGiderOdenen=0, sirketGelirBekleyen=0, sirketGiderBekleyen=0;
   accEntries.forEach(e=>{
-    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.recurring||e.artistPay||e.docClient)return; // sadece normal gelir/gider
+    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.recurring||e.artistPay||e.docClient)return; // sadece normal gelir/gider
     const oran=Math.abs(e.kdv||0); const haric=(e.kdv||0)<0;
     const tutar=(oran>0&&haric)?(e.amount||0)*(1+oran/100):(e.amount||0); // hariç ise kasaya brüt girer
     if(e.yon==='gelir'){
@@ -5482,7 +5791,7 @@ function renderDashboard(){
   // Tahsil edilen şirket gelirinin KDV'si (kdv oranına göre içinden ayrıştır)
   let sirketKdv=0;
   accEntries.forEach(e=>{
-    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.recurring||e.artistPay||e.docClient)return;
+    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.recurring||e.artistPay||e.docClient)return;
     if(e.yon==='gelir'&&e.status==='tamam'){
       const oran=Math.abs(e.kdv||0); const haric=(e.kdv||0)<0;
       if(oran>0){ sirketKdv+= haric ? (e.amount||0)*oran/100 : (e.amount||0)-(e.amount||0)/(1+oran/100); }
@@ -6058,10 +6367,12 @@ async function topluOde(){
   });
   // backend'e kaydet (her event bir kez)
   for(const eid in etkilenen){await persist(etkilenen[eid]);}
+  await logAudit('update','kaseTopluOdeme','',checks.length+' kaşe ödendi işaretlendi',{tarih,not,etkilenenIsler:Object.keys(etkilenen)});
   await loadEvents();
   document.getElementById('topluTarih').value='';
   document.getElementById('topluNot').value='';
   renderEkipOdeme();
+  renderNotifPanel();
   toast(checks.length+' kaşe ödendi olarak işaretlendi');
 }
 
@@ -6078,8 +6389,10 @@ async function toggleKaseOdendi(eventId, kaseIdx){
   }
   // backend'e kaydet
   await persist(ev);
+  await logAudit('update','kase',ev.id,(ev.kase[kaseIdx].name||'')+' — '+fmt(ev.kase[kaseIdx].amount||0),{odendi:yeniDurum,isim:(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')});
   await loadEvents();
   renderEkipOdeme();
+  renderNotifPanel();
   toast(yeniDurum?'Ödendi olarak işaretlendi':'Ödeme geri alındı');
 }
 
@@ -6496,6 +6809,7 @@ function applyUserUI(){
   const ygrp=document.getElementById('navgrp-yonetim');if(ygrp)ygrp.style.display=isAdmin?'':'none';
   document.getElementById('tabUsers').style.display=isAdmin?'flex':'none';
   const ay=document.getElementById('tabAyarlar');if(ay)ay.style.display=isAdmin?'flex':'none';
+  const den=document.getElementById('tabDenetim');if(den)den.style.display=isAdmin?'flex':'none';
 }
 
 function openChangePass(){
@@ -6572,6 +6886,7 @@ async function addUser(){
     if(!res)return;
     const data=await res.json();
     if(!res.ok){toast(data.error||'Eklenemedi');return;}
+    await logAudit('create','user',data?.id||'',name+' ('+email+')',{role});
     resetUserForm();
     renderUsers();
     toast('Kullanıcı eklendi');
@@ -6584,6 +6899,7 @@ async function resetUserPass(id,name){
     if(!res)return;
     const data=await res.json();
     if(!res.ok){toast(data.error||'Sıfırlanamadı');return;}
+    await logAudit('update','user',id,name+' — şifre sıfırlandı');
     if(data.tempPassword){
       prompt(name+' için yeni geçici şifre (kopyalayıp kullanıcıya iletin):',data.tempPassword);
     }
@@ -6596,6 +6912,8 @@ async function toggleUserRole(id,curRole){
     const res=await apiFetch('/api/auth/users/'+id,{method:'PATCH',body:JSON.stringify({role:newRole})});
     if(!res)return;
     if(!res.ok){const d=await res.json();toast(d.error||'Güncellenemedi');return;}
+    const u=users.find(x=>x.id===id);
+    await logAudit('update','user',id,(u?.name||'')+' — rol '+curRole+' → '+newRole);
     renderUsers();toast('Rol güncellendi');
   }catch(e){toast('Bağlantı hatası');}
 }
@@ -6604,6 +6922,8 @@ async function toggleUserActive(id,cur){
     const res=await apiFetch('/api/auth/users/'+id,{method:'PATCH',body:JSON.stringify({active:!cur})});
     if(!res)return;
     if(!res.ok){const d=await res.json();toast(d.error||'Güncellenemedi');return;}
+    const u=users.find(x=>x.id===id);
+    await logAudit('update','user',id,(u?.name||'')+(cur?' — pasifleştirildi':' — aktifleştirildi'));
     renderUsers();toast('Güncellendi');
   }catch(e){toast('Bağlantı hatası');}
 }
