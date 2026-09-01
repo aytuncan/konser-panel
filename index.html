@@ -321,77 +321,6 @@ select option{background:var(--surface)}
 .stat .v{font-size:24px;font-weight:700;margin-top:8px;font-variant-numeric:tabular-nums;letter-spacing:-0.5px}
 .stat .v.pos{color:var(--ink)}.stat .v.neg{color:var(--red)}
 
-/* ── DASHBOARD 2.0: KPI KARTLARI ──────────────────────── */
-.kpi-grid{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-bottom:24px;
-}
-.kpi-card{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
-  padding:20px;display:flex;flex-direction:column;gap:12px;transition:box-shadow .18s,transform .18s;
-}
-.kpi-card:hover{box-shadow:0 8px 24px rgba(20,25,45,0.06);transform:translateY(-2px)}
-.kpi-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.kpi-ico{
-  width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
-  color:#fff;flex-shrink:0;
-}
-.kpi-ico svg{width:22px;height:22px;stroke:#fff}
-.kpi-chip{
-  display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;
-  padding:4px 9px;border-radius:20px;white-space:nowrap;
-}
-.kpi-chip.up{background:rgba(22,163,74,0.12);color:var(--green)}
-.kpi-chip.down{background:rgba(220,38,38,0.12);color:var(--red)}
-.kpi-chip.flat{background:var(--faint);color:var(--muted)}
-.kpi-lbl{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600}
-.kpi-val{font-size:28px;font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums;line-height:1;margin-top:2px}
-.kpi-val.neg{color:var(--red)}
-
-/* ── DASHBOARD 2.0: PANEL BAŞLIK ──────────────────────── */
-.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px}
-.panel-title{font-size:15px;font-weight:700;letter-spacing:-.2px;color:var(--ink)}
-.panel-sub{font-size:12px;color:var(--muted);margin-top:2px}
-
-/* ── DASHBOARD 2.0: ALAN GRAFİĞİ ──────────────────────── */
-.area-tip{
-  position:absolute;pointer-events:none;background:var(--ink);color:#fff;
-  padding:7px 11px;border-radius:8px;font-size:12px;font-weight:600;white-space:nowrap;
-  transform:translate(-50%,-130%);opacity:0;transition:opacity .12s;z-index:5;box-shadow:0 6px 20px rgba(0,0,0,.25);
-}
-.area-tip .t-lbl{color:rgba(255,255,255,.6);font-weight:500;font-size:11px}
-.area-dot{cursor:pointer;transition:r .12s}
-
-/* ── DASHBOARD 2.0: DONUT LEGEND ──────────────────────── */
-.donut-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center}
-.donut-legend{display:flex;flex-direction:column;gap:10px;min-width:130px}
-.donut-leg-item{display:flex;align-items:center;gap:8px;font-size:13px}
-.donut-leg-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
-.donut-leg-name{color:var(--ink);font-weight:500}
-.donut-leg-val{color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600}
-
-/* ── DASHBOARD 2.0: PERFORMANS BAR LİSTESİ ────────────── */
-.perf-row{display:grid;grid-template-columns:120px 1fr auto;align-items:center;gap:12px;margin-bottom:14px}
-.perf-row:last-child{margin-bottom:0}
-.perf-name{font-size:13.5px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.perf-track{height:9px;background:var(--faint);border-radius:6px;overflow:hidden}
-.perf-fill{height:100%;border-radius:6px;transition:width .5s cubic-bezier(.4,0,.2,1)}
-.perf-val{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
-@media(max-width:520px){.perf-row{grid-template-columns:90px 1fr auto}}
-
-/* ── DASHBOARD 2.0: MODERN TABLO ──────────────────────── */
-.dtable{width:100%;border-collapse:collapse;font-size:13.5px}
-.dtable th{
-  text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;
-  padding:10px 12px;border-bottom:1px solid var(--border);font-weight:600;
-}
-.dtable td{padding:13px 12px;border-bottom:1px solid var(--faint)}
-.dtable tr:last-child td{border-bottom:none}
-.dtable tr:hover td{background:var(--faint)}
-.pill{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:700;letter-spacing:.02em}
-.pill.ok{background:rgba(22,163,74,0.12);color:var(--green)}
-.pill.wait{background:rgba(217,119,6,0.13);color:var(--amber)}
-.pill.late{background:rgba(220,38,38,0.12);color:var(--red)}
-
 /* ── TABLES ────────────────────────────────────────────── */
 .atable{width:100%;border-collapse:collapse;font-size:13.5px}
 .atable th{
@@ -493,9 +422,6 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabSaved" onclick="showTab(&#39;saved&#39;)">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/></svg> Konserler
       </button>
-      <button class="nav-item" id="tabTurne" onclick="showTab('turne')">
-        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/><path d="M3.5 15.5L1 22l6.5-2.5"/><path d="M20.5 15.5L23 22l-6.5-2.5"/></svg> Turne Yönetimi
-      </button>
       <button class="nav-item" id="tabSimulasyon" onclick="showTab('simulasyon')">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Hızlı Simülasyon
       </button>
@@ -582,9 +508,6 @@ select option{background:var(--surface)}
       <button class="nav-item" id="tabAyarlar" onclick="showTab('ayarlar')" style="display: flex;">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Ayarlar
       </button>
-      <button class="nav-item" id="tabDenetim" onclick="showTab('denetim')" style="display: flex;">
-        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> İşlem Geçmişi
-      </button>
       </div></div>
     </nav>
 
@@ -599,18 +522,6 @@ select option{background:var(--surface)}
         <div class="topbar-title" id="pageTitle">Dashboard</div>
       </div>
       <div class="topbar-user">
-        <div style="position:relative;flex:none">
-          <button class="btn ghost" id="notifBellBtn" style="flex:none;min-width:auto;padding:8px 12px;font-size:16px;position:relative" onclick="toggleNotifPanel()" title="Bildirimler">
-            🔔<span id="notifBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--red);color:#fff;font-size:10px;font-weight:700;border-radius:10px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px">0</span>
-          </button>
-          <div id="notifPanel" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:360px;max-width:88vw;max-height:70vh;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:0 12px 40px rgba(0,0,0,.18);z-index:90">
-            <div style="padding:14px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center">
-              <span>Bildirimler</span>
-              <button onclick="closeNotifPanel()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0 4px">×</button>
-            </div>
-            <div id="notifList" style="padding:8px"></div>
-          </div>
-        </div>
         <div class="user-avatar" id="userAvatar">AC</div>
         <div class="user-info">
           <div class="name" id="userName">Aytun CAN</div>
@@ -624,60 +535,28 @@ select option{background:var(--surface)}
     <div class="content">
 
       <div id="view-dashboard" style="">
-        <!-- KPI ŞERİDİ (özet göstergeler) -->
-        <div class="kpi-grid" id="dashKpi"></div>
-
-        <!-- ANA GRAFİK SATIRI: alan grafiği + donut -->
-        <div class="dashboard-grid" style="grid-template-columns:minmax(0,1.9fr) minmax(0,1fr)">
-          <div class="card full-w" style="grid-column:auto">
-            <div class="panel-head">
-              <div>
-                <div class="panel-title">Aylık Ciro & Kâr Trendi</div>
-                <div class="panel-sub">Tarihli konserlere göre aylık ciro (KDV hariç) ve net kâr</div>
-              </div>
-              <div style="display:flex;gap:14px;align-items:center;font-size:12px;color:var(--muted)">
-                <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:11px;height:11px;background:var(--accent);border-radius:3px;display:inline-block"></span>Ciro</span>
-                <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:11px;height:11px;background:var(--green);border-radius:3px;display:inline-block"></span>Kâr</span>
-              </div>
-            </div>
-            <div id="dashTrend" style="margin-top:16px;position:relative"><div class="anEmpty">Tarihli konser yok.</div></div>
-          </div>
-          <div class="card">
-            <div class="panel-head"><div class="panel-title">Gelir Dağılımı</div></div>
-            <div class="panel-sub" style="margin-bottom:12px">Tahsil edilen paranın kaynağı</div>
-            <div id="dashDonut"><div class="anEmpty">Veri yok.</div></div>
-          </div>
-        </div>
-
-        <!-- PERFORMANS + SON İŞLEMLER -->
-        <div class="dashboard-grid">
-          <div class="card">
-            <div class="panel-head"><div class="panel-title">En Kârlı Konserler</div></div>
-            <div class="panel-sub" style="margin-bottom:16px">Kâra göre ilk 5 iş</div>
-            <div id="dashTopKonser"><div class="anEmpty">Konser yok.</div></div>
-          </div>
-          <div class="card">
-            <div class="panel-head"><div class="panel-title">Son İşlemler</div></div>
-            <div class="panel-sub" style="margin-bottom:16px">En son eklenen konserler</div>
-            <div id="dashSonIslem" style="overflow-x:auto"><div class="anEmpty">İşlem yok.</div></div>
-          </div>
-        </div>
-
-        <!-- GERÇEK KASA (detay) -->
+        <!-- GRUP 1: GERÇEK KASA (sıcak para) -->
         <div class="card">
           <div class="card-title">💰 Gerçek Kasa</div>
           <div class="hint" style="margin-bottom:20px">Şu an kasaya giren/çıkan gerçek para. Tahsil edilen paradan, o konserlerin tahsil oranına denk kaşeler, giderler ve sanatçıya yapılan ödemeler düşülür.</div>
           <div class="stat-grid" id="kasaSirket"></div>
         </div>
 
-        <!-- KÂR / ZARAR (muhasebe) -->
+        <!-- GRUP 2: KÂR / ZARAR (muhasebe) -->
         <div class="card">
           <div class="card-title" id="dashAyBaslik">Kâr / Zarar — Bu Ay</div>
           <div class="hint" style="margin-bottom:20px">Bu ayın işlerinden doğan kâr, paylar ve hak edişler. (Kasadaki gerçek paradan farklıdır; bu muhasebe kârıdır.)</div>
           <div class="stat-grid" id="dashAyOzet"></div>
         </div>
 
-        <!-- OPERASYON -->
+        <!-- AYLIK TREND GRAFİĞİ -->
+        <div class="card">
+          <div class="card-title">Aylık Ciro & Kâr Trendi</div>
+          <div class="hint" style="margin-bottom:16px">Tarihli konserlere göre aylık ciro (KDV hariç) ve net kâr. <span style="display:inline-block;width:12px;height:12px;background:var(--accent);border-radius:3px;vertical-align:middle"></span> Ciro &nbsp; <span style="display:inline-block;width:12px;height:12px;background:var(--green);border-radius:3px;vertical-align:middle"></span> Kâr</div>
+          <div id="dashTrend"><div class="anEmpty">Tarihli konser yok.</div></div>
+        </div>
+
+        <!-- GRUP 3: OPERASYON -->
         <div class="dashboard-grid">
           <div class="card">
             <div class="card-title">Yaklaşan Etkinlikler</div>
@@ -697,7 +576,7 @@ select option{background:var(--surface)}
           <div id="dashKase"><div class="anEmpty">Ödenmemiş Ekip Kaşesi yok 🎉</div></div>
         </div>
 
-        <!-- gizli: eski genel bakış -->
+        <!-- gizli: eski genel bakış kaldırıldı, kasa+menajer birleşti -->
         <div id="dashOzet" style="display:none"></div>
         <div id="kasaMenajer" style="display:none"></div>
       </div>
@@ -879,12 +758,8 @@ select option{background:var(--surface)}
               <label>Sanatçı / sanatçı firması</label>
               <select id="evArtistPick"><option value="">— sanatçı yok / seç —</option></select>
             </div>
-            <div>
-              <label>Turne (opsiyonel)</label>
-              <select id="evTurPick"><option value="">— tura bağlı değil —</option></select>
-            </div>
           </div>
-          <div class="hint">Organizatör firmayı seçersen alacak/verecek Muhasebe'de o firmanın cari hesabında toplanır. Sanatçıyı seçersen kârın sanatçı payı (%75) o sanatçının hesabına yazılır. Turne seçersen bu iş, o turnenin itinerary'sinde otomatik görünür.</div>
+          <div class="hint">Organizatör firmayı seçersen alacak/verecek Muhasebe'de o firmanın cari hesabında toplanır. Sanatçıyı seçersen kârın sanatçı payı (%75) o sanatçının hesabına yazılır.</div>
         </div>
 
         <div class="card">
@@ -1034,96 +909,6 @@ select option{background:var(--surface)}
           <button class="btn ghost" onclick="exportAll()">Tümünü Excel'e aktar</button>
         </div>
         <div class="saved-list" id="savedList"></div>
-      </div>
-
-      <div id="view-turne" style="display:none">
-        <div id="turListWrap">
-          <div class="card">
-            <div class="card-title" id="turFormTitle">Yeni Turne</div>
-            <div class="grid">
-              <div><label>Turne adı *</label><input id="turAd" placeholder="CAN OZAN — Yaz Turnesi 2026" autocomplete="off"></div>
-              <div>
-                <label>Sanatçı / sanatçı firması</label>
-                <select id="turArtist"><option value="">— sanatçı seç —</option></select>
-              </div>
-              <div>
-                <label>Durum</label>
-                <select id="turDurum">
-                  <option value="planlaniyor">Planlanıyor</option>
-                  <option value="aktif">Aktif</option>
-                  <option value="tamamlandi">Tamamlandı</option>
-                  <option value="iptal">İptal</option>
-                </select>
-              </div>
-            </div>
-            <div style="margin-top:16px"><label>Not</label><input id="turNot" placeholder="Genel notlar..." autocomplete="off"></div>
-            <div class="actions" style="margin-top:24px">
-              <button class="btn primary" onclick="saveTur()" id="turSaveBtn">Turne kaydet</button>
-              <button class="btn ghost" onclick="resetTurForm()">Temizle</button>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-title">Turneler</div>
-            <input id="turSearch" placeholder="🔍 Turne ara..." autocomplete="off" oninput="renderTurler()" style="margin-bottom:16px">
-            <div class="saved-list" id="turList"></div>
-          </div>
-        </div>
-
-        <div id="turDetayWrap" style="display:none">
-          <div class="card">
-            <div class="actions" style="margin-bottom:8px">
-              <button class="btn ghost" onclick="turDetayKapat()">← Turne listesine dön</button>
-            </div>
-            <div class="card-title" id="turDetayBaslik">Turne Detayı</div>
-            <div class="stat-grid" id="turDetayOzet" style="margin-bottom:16px"></div>
-            <div class="hint" id="turDetayCakisma" style="display:none;margin-bottom:16px;color:var(--red);font-weight:600"></div>
-            <div class="actions">
-              <button class="btn primary" onclick="turYeniEtkinlik()">+ Yeni Etkinlik Ekle</button>
-              <button class="btn ghost" onclick="turExcelAktar()">Turneyi Excel'e aktar</button>
-              <button class="btn danger" onclick="delTur(_turDetayId)">Turneyi Sil</button>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-title">🗺️ Rota Planı (Duraklar)</div>
-            <div class="hint" style="margin-bottom:14px">Turnenin planlanan şehir/mekan/tarih/organizatör listesi — henüz tam finansal detay girmeden hızlıca rota kur. "Kayıtlı İş"ten seçersen satır otomatik dolar. Netleşince "→" ile tam bir Etkinlik kaydına çevir.</div>
-            <div class="row-head" style="grid-template-columns:150px 1fr 1fr 110px 1fr 110px 70px"><span>Kayıtlı İş</span><span>Şehir</span><span>Mekan</span><span>Tarih</span><span>Organizatör</span><span>Durum</span><span></span></div>
-            <div id="turDurakRows"></div>
-            <button class="addbtn" onclick="turAddDurak()">+ Durak ekle</button>
-            <div class="actions" style="margin-top:16px">
-              <button class="btn primary" onclick="turDuraklariKaydet()">Rota Planını Kaydet</button>
-            </div>
-            <datalist id="turMekanList"></datalist>
-          </div>
-
-          <div class="card">
-            <div class="card-title">💸 Turne Ekstra Giderleri</div>
-            <div class="hint" style="margin-bottom:14px">Tek bir konsere değil, turnenin tamamına ait giderler (turne otobüsü, genel prodüksiyon, ortak ulaşım vb.). Bu tutarlar hem turnenin net kârından hem de genel Muhasebe'deki toplam giderden düşülür.</div>
-            <div class="row-head kase"><span>Açıklama</span><span>Tutar ₺</span><span>KDV?</span><span></span></div>
-            <div class="rows" id="turGiderRows"></div>
-            <button class="addbtn" onclick="turAddGider()">+ Gider ekle</button>
-            <div class="actions" style="margin-top:16px">
-              <button class="btn primary" onclick="turGiderleriKaydet()">Giderleri Kaydet</button>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-title">İtinerary (Rota)</div>
-            <div class="hint" style="margin-bottom:16px">Bu turneye bağlı, tam finansal detayı girilmiş konserler, tarih sırasına göre.</div>
-            <div id="turItinerary"><div class="anEmpty">Bu turneye henüz konser bağlı değil.</div></div>
-          </div>
-
-          <div class="card">
-            <div class="card-title">Mevcut İşlerden Ekle</div>
-            <div class="hint" style="margin-bottom:14px">Kayıtlı işlerden birden fazlasını seç, tek seferde bu turneye bağla (başka turda olanlar oradan çıkarılır).</div>
-            <input id="turEkleArama" placeholder="🔍 İş ara: şehir, mekan..." autocomplete="off" oninput="renderTurEkleListe()" style="margin-bottom:12px">
-            <div id="turEkleListe"><div class="anEmpty">Bağlanabilecek iş yok.</div></div>
-            <div class="actions" style="margin-top:14px">
-              <button class="btn primary" onclick="turSecilenleriEkle()">Seçilenleri Turneye Ekle</button>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div id="view-odeme" style="display:none">
@@ -2001,27 +1786,6 @@ Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
         </div>
       </div>
 
-      <div id="view-denetim" style="display:none">
-        <div class="card">
-          <div class="card-title">🕵 İşlem Geçmişi (Denetim İzi)</div>
-          <div class="hint" style="margin-bottom:16px">Silme ve kritik değişiklik (kaşe ödeme, kullanıcı yetkisi, finansman, sözleşme durumu vb.) işlemleri burada kalıcı olarak kaydedilir — kim, ne zaman, ne yaptı. Silinen kayıtların anlık görüntüsü "Detay"da tutulur.</div>
-          <div class="stat-grid" id="denOzet" style="margin-bottom:20px"></div>
-          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
-            <input id="denSearch" placeholder="🔍 Ara: kullanıcı, etiket, varlık..." oninput="renderDenetim()" style="flex:1;min-width:220px">
-            <select id="denAksiyon" onchange="renderDenetim()" style="width:auto;min-width:160px">
-              <option value="">Tüm işlemler</option>
-              <option value="delete">Silme</option>
-              <option value="update">Güncelleme</option>
-              <option value="create">Oluşturma</option>
-            </select>
-            <select id="denVarlik" onchange="renderDenetim()" style="width:auto;min-width:170px">
-              <option value="">Tüm varlıklar</option>
-            </select>
-          </div>
-          <div id="denListe"><div class="anEmpty">Henüz kayıtlı işlem yok.</div></div>
-        </div>
-      </div>
-
     </div></div></div></div><div id="changePassModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;align-items:center;justify-content:center;padding:16px">
   <div class="card" style="max-width:400px;width:100%;margin:0;padding:32px">
     <div class="card-title">Şifre Değiştir</div>
@@ -2326,9 +2090,9 @@ function applyXlsx() {
 }
 
 const PAGE_TITLES={
-  dashboard:'Dashboard',new:'Yeni Etkinlik',saved:'Konserler',turne:'Turne Yönetimi',odeme:'Muhasebe',mgenel:'Muhasebe — Genel',mgg:'Muhasebe — Gelir/Gider',mcari:'Muhasebe — Cari Durum',mkdv:'Muhasebe — KDV',ekipodeme:'Ekip Ödemeleri',finansman:'Finansman',sanatci:'Sanatçı Hesabı',
+  dashboard:'Dashboard',new:'Yeni Etkinlik',saved:'Konserler',odeme:'Muhasebe',mgenel:'Muhasebe — Genel',mgg:'Muhasebe — Gelir/Gider',mcari:'Muhasebe — Cari Durum',mkdv:'Muhasebe — KDV',ekipodeme:'Ekip Ödemeleri',finansman:'Finansman',sanatci:'Sanatçı Hesabı',
   szhazirla:'Sözleşme Hazırla',szyapilan:'Yapılan Sözleşmeler',szrehber:'Sözleşme Rehberi',szfirmam:'Firma Bilgilerim',szsablon:'Sözleşme Şablonu',firms:'Firmalar',venues:'Mekanlar',analiz:'Rapor',
-  users:'Kullanıcılar',ayarlar:'Ayarlar',simulasyon:'Hızlı Simülasyon',simdetay:'Detaylı Simülasyon',denetim:'İşlem Geçmişi'
+  users:'Kullanıcılar',ayarlar:'Ayarlar',simulasyon:'Hızlı Simülasyon',simdetay:'Detaylı Simülasyon'
 };
 function openSidebar(){
   document.getElementById('sidebar').classList.add('open');
@@ -2346,12 +2110,12 @@ function toggleNavGroup(g){
 // hangi sekme hangi gruba ait (aktif sekmenin grubu otomatik açılır)
 const NAV_TAB_GROUP={
   dashboard:'genel',
-  new:'etkinlik',saved:'etkinlik',turne:'etkinlik',simulasyon:'etkinlik',simdetay:'etkinlik',sanatci:'etkinlik',
+  new:'etkinlik',saved:'etkinlik',simulasyon:'etkinlik',simdetay:'etkinlik',sanatci:'etkinlik',
   mgenel:'muhasebe',mgg:'muhasebe',mcari:'muhasebe',mkdv:'muhasebe',ekipodeme:'muhasebe',finansman:'muhasebe',
   szhazirla:'sozlesme',szyapilan:'sozlesme',szrehber:'sozlesme',szfirmam:'sozlesme',szsablon:'sozlesme',
   firms:'rehber',venues:'rehber',ekip:'rehber',
   analiz:'rapor',
-  users:'yonetim',ayarlar:'yonetim',denetim:'yonetim'
+  users:'yonetim',ayarlar:'yonetim'
 };
 function openNavGroupFor(t){
   const g=NAV_TAB_GROUP[t];
@@ -2390,7 +2154,7 @@ function showTab(t){
   const muhAlt={mgenel:'genel',mgg:'gg',mcari:'cari',mkdv:'kdv'};
   const isMuh=Object.keys(muhAlt).includes(t);
   const activeView=isMuh?'odeme':t;
-  ['dashboard','new','saved','turne','simulasyon','simdetay','odeme','ekipodeme','finansman','sanatci','szhazirla','szyapilan','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users','ayarlar','denetim'].forEach(id=>{
+  ['dashboard','new','saved','simulasyon','simdetay','odeme','ekipodeme','finansman','sanatci','szhazirla','szyapilan','szrehber','szfirmam','szsablon','firms','venues','ekip','analiz','users','ayarlar'].forEach(id=>{
     const v=document.getElementById('view-'+id);
     if(v) v.style.display=(activeView===id)?'':'none';
   });
@@ -2404,9 +2168,8 @@ function showTab(t){
   document.getElementById('pageTitle').textContent=PAGE_TITLES[t]||'';
   closeSidebar();
   if(t==='dashboard'){refreshDashboard();}
-  if(t==='new'){refreshEkipGiderPickers();refreshEvFirmPicker();refreshEvArtistPicker();refreshEvTurPicker();}
+  if(t==='new'){refreshEkipGiderPickers();refreshEvFirmPicker();refreshEvArtistPicker();}
   if(t==='saved')setSavedFilter(savedFilter);
-  if(t==='turne'){turDetayKapat();refreshTurArtistPicker();renderTurler();}
   if(isMuh){refreshAccFirmPicker();renderOdeme();setMtab(muhAlt[t]);}
   if(t==='ekipodeme')renderEkipOdeme();
   if(t==='finansman')renderFinansman();
@@ -2433,7 +2196,6 @@ function showTab(t){
   if(t==='ekip')renderEkip();
   if(t==='analiz')renderAnaliz();
   if(t==='users')renderUsers();
-  if(t==='denetim'){loadAcc().then(renderDenetim);}
 }
 function setTip(t){
   tip=t;
@@ -2675,7 +2437,6 @@ function gather(){
     venueId:document.getElementById('mekanPick').value||'',
     firmId:document.getElementById('evFirmPick').value||'',
     artistId:document.getElementById('evArtistPick').value||'',
-    turId:document.getElementById('evTurPick').value||'',
     kapasite:+document.getElementById('kapasite').value||0,
     satilan:+document.getElementById('satilan').value||0,
     biletAdet:+document.getElementById('biletAdet').value||0,
@@ -2706,8 +2467,6 @@ function restore(ev){
   document.getElementById('evFirmPick').value=ev.firmId||'';
   refreshEvArtistPicker();
   document.getElementById('evArtistPick').value=ev.artistId||'';
-  refreshEvTurPicker();
-  document.getElementById('evTurPick').value=ev.turId||'';
   if(ev.venueId){['mekan','sehir','kapasite'].forEach(id=>{const e=document.getElementById(id);e.readOnly=true;e.style.opacity='.7';});}
   else{['mekan','sehir','kapasite'].forEach(id=>{const e=document.getElementById(id);e.readOnly=false;e.style.opacity='1';});}
   document.getElementById('biletAdet').value=ev.biletAdet||'';
@@ -2741,7 +2500,6 @@ function resetForm(){
   const mp=document.getElementById('mekanPick');if(mp)mp.value='';
   const efp=document.getElementById('evFirmPick');if(efp)efp.value='';
   const eap=document.getElementById('evArtistPick');if(eap)eap.value='';
-  const etp=document.getElementById('evTurPick');if(etp)etp.value='';
   ['mekan','sehir','kapasite'].forEach(id=>{const e=document.getElementById(id);e.readOnly=false;e.style.opacity='1';});
   document.getElementById('komOran').value=15.75;
   document.getElementById('kdvOran').value=20;document.getElementById('kdvOranOrg').value=20;
@@ -2757,17 +2515,8 @@ function resetForm(){
 async function saveEvent(){
   const ev=gather();
   if(!ev.sehir&&!ev.mekan){toast('Şehir veya mekan gir');return;}
-  const cakisan=bookingCakismaKontrol(ev);
-  if(cakisan){
-    const isim=(cakisan.sehir||'')+(cakisan.mekan?' · '+cakisan.mekan:'')||'(başka bir iş)';
-    const sanatciAd=ev.artistId?firmName(ev.artistId):'Bu sanatçı';
-    if(!confirm('⚠ ÇAKIŞMA UYARISI\n\n'+sanatciAd+' zaten '+trDate(ev.tarih)+' tarihinde "'+isim+'" işine kayıtlı görünüyor.\n\nYine de kaydetmek istiyor musun?'))return;
-  }
-  const wasExisting=!!editingId;
   await persist(ev);
-  await logAudit(wasExisting?'update':'create','event',ev.id,(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:''));
   await loadEvents();
-  renderNotifPanel();
   editingId=null;
   toast('Kaydedildi');
   showTab('saved');
@@ -2839,12 +2588,9 @@ function renderSaved(){
 }
 async function delEvent(id){
   if(!confirm('Bu kaydı silmek istiyor musun?'))return;
-  const ev=events.find(x=>x.id===id);
-  await logAudit('delete','event',id,(ev?.sehir||'')+(ev?.mekan?' · '+ev.mekan:''),ev);
   await removeStored(id);
   await loadEvents();
   renderSaved();
-  renderNotifPanel();
   toast('Silindi');
 }
 
@@ -3117,8 +2863,6 @@ function editDc(id){
 }
 async function delDc(id){
   if(!confirm('Bu karşı tarafı silmek istiyor musun?'))return;
-  const dc=accEntries.find(x=>x.id===id);
-  await logAudit('delete','dc',id,dc?.name||'',dc);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();renderDcList();refreshDcPicker();toast('Silindi');
 }
@@ -3145,8 +2889,6 @@ async function kdvOdemeEkle(){
 }
 async function kdvOdemeSil(id){
   if(!confirm('Bu KDV ödemesini silmek istiyor musun?'))return;
-  const o=accEntries.find(x=>x.id===id);
-  await logAudit('delete','kdvodeme',id,(o?.donem||'')+' — '+fmt(o?.amount||0),o);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();renderAcc();renderDashboard();toast('Silindi');
 }
@@ -3253,8 +2995,6 @@ function editFirm(id){
 }
 async function delFirm(id){
   if(!confirm('Bu firmayı silmek istiyor musun?'))return;
-  const f=firms.find(x=>x.id===id);
-  await logAudit('delete','firm',id,f?.name||'',f);
   try{await apiFetch('/api/firms/'+id,{method:'DELETE'});}catch(e){}
   await loadFirms();renderFirms();toast('Silindi');
 }
@@ -3298,434 +3038,6 @@ function refreshEvArtistPicker(){
   firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');sel.appendChild(o);});
   sel.value=cur;
 }
-
-// ── TURNE / BOOKING YÖNETİMİ ──────────────────────────────
-// Turneler jenerik /api/acc üzerinde type:'tur' olarak saklanır.
-// Bir konser (event) turId alanıyla bir turneye bağlanabilir (opsiyonel).
-const TUR_DURUMLAR={
-  planlaniyor:{ad:'Planlanıyor',renk:'bekliyor'},
-  aktif:{ad:'Aktif',renk:'warn'},
-  tamamlandi:{ad:'Tamamlandı',renk:'pos'},
-  iptal:{ad:'İptal',renk:'neg'}
-};
-function turListesi(){ return accEntries.filter(e=>e.type==='tur'); }
-function turEventleri(turId){ return events.filter(ev=>ev.turId===turId); }
-function refreshEvTurPicker(){
-  const sel=document.getElementById('evTurPick');if(!sel)return;
-  const cur=sel.value;
-  sel.innerHTML='<option value="">— tura bağlı değil —</option>';
-  turListesi().sort((a,b)=>(a.ad||'').localeCompare(b.ad||'','tr')).forEach(t=>{
-    const o=document.createElement('option');o.value=t.id;o.textContent=t.ad;sel.appendChild(o);
-  });
-  sel.value=cur;
-}
-function refreshTurArtistPicker(){
-  const sel=document.getElementById('turArtist');if(!sel)return;
-  const cur=sel.value;
-  sel.innerHTML='<option value="">— sanatçı seç —</option>';
-  firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');sel.appendChild(o);});
-  sel.value=cur;
-}
-let editingTurId=null;
-function resetTurForm(){
-  editingTurId=null;
-  document.getElementById('turAd').value='';
-  document.getElementById('turArtist').value='';
-  document.getElementById('turDurum').value='planlaniyor';
-  document.getElementById('turNot').value='';
-  document.getElementById('turFormTitle').textContent='Yeni Turne';
-  document.getElementById('turSaveBtn').textContent='Turne kaydet';
-}
-async function saveTur(){
-  const ad=document.getElementById('turAd').value.trim();
-  if(!ad){toast('Turne adı gerekli');return;}
-  const t={
-    id:editingTurId||('tur'+Date.now()),
-    type:'tur',
-    ad,
-    artistId:document.getElementById('turArtist').value||'',
-    durum:document.getElementById('turDurum').value||'planlaniyor',
-    notlar:document.getElementById('turNot').value||''
-  };
-  const wasExisting=!!editingTurId;
-  try{
-    const res=await apiFetch('/api/acc'+(wasExisting?'/'+t.id:''),{method:wasExisting?'PUT':'POST',body:JSON.stringify(t)});
-    if(!res||!res.ok){toast('Kaydedilemedi');return;}
-  }catch(err){toast('Kaydedilemedi');return;}
-  await logAudit(wasExisting?'update':'create','tur',t.id,t.ad);
-  await loadAcc();
-  resetTurForm();
-  refreshEvTurPicker();
-  renderTurler();
-  toast('Turne kaydedildi');
-}
-function editTur(id){
-  const t=turListesi().find(x=>x.id===id);if(!t)return;
-  editingTurId=t.id;
-  document.getElementById('turAd').value=t.ad||'';
-  refreshTurArtistPicker();
-  document.getElementById('turArtist').value=t.artistId||'';
-  document.getElementById('turDurum').value=t.durum||'planlaniyor';
-  document.getElementById('turNot').value=t.notlar||'';
-  document.getElementById('turFormTitle').textContent='Turne Düzenle';
-  document.getElementById('turSaveBtn').textContent='Değişiklikleri kaydet';
-  document.getElementById('turFormTitle').scrollIntoView({behavior:'smooth'});
-}
-async function delTur(id){
-  if(!id)return;
-  if(!confirm('Bu turneyi silmek istiyor musun? Bağlı konserler silinmez, sadece turdan çıkarılır.'))return;
-  const t=turListesi().find(x=>x.id===id);
-  const bagli=turEventleri(id);
-  for(const ev of bagli){ev.turId='';await persist(ev);}
-  if(bagli.length)await loadEvents();
-  await logAudit('delete','tur',id,t?.ad||'',t);
-  try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
-  await loadAcc();
-  refreshEvTurPicker();
-  turDetayKapat();
-  renderTurler();
-  toast('Turne silindi');
-}
-function turGiderNetToplam(t){
-  return (t.giderler||[]).reduce((a,g)=>a+(g.amount-(g.kdv?g.amount-g.amount/1.2:0)),0);
-}
-function turNetKar(t){
-  const karEvents=turEventleri(t.id).reduce((a,e)=>a+computeFor(e).kar,0);
-  return karEvents-turGiderNetToplam(t);
-}
-function renderTurler(){
-  const wrap=document.getElementById('turList');if(!wrap)return;
-  const q=(document.getElementById('turSearch')?.value||'').toLocaleLowerCase('tr');
-  const all=turListesi();
-  const list=all.filter(t=>!q||(t.ad||'').toLocaleLowerCase('tr').includes(q));
-  if(!list.length){wrap.innerHTML='<div class="empty"><div class="big">🎪</div>'+(all.length?'Eşleşen turne yok.':'Henüz turne yok. Yukarıdan ekle.')+'</div>';return;}
-  wrap.innerHTML='';
-  list.sort((a,b)=>(b.ad||'').localeCompare(a.ad||'','tr')).forEach(t=>{
-    const evs=turEventleri(t.id);
-    const tarihler=evs.map(e=>e.tarih).filter(Boolean).sort();
-    const aralik=tarihler.length?trDate(tarihler[0])+(tarihler.length>1?' → '+trDate(tarihler[tarihler.length-1]):''):'tarihsiz';
-    const toplamKar=turNetKar(t);
-    const sanatciAd=t.artistId?firmName(t.artistId):'';
-    const di=TUR_DURUMLAR[t.durum]||TUR_DURUMLAR.planlaniyor;
-    const d=document.createElement('div');
-    d.className='saved-item';
-    d.onclick=(ev)=>{if(ev.target.classList.contains('del'))return;turDetayAc(t.id);};
-    d.innerHTML=`
-      <div class="info">
-        <div class="ttl">${esc(t.ad)}<span class="vbadge ${di.renk}">${di.ad}</span></div>
-        <div class="sub">${sanatciAd?esc(sanatciAd)+' · ':''}${evs.length} konser · ${aralik}</div>
-      </div>
-      <div class="pnl"><div class="a ${toplamKar>=0?'pos':'neg'}">${fmt(toplamKar)}</div></div>
-      <button class="del" title="Sil" onclick="delTur('${t.id}')">🗑</button>`;
-    wrap.appendChild(d);
-  });
-}
-let _turDetayId=null;
-function turDetayAc(id){
-  _turDetayId=id;
-  document.getElementById('turListWrap').style.display='none';
-  document.getElementById('turDetayWrap').style.display='block';
-  renderTurDetay(id);
-}
-function turDetayKapat(){
-  _turDetayId=null;
-  const lw=document.getElementById('turListWrap');if(lw)lw.style.display='';
-  const dw=document.getElementById('turDetayWrap');if(dw)dw.style.display='none';
-}
-function renderTurEkleListe(){
-  const wrap=document.getElementById('turEkleListe');if(!wrap||!_turDetayId)return;
-  const q=(document.getElementById('turEkleArama')?.value||'').toLocaleLowerCase('tr');
-  let list=events.filter(ev=>ev.turId!==_turDetayId);
-  if(q)list=list.filter(ev=>[ev.sehir,ev.mekan].some(v=>(v||'').toLocaleLowerCase('tr').includes(q)));
-  list.sort((a,b)=>(a.tarih||'9999').localeCompare(b.tarih||'9999'));
-  if(!list.length){wrap.innerHTML='<div class="anEmpty">'+(events.length?'Bağlanabilecek iş yok.':'Henüz kayıtlı iş yok.')+'</div>';return;}
-  wrap.innerHTML=list.map(ev=>{
-    const isim=(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')||'(iş)';
-    return `<label style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-bottom:1px solid var(--border);cursor:pointer">
-      <input type="checkbox" class="turEkleCheck" value="${ev.id}" style="width:18px;height:18px;flex:none;accent-color:var(--accent)">
-      <span style="flex:1;font-size:13.5px">${esc(isim)}${ev.tarih?' · '+trDate(ev.tarih):''}</span>
-      ${ev.turId?'<span class="badge">başka turda</span>':''}
-    </label>`;
-  }).join('');
-}
-async function turSecilenleriEkle(){
-  const checks=[...document.querySelectorAll('.turEkleCheck:checked')];
-  if(!checks.length){toast('Önce en az bir iş seç');return;}
-  if(!_turDetayId)return;
-  for(const c of checks){
-    const ev=events.find(x=>x.id===c.value);
-    if(!ev)continue;
-    ev.turId=_turDetayId;
-    await persist(ev);
-  }
-  await logAudit('update','tur',_turDetayId,checks.length+' iş turneye eklendi');
-  await loadEvents();
-  renderTurDetay(_turDetayId);
-  renderTurler();
-  toast(checks.length+' iş turneye eklendi');
-}
-async function turDenCikar(evId){
-  if(!confirm('Bu işi turneden çıkarmak istiyor musun? İş silinmez, sadece bağlantısı kalkar.'))return;
-  const ev=events.find(x=>x.id===evId);if(!ev)return;
-  ev.turId='';
-  await persist(ev);
-  await logAudit('update','event',ev.id,(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')+' — turneden çıkarıldı');
-  await loadEvents();
-  renderTurDetay(_turDetayId);
-  renderTurler();
-  toast('Turneden çıkarıldı');
-}
-function renderTurDetay(id){
-  const t=turListesi().find(x=>x.id===id);
-  if(!t){turDetayKapat();return;}
-  const evs=turEventleri(id).slice().sort((a,b)=>(a.tarih||'9999').localeCompare(b.tarih||'9999'));
-  const sanatciAd=t.artistId?firmName(t.artistId):'';
-  document.getElementById('turDetayBaslik').textContent='🎪 '+t.ad+(sanatciAd?' — '+sanatciAd:'');
-  const toplamCiro=evs.reduce((a,e)=>a+computeFor(e).ciroNet,0);
-  const toplamKar=evs.reduce((a,e)=>a+computeFor(e).kar,0);
-  const turGiderler=t.giderler||[];
-  const turGiderNet=turGiderNetToplam(t);
-  const netTurneKari=toplamKar-turGiderNet;
-  const sehirler=new Set(evs.map(e=>(e.sehir||'').toUpperCase().trim()).filter(Boolean));
-  const tarihler=evs.map(e=>e.tarih).filter(Boolean).sort();
-  const di=TUR_DURUMLAR[t.durum]||TUR_DURUMLAR.planlaniyor;
-  document.getElementById('turDetayOzet').innerHTML=`
-    <div class="stat"><div class="n">Durum</div><div class="v"><span class="vbadge ${di.renk}">${di.ad}</span></div></div>
-    <div class="stat"><div class="n">Konser Sayısı</div><div class="v">${evs.length}</div></div>
-    <div class="stat"><div class="n">Şehir Sayısı</div><div class="v">${sehirler.size}</div></div>
-    <div class="stat"><div class="n">Tarih Aralığı</div><div class="v" style="font-size:15px">${tarihler.length?trDate(tarihler[0])+(tarihler.length>1?' → '+trDate(tarihler[tarihler.length-1]):''):'—'}</div></div>
-    <div class="stat"><div class="n">Toplam Ciro (net)</div><div class="v">${fmt(toplamCiro)}</div></div>
-    <div class="stat"><div class="n">Konserlerden Kâr</div><div class="v ${toplamKar>=0?'':'neg'}">${fmt(toplamKar)}</div></div>
-    <div class="stat"><div class="n">Turne Ekstra Gideri</div><div class="v ${turGiderNet>0?'neg':''}">${fmt(turGiderNet)}</div></div>
-    <div class="stat" style="border-color:${netTurneKari>=0?'var(--green)':'var(--red)'};background:${netTurneKari>=0?'rgba(90,209,154,0.07)':'rgba(240,122,122,0.07)'}"><div class="n">Net Turne Kârı</div><div class="v ${netTurneKari>=0?'pos':'neg'}">${fmt(netTurneKari)}</div></div>`;
-
-  const tarihSayim={};
-  evs.forEach(e=>{if(e.tarih){tarihSayim[e.tarih]=(tarihSayim[e.tarih]||0)+1;}});
-  const cakisan=Object.entries(tarihSayim).filter(([,n])=>n>1).map(([d])=>d);
-  const cakismaEl=document.getElementById('turDetayCakisma');
-  if(cakisan.length){
-    cakismaEl.style.display='block';
-    cakismaEl.textContent='⚠ Çakışma: '+cakisan.map(d=>trDate(d)).join(', ')+' tarihinde birden fazla konser bu turneye bağlı.';
-  }else if(cakismaEl)cakismaEl.style.display='none';
-
-  const itWrap=document.getElementById('turItinerary');
-  if(!evs.length){
-    itWrap.innerHTML='<div class="anEmpty">Bu turneye henüz konser bağlı değil.</div>';
-  }else{
-    let h='<table class="dtable"><thead><tr><th>Tarih</th><th>Şehir</th><th>Mekan</th><th style="text-align:right">Ciro</th><th style="text-align:right">Kâr</th><th style="text-align:right">Durum</th><th></th></tr></thead><tbody>';
-    evs.forEach(ev=>{
-      const c=computeFor(ev);
-      const t2=tahsilatFor(ev);
-      const pill=t2.durum==='tamam'?'<span class="pill ok">Tahsil edildi</span>':t2.durum==='kismi'?'<span class="pill wait">Kısmi</span>':t2.durum==='bekliyor'?'<span class="pill late">Bekliyor</span>':'<span class="pill wait">—</span>';
-      h+=`<tr>
-        <td style="cursor:pointer" onclick="restoreById('${ev.id}')">${ev.tarih?trDate(ev.tarih):'—'}</td>
-        <td style="cursor:pointer" onclick="restoreById('${ev.id}')">${esc(ev.sehir||'')}</td>
-        <td style="cursor:pointer" onclick="restoreById('${ev.id}')">${esc(ev.mekan||'')}</td>
-        <td style="text-align:right">${fmt(c.ciroNet)}</td>
-        <td style="text-align:right" class="${c.kar>=0?'':'neg'}">${fmt(c.kar)}</td>
-        <td style="text-align:right">${pill}</td>
-        <td style="text-align:right"><button class="del" title="Turneden çıkar" onclick="turDenCikar('${ev.id}')">🗑</button></td>
-      </tr>`;
-    });
-    h+='</tbody></table>';
-    itWrap.innerHTML=h;
-  }
-  renderTurEkleListe();
-  refreshTurMekanDatalist();
-  document.getElementById('turDurakRows').innerHTML='';
-  (t.duraklar||[]).forEach(d=>turAddDurak(d.sehir,d.mekan,d.tarih,d.firmId,d.durum));
-  document.getElementById('turGiderRows').innerHTML='';
-  turGiderler.forEach(g=>turAddGider(g.name,g.amount,g.kdv));
-}
-// ── TURNE EKSTRA GİDERLERİ ── tek bir konsere değil turnenin tamamına ait giderler
-function turAddGider(name='',amount='',kdv=false){
-  const wrap=document.getElementById('turGiderRows');if(!wrap)return;
-  const div=document.createElement('div');
-  div.className='row kase';
-  div.innerHTML=`
-    <input placeholder="Açıklama" value="${(name||'').replace(/"/g,'&quot;')}" autocomplete="off">
-    <input type="number" min="0" placeholder="0" value="${amount}">
-    <select><option value="0"${!kdv?' selected':''}>Yok</option><option value="1"${kdv?' selected':''}>Var</option></select>
-    <button class="rm" onclick="this.parentElement.remove()">×</button>`;
-  wrap.appendChild(div);
-}
-function turReadGiderler(){
-  const wrap=document.getElementById('turGiderRows');if(!wrap)return[];
-  return [...wrap.children].map(r=>{
-    const i=r.querySelectorAll('input'),s=r.querySelector('select');
-    return {name:i[0].value,amount:+i[1].value||0,kdv:s.value==='1'};
-  }).filter(x=>x.name||x.amount);
-}
-async function turGiderleriKaydet(){
-  if(!_turDetayId)return;
-  const t=turListesi().find(x=>x.id===_turDetayId);if(!t)return;
-  t.giderler=turReadGiderler();
-  try{
-    const res=await apiFetch('/api/acc/'+t.id,{method:'PUT',body:JSON.stringify(t)});
-    if(!res||!res.ok){toast('Kaydedilemedi');return;}
-  }catch(err){toast('Kaydedilemedi');return;}
-  await logAudit('update','tur',t.id,t.ad+' — ekstra giderler güncellendi',{giderSayisi:t.giderler.length});
-  await loadAcc();
-  renderTurler();
-  renderTurDetay(_turDetayId);
-  toast('Turne giderleri kaydedildi');
-}
-// ── ROTA PLANI (DURAKLAR) ── henüz tam finansal detayı olmayan planlanan
-// şehir/mekan/tarih/organizatör satırları. Netleşince Etkinlik kaydına çevrilir.
-function turDurakSehirOptionsHTML(){
-  const src=document.getElementById('sehir');
-  return src?src.innerHTML:'<option value="">— Şehir Seç —</option>';
-}
-function turDurakFirmaOptionsHTML(){
-  let h='<option value="">— organizatör seç —</option>';
-  firms.forEach(f=>{h+=`<option value="${f.id}">${esc(f.name)}${f.type?' ('+esc(f.type)+')':''}</option>`;});
-  return h;
-}
-function refreshTurMekanDatalist(){
-  const dl=document.getElementById('turMekanList');if(!dl)return;
-  dl.innerHTML=venues.map(v=>`<option value="${esc(v.name)}">`).join('');
-}
-function turDurakEventOptionsHTML(){
-  let h='<option value="">— kayıtlı işten doldur —</option>';
-  events.slice().sort((a,b)=>(a.tarih||'9999').localeCompare(b.tarih||'9999')).forEach(ev=>{
-    const isim=(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')||'(iş)';
-    h+=`<option value="${ev.id}">${esc(isim)}${ev.tarih?' · '+trDate(ev.tarih):''}</option>`;
-  });
-  return h;
-}
-function turDurakDoldur(sel){
-  const ev=events.find(x=>x.id===sel.value);
-  sel.value='';
-  if(!ev)return;
-  const row=sel.closest('.row');
-  row.querySelector('.td-sehir').value=ev.sehir||'';
-  row.querySelector('.td-mekan').value=ev.mekan||'';
-  row.querySelector('.td-tarih').value=ev.tarih||'';
-  if(ev.firmId)row.querySelector('.td-firma').value=ev.firmId;
-  toast('Satır dolduruldu');
-}
-function turAddDurak(sehir='',mekan='',tarih='',firmId='',durum='planlaniyor'){
-  const wrap=document.getElementById('turDurakRows');if(!wrap)return;
-  const div=document.createElement('div');
-  div.className='row';
-  div.style.gridTemplateColumns='150px 1fr 1fr 110px 1fr 110px 70px';
-  div.style.marginBottom='8px';
-  div.style.alignItems='center';
-  div.innerHTML=`
-    <select class="td-doldur" onchange="turDurakDoldur(this)">${turDurakEventOptionsHTML()}</select>
-    <select class="td-sehir">${turDurakSehirOptionsHTML()}</select>
-    <input class="td-mekan" list="turMekanList" placeholder="Mekan adı" value="${(mekan||'').replace(/"/g,'&quot;')}">
-    <input class="td-tarih" type="date" value="${tarih||''}">
-    <select class="td-firma">${turDurakFirmaOptionsHTML()}</select>
-    <select class="td-durum">
-      <option value="planlaniyor"${durum==='planlaniyor'?' selected':''}>Planlanıyor</option>
-      <option value="teklif"${durum==='teklif'?' selected':''}>Teklif Gönderildi</option>
-      <option value="onaylandi"${durum==='onaylandi'?' selected':''}>Onaylandı</option>
-      <option value="iptal"${durum==='iptal'?' selected':''}>İptal</option>
-    </select>
-    <div style="display:flex;gap:4px">
-      <button class="btn ghost" style="flex:none;min-width:auto;padding:8px 8px;font-size:13px" title="Etkinliğe çevir" onclick="turDurakCevir(this)">→</button>
-      <button class="rm" title="Durağı sil" onclick="this.closest('.row').remove()">×</button>
-    </div>`;
-  div.querySelector('.td-sehir').value=sehir||'';
-  div.querySelector('.td-firma').value=firmId||'';
-  wrap.appendChild(div);
-}
-function turReadDuraklar(){
-  return [...document.querySelectorAll('#turDurakRows .row')].map(r=>({
-    sehir:r.querySelector('.td-sehir').value,
-    mekan:r.querySelector('.td-mekan').value,
-    tarih:r.querySelector('.td-tarih').value,
-    firmId:r.querySelector('.td-firma').value,
-    durum:r.querySelector('.td-durum').value
-  })).filter(d=>d.sehir||d.mekan||d.tarih);
-}
-async function turDuraklariKaydet(){
-  if(!_turDetayId)return;
-  const t=turListesi().find(x=>x.id===_turDetayId);if(!t)return;
-  t.duraklar=turReadDuraklar();
-  try{
-    const res=await apiFetch('/api/acc/'+t.id,{method:'PUT',body:JSON.stringify(t)});
-    if(!res||!res.ok){toast('Kaydedilemedi');return;}
-  }catch(err){toast('Kaydedilemedi');return;}
-  await logAudit('update','tur',t.id,t.ad+' — rota planı güncellendi',{duraklar:t.duraklar.length});
-  await loadAcc();
-  renderTurler();
-  toast('Rota planı kaydedildi');
-}
-async function turDurakCevir(btn){
-  if(!_turDetayId)return;
-  const row=btn.closest('.row');
-  const sehir=row.querySelector('.td-sehir').value;
-  const mekan=row.querySelector('.td-mekan').value;
-  const tarih=row.querySelector('.td-tarih').value;
-  const firmId=row.querySelector('.td-firma').value;
-  if(!sehir&&!mekan){toast('Şehir veya mekan gir');return;}
-  const t=turListesi().find(x=>x.id===_turDetayId);if(!t)return;
-  const yeniEv={
-    id:'e'+Date.now(),savedAt:Date.now(),
-    sehir,mekan,tarih,tip:'ORGANIZATOR',
-    firmId:firmId||'',artistId:t.artistId||'',turId:t.id,
-    kapasite:0,satilan:0,biletAdet:0,biletFiyat:0,komOran:15.75,
-    kdvOran:20,orgBedel:0,kdvOranOrg:20,
-    p1ad:'CAN OZAN',p1pay:75,p2ad:'MAN FEE',p2pay:25,
-    kase:[],gider:[],odemeler:[],vadeler:[]
-  };
-  const cakisan=bookingCakismaKontrol(yeniEv);
-  if(cakisan){
-    const isim=(cakisan.sehir||'')+(cakisan.mekan?' · '+cakisan.mekan:'')||'(başka bir iş)';
-    if(!confirm('⚠ ÇAKIŞMA UYARISI\n\nBu sanatçı zaten '+(tarih?trDate(tarih):'aynı')+' tarihinde "'+isim+'" işine kayıtlı görünüyor.\n\nYine de dönüştürmek istiyor musun?'))return;
-  }
-  await persist(yeniEv);
-  await logAudit('create','event',yeniEv.id,(sehir||'')+(mekan?' · '+mekan:'')+' — durak etkinliğe çevrildi');
-  row.remove();
-  await turDuraklariKaydet();
-  await loadEvents();
-  renderTurDetay(_turDetayId);
-  renderTurler();
-  toast('Etkinliğe çevrildi — Yeni Etkinlik\'te finansal detayları tamamla');
-}
-// turne detayından: Yeni Etkinlik formunu bu turneye (ve varsa sanatçısına) önceden bağlı aç
-function turYeniEtkinlik(){
-  if(!_turDetayId)return;
-  const turId=_turDetayId;
-  const t=turListesi().find(x=>x.id===turId);
-  resetForm();
-  showTab('new');
-  document.getElementById('evTurPick').value=turId;
-  if(t&&t.artistId)document.getElementById('evArtistPick').value=t.artistId;
-  toast('Turne otomatik seçildi — bilgileri doldurup kaydet');
-}
-function turExcelAktar(){
-  if(!_turDetayId)return;
-  const t=turListesi().find(x=>x.id===_turDetayId);if(!t)return;
-  const evs=turEventleri(_turDetayId).slice().sort((a,b)=>(a.tarih||'9999').localeCompare(b.tarih||'9999'));
-  if(!evs.length){toast('Bu turneye bağlı konser yok');return;}
-  const rows=[['TURNE',t.ad],['Sanatçı',t.artistId?firmName(t.artistId):''],['Durum',(TUR_DURUMLAR[t.durum]||{}).ad||t.durum],[],
-    ['Tarih','Şehir','Mekan','Ciro (net)','Kâr']];
-  evs.forEach(ev=>{const c=computeFor(ev);rows.push([ev.tarih||'',ev.sehir||'',ev.mekan||'',Math.round(c.ciroNet),Math.round(c.kar)]);});
-  const toplamCiro=evs.reduce((a,e)=>a+computeFor(e).ciroNet,0);
-  const toplamKarEvents=evs.reduce((a,e)=>a+computeFor(e).kar,0);
-  const turGiderNet=turGiderNetToplam(t);
-  rows.push([],['TOPLAM (konserler)','','',Math.round(toplamCiro),Math.round(toplamKarEvents)]);
-  if((t.giderler||[]).length){
-    rows.push([],['TURNE EKSTRA GİDERLERİ','Tutar']);
-    t.giderler.forEach(g=>rows.push([g.name,Math.round(g.amount)]));
-    rows.push(['Turne gideri toplamı (net)',Math.round(turGiderNet)]);
-  }
-  rows.push([],['NET TURNE KÂRI','','','',Math.round(toplamKarEvents-turGiderNet)]);
-  const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:20},{wch:16},{wch:20},{wch:14},{wch:14}];
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'TURNE');
-  XLSX.writeFile(wb,safeName(t.ad)+'.xlsx');
-  toast('Turne Excel\'e aktarıldı');
-}
-// aynı sanatçının aynı tarihte başka bir işi var mı (booking çakışması)
-function bookingCakismaKontrol(ev){
-  if(!ev.artistId||!ev.tarih)return null;
-  return events.find(x=>x.id!==ev.id && x.artistId===ev.artistId && x.tarih===ev.tarih)||null;
-}
 function fillClientFromFirm(){
   const id=document.getElementById('dFirmPick').value;if(!id)return;
   const f=firms.find(x=>x.id===id);if(!f)return;
@@ -3768,8 +3080,6 @@ function editVenue(id){
 }
 async function delVenue(id){
   if(!confirm('Bu mekanı silmek istiyor musun?'))return;
-  const v=venues.find(x=>x.id===id);
-  await logAudit('delete','venue',id,v?.name||'',v);
   try{await apiFetch('/api/venues/'+id,{method:'DELETE'});}catch(e){}
   await loadVenues();renderVenues();toast('Silindi');
 }
@@ -4007,8 +3317,8 @@ function docHTML(type){
   // teknik şartlar metinde {teknik} yoksa ve varsa, sona ekle
   const govdeHtml=esc(govde).replace(/\n/g,'<br>');
   return head+title+
-    `<div style="font-size:11.5px;margin-top:10px;line-height:1.7">${govdeHtml}</div>`+
-    `<table style="width:100%;margin-top:34px;font-size:11.5px"><tr>
+    `<div style="font-size:11px;margin-top:8px;line-height:1.45;text-align:justify">${govdeHtml}</div>`+
+    `<table style="width:100%;margin-top:26px;font-size:11.5px;page-break-inside:avoid"><tr>
       <td style="width:50%;text-align:center">
         <div style="border-top:1px solid #1a1a1a;margin:0 20px;padding-top:6px">MENAJER</div>
         <div style="margin-top:4px">${esc(d.co.coName)}<br>${esc(d.co.coAuth)}</div>
@@ -4123,8 +3433,6 @@ function szMailYolla(idOrNull){
 
 async function szSil(id){
   if(!confirm('Bu kayıtlı sözleşmeyi silmek istiyor musun?'))return;
-  const e=accEntries.find(x=>x.id===id);
-  await logAudit('delete','sozlesme',id,e?.desc||'',e);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();szRenderKayitli();szRenderYapilan();toast('Silindi');
 }
@@ -4148,12 +3456,10 @@ function szSetFiltre(f){
 }
 async function szDurumDegistir(id,yeniDurum){
   const e=accEntries.find(x=>x.id===id);if(!e)return;
-  const eskiDurum=e.durum;
   e.durum=yeniDurum;
   try{
     await apiFetch('/api/acc/'+id,{method:'PUT',body:JSON.stringify(e)});
   }catch(err){toast('Güncellenemedi');return;}
-  await logAudit('update','sozlesme',id,e.desc||'',{eskiDurum,yeniDurum});
   szRenderYapilan();
   toast('Durum güncellendi: '+SZ_DURUMLAR[yeniDurum].ad);
 }
@@ -4209,16 +3515,42 @@ async function makePDF(type){
   const d=docData();
   if(!d.co.coName){toast('Önce kendi firma adını gir (Firma Bilgilerim sekmesi)');showTab('szfirmam');return;}
   const baslik=type==='teklif'?'Teklif':'Sözleşme';
+  // Belge referans no — hem başlıkta hem her sayfanın üst köşesinde görünür,
+  // böylece çok sayfalı çıktıda sayfaların aynı belgeye ait olduğu anlaşılır.
+  const belgeNo=(d.co.coPrefix||'TKF')+'-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000+1000));
+  const ustEtiket=baslik.toUpperCase()+(d.venue?' — '+esc(d.venue):'')+(d.date?' · '+trDate(d.date):'')+'  |  Belge No: '+belgeNo;
   const win=window.open('','_blank');
   if(!win){toast('Açılır pencere engellendi, izin ver');return;}
   win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
-    <title>${baslik} - ${esc(d.venue||'')}</title>
+    <title>${baslik} - ${esc(d.venue||'')} (${belgeNo})</title>
     <style>
-      @page{size:A4;margin:18mm}
+      /* Üst: belge kimliği (her sayfada) — Alt: Sayfa X / Y (sayfa sürekliliği) */
+      @page{
+        size:A4 portrait;
+        margin:18mm 15mm 16mm 15mm;
+        @top-center{ content:"${ustEtiket.replace(/"/g,'\\"')}"; font-family:'Segoe UI',Helvetica,Arial,sans-serif; font-size:8pt; color:#888; }
+        @bottom-center{ content:"Sayfa " counter(page) " / " counter(pages); font-family:'Segoe UI',Helvetica,Arial,sans-serif; font-size:8.5pt; color:#666; }
+        @bottom-right{ content:"${esc(d.co.coName||'').replace(/"/g,'\\"')}"; font-family:'Segoe UI',Helvetica,Arial,sans-serif; font-size:8pt; color:#aaa; }
+      }
       *{box-sizing:border-box}
-      body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;line-height:1.6;margin:0;padding:20px;font-size:13px}
-      @media print{body{padding:0}}
-    </style></head><body>${docHTML(type)}
+      html,body{margin:0;padding:0}
+      body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;line-height:1.42;font-size:11.5px}
+      /* A4 dikey yazı alanı: 210mm - 2×15mm = 180mm. İçerik bu genişliği aşmasın */
+      .sozlesme-sayfa{width:180mm;max-width:180mm;margin:0 auto;padding:0}
+      .sozlesme-sayfa table{width:100%;border-collapse:collapse;table-layout:fixed}
+      .sozlesme-sayfa td,.sozlesme-sayfa th{word-wrap:break-word;overflow-wrap:break-word}
+      .sozlesme-sayfa h1,.sozlesme-sayfa h2,.sozlesme-sayfa h3{page-break-after:avoid}
+      /* madde / imza bloğu ortadan bölünmesin */
+      .sozlesme-sayfa p,.sozlesme-sayfa li,.sozlesme-sayfa tr{page-break-inside:avoid}
+      /* @page üst/alt bilgisini desteklemeyen tarayıcılar için yedek üst şerit */
+      .pdf-fallback-head{display:none;font-size:8pt;color:#999;border-bottom:1px solid #eee;padding-bottom:4px;margin-bottom:10px}
+      @media print{
+        body{padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        .sozlesme-sayfa{width:auto;max-width:100%}
+      }
+    </style></head><body>
+    <div class="pdf-fallback-head">${ustEtiket}</div>
+    <div class="sozlesme-sayfa">${docHTML(type)}</div>
     <script>window.onload=function(){window.print();}<\/script>
     </body></html>`);
   win.document.close();
@@ -4231,88 +3563,6 @@ let accYon='gelir';
 
 async function loadAcc(){
   try{const res=await apiFetch('/api/acc');if(!res){accEntries=[];return;}accEntries=await res.json();}catch(e){accEntries=[];}
-}
-
-// ── DENETİM İZİ (audit log) ──────────────────────────────
-// Her silme ve kritik güncelleme burada kaydedilir: kim, ne zaman, ne yaptı.
-// meta: silinen/değişen kaydın anlık görüntüsü (geri getirmek için elle kullanılabilir).
-async function logAudit(action,entity,entityId,label,meta){
-  const e={
-    id:'aud'+Date.now()+Math.random().toString(36).slice(2,7),
-    type:'auditlog',
-    action,        // 'create' | 'update' | 'delete'
-    entity,        // 'event' | 'firm' | 'venue' | 'acc' | 'kase' | 'user' | ...
-    entityId:entityId||'',
-    label:label||'',
-    userName:_user?_user.name:'Bilinmiyor',
-    userEmail:_user?_user.email:'',
-    ts:Date.now(),
-    meta:meta!=null?meta:null
-  };
-  try{await apiFetch('/api/acc',{method:'POST',body:JSON.stringify(e)});}catch(err){}
-}
-function auditList(){
-  return accEntries.filter(e=>e.type==='auditlog').sort((a,b)=>(b.ts||0)-(a.ts||0));
-}
-const DEN_ENTITY_AD={
-  event:'Konser',firm:'Firma',venue:'Mekan',dc:'Karşı Taraf',kdvodeme:'KDV Ödemesi',
-  finansman:'Finansman',sabitOdeme:'Sabit Ödeme',acc:'Gelir/Gider',kase:'Kaşe Ödeme Durumu',
-  kaseTopluOdeme:'Toplu Kaşe Ödemesi',kaseTanim:'Kaşe Tanımı',ekip:'Ekip',giderTanim:'Sabit Gider Tanımı',
-  sanatciHareket:'Sanatçı Hareketi',sozlesme:'Sözleşme',simulasyon:'Simülasyon',user:'Kullanıcı',tur:'Turne'
-};
-const DEN_AKSIYON_AD={create:'Oluşturuldu',update:'Güncellendi',delete:'Silindi'};
-const DEN_AKSIYON_RENK={create:'pos',update:'warn',delete:'neg'};
-function denRefreshVarlikPicker(list){
-  const sel=document.getElementById('denVarlik');if(!sel)return;
-  const cur=sel.value;
-  const varliklar=[...new Set(list.map(e=>e.entity))].sort();
-  sel.innerHTML='<option value="">Tüm varlıklar</option>'+varliklar.map(v=>`<option value="${esc(v)}">${esc(DEN_ENTITY_AD[v]||v)}</option>`).join('');
-  sel.value=cur;
-}
-function denToggle(rid){
-  const row=document.getElementById(rid);
-  if(row)row.style.display=row.style.display==='none'?'table-row':'none';
-}
-function renderDenetim(){
-  const list=auditList();
-  denRefreshVarlikPicker(list);
-  const ozet=document.getElementById('denOzet');
-  if(ozet){
-    const son24=list.filter(e=>Date.now()-(e.ts||0)<86400000).length;
-    const silme=list.filter(e=>e.action==='delete').length;
-    ozet.innerHTML=`
-      <div class="stat"><div class="n">Toplam Kayıt</div><div class="v">${list.length}</div></div>
-      <div class="stat"><div class="n">Son 24 Saat</div><div class="v">${son24}</div></div>
-      <div class="stat"><div class="n">Toplam Silme</div><div class="v ${silme?'neg':''}">${silme}</div></div>`;
-  }
-  const q=(document.getElementById('denSearch')?.value||'').toLocaleLowerCase('tr');
-  const aksF=document.getElementById('denAksiyon')?.value||'';
-  const varF=document.getElementById('denVarlik')?.value||'';
-  let filt=list;
-  if(aksF)filt=filt.filter(e=>e.action===aksF);
-  if(varF)filt=filt.filter(e=>e.entity===varF);
-  if(q)filt=filt.filter(e=>[e.userName,e.label,DEN_ENTITY_AD[e.entity]||e.entity].some(v=>(v||'').toLocaleLowerCase('tr').includes(q)));
-  const wrap=document.getElementById('denListe');
-  if(!wrap)return;
-  if(!filt.length){wrap.innerHTML='<div class="anEmpty">'+(list.length?'Eşleşen kayıt yok.':'Henüz kayıtlı işlem yok.')+'</div>';return;}
-  let h='<table class="dtable"><thead><tr><th>Tarih</th><th>Kullanıcı</th><th>İşlem</th><th>Varlık</th><th>Etiket</th><th></th></tr></thead><tbody>';
-  filt.forEach((e,i)=>{
-    const tarih=e.ts?new Date(e.ts).toLocaleString('tr-TR'):'—';
-    const rid='den_'+i;
-    h+=`<tr style="${e.meta!=null?'cursor:pointer':''}" ${e.meta!=null?`onclick="denToggle('${rid}')"`:''}>
-      <td style="white-space:nowrap;color:var(--muted)">${tarih}</td>
-      <td>${esc(e.userName||'—')}</td>
-      <td><span class="vbadge ${DEN_AKSIYON_RENK[e.action]||'bekliyor'}">${esc(DEN_AKSIYON_AD[e.action]||e.action)}</span></td>
-      <td>${esc(DEN_ENTITY_AD[e.entity]||e.entity)}</td>
-      <td>${esc(e.label||'')}</td>
-      <td style="color:var(--accent);white-space:nowrap">${e.meta!=null?'▸ detay':''}</td>
-    </tr>`;
-    if(e.meta!=null){
-      h+=`<tr id="${rid}" style="display:none"><td colspan="6" style="background:var(--surface2)"><pre style="white-space:pre-wrap;word-break:break-all;font-size:11px;margin:0;padding:4px 8px">${esc(JSON.stringify(e.meta,null,2))}</pre></td></tr>`;
-    }
-  });
-  h+='</tbody></table>';
-  wrap.innerHTML=h;
 }
 function setAccYon(y){
   accYon=y;
@@ -4368,14 +3618,11 @@ async function saveFin(){
     link:document.getElementById('finLink').value.trim()||'',
     status:'tamam',kdv:0
   };
-  let wasExisting=false;
   try{
     const exists=accEntries.find(x=>x.id===e.id);
-    wasExisting=!!exists;
     const res=await apiFetch('/api/acc'+(exists?'/'+e.id:''),{method:exists?'PUT':'POST',body:JSON.stringify(e)});
     if(!res||!res.ok){toast('Kaydedilemedi');return;}
   }catch(err){toast('Kaydedilemedi');return;}
-  await logAudit(wasExisting?'update':'create','finansman',e.id,e.desc+' — '+fmt(e.amount),e);
   await loadAcc();
   resetFinForm();
   renderFinansman();
@@ -4398,8 +3645,6 @@ function editFin(id){
 }
 async function delFin(id){
   if(!confirm('Bu finansman hareketini silmek istiyor musun?'))return;
-  const e=accEntries.find(x=>x.id===id);
-  await logAudit('delete','finansman',id,(e?.desc||'')+' — '+fmt(e?.amount||0),e);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();renderFinansman();renderDashboard();toast('Silindi');
 }
@@ -4516,8 +3761,6 @@ function editSabit(id){
 }
 async function delSabit(id){
   if(!confirm('Bu sabit ödemeyi silmek istiyor musun?'))return;
-  const e=accEntries.find(x=>x.id===id);
-  await logAudit('delete','sabitOdeme',id,e?.desc||'',e);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();renderOdeme();toast('Silindi');
 }
@@ -4531,7 +3774,7 @@ async function toggleSabitOdendi(id, ayKey){
   if(pm.has(ayKey))pm.delete(ayKey); else pm.add(ayKey);
   e.paidMonths=[...pm];
   try{await apiFetch('/api/acc/'+id,{method:'PUT',body:JSON.stringify(e)});}catch(err){toast('Kaydedilemedi');return;}
-  await loadAcc();renderOdeme();renderNotifPanel();
+  await loadAcc();renderOdeme();
   toast(pm.has(ayKey)?'Ödendi işaretlendi':'Geri alındı');
 }
 function renderSabit(){
@@ -4735,8 +3978,6 @@ function editAcc(id){
 }
 async function delAcc(id){
   if(!confirm('Bu işlemi silmek istiyor musun?'))return;
-  const e=accEntries.find(x=>x.id===id);
-  await logAudit('delete','acc',id,(e?.desc||'')+' — '+fmt(e?.amount||0),e);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();renderOdeme();toast('Silindi');
 }
@@ -4793,7 +4034,7 @@ function accAggregate(ayFilter){
     if(e.recurring)return; // sabit ödeme tanımları ayrı yönetilir
     if(e.artistPay)return; // sanatçı hesabı hareketleri ayrı yönetilir
     if(e.docClient)return; // karşı taraf rehberi ayrı
-    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.type==='tur')return; // ayar/rehber + kdv ödeme + denetim kayıtları
+    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman')return; // ayar/rehber + kdv ödeme kayıtları
     if(!ayUyar(e.date))return;
     const oran=Math.abs(e.kdv||0);
     const haric=(e.kdv||0)<0;            // negatif = "+ Ekle" (tutar KDV hariç)
@@ -4812,17 +4053,6 @@ function accAggregate(ayFilter){
       if(e.status!=='tamam'){borc+=brut;ensureCari(e.firmId,firmName(e.firmId)).borc+=brut;}
     }
   });
-
-  // turne ekstra giderleri: tarihsiz olduğu için sadece genel (ay filtresiz) görünümde sayılır
-  if(!ayFilter){
-    turListesi().forEach(t=>{
-      (t.giderler||[]).forEach(g=>{
-        const kdvTutar=g.kdv?g.amount-g.amount/1.2:0;
-        indirilecekKdv+=kdvTutar;
-        toplamGider+=(g.amount-kdvTutar);
-      });
-    });
-  }
 
   return {hesaplananKdv,indirilecekKdv,netKdv:hesaplananKdv-indirilecekKdv,
           toplamGelir,toplamGider,netKar:toplamGelir-toplamGider,
@@ -4917,7 +4147,7 @@ function muhasebeExcelAktar(){
     // 2) GELİR / GİDER (ham işlemler — konser dışı, elle girilenler)
     const gg=[['Tarih','Açıklama','Yön','Tutar (KDV dahil)','KDV %','Net','Durum','Firma']];
     accEntries.forEach(e=>{
-      if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.type==='tur'||e.recurring||e.artistPay||e.docClient)return;
+      if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.recurring||e.artistPay||e.docClient)return;
       const oran=Math.abs(e.kdv||0);
       const haric=(e.kdv||0)<0;
       const net=oran>0?(haric?(e.amount||0):(e.amount||0)/(1+oran/100)):(e.amount||0);
@@ -5125,7 +4355,7 @@ function renderAcc(){
     if(e.recurring)return; // sabit ödemeler kendi kartında
     if(e.artistPay)return; // sanatçı hesabı kendi ekranında
     if(e.docClient)return; // karşı taraf rehberi kendi kartında
-    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.type==='tur')return; // ayar/rehber + kdv ödeme + finansman + denetim (ayrı bölüm)
+    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman')return; // ayar/rehber + kdv ödeme + finansman (ayrı bölüm)
     items.push({kind:'M',id:e.id,date:e.date||'',title:e.desc,
       sub:[e.firmId?firmName(e.firmId):'',e.kdv?'KDV %'+Math.abs(e.kdv)+((e.kdv||0)<0?' +ekle':' dahil'):'KDV yok'].filter(Boolean).join(' · '),
       amount:e.amount,yon:e.yon,status:e.status||'bekliyor',fisLink:e.fisLink||'',faturaLink:e.faturaLink||''});
@@ -5247,8 +4477,6 @@ function editKase(id){
 }
 async function delKase(id){
   if(!confirm('Bu kaşeyi silmek istiyor musun?'))return;
-  const k=kases.find(x=>x.id===id);
-  await logAudit('delete','kaseTanim',id,k?.name||'',k);
   kases=kases.filter(x=>x.id!==id);await saveKasesLocal();
   await loadKases();
   renderKases();
@@ -5332,8 +4560,6 @@ function editEkip(id){
 }
 async function delEkip(id){
   if(!confirm('Bu ekibi silmek istiyor musun?'))return;
-  const ek=ekipler.find(x=>x.id===id);
-  await logAudit('delete','ekip',id,ek?.name||'',ek);
   ekipler=ekipler.filter(x=>x.id!==id);await saveEkiplerLocal();
   await loadEkipler();
   renderEkipler();
@@ -5391,8 +4617,6 @@ function editGider(id){
 }
 async function delGider(id){
   if(!confirm('Bu gideri silmek istiyor musun?'))return;
-  const g=giderler.find(x=>x.id===id);
-  await logAudit('delete','giderTanim',id,g?.name||'',g);
   giderler=giderler.filter(x=>x.id!==id);await saveGiderlerLocal();
   await loadGiderler();
   renderGiderler();
@@ -5549,8 +4773,6 @@ function editSaHareket(id){
 }
 async function delSaHareket(id){
   if(!confirm('Bu kaydı silmek istiyor musun?'))return;
-  const e=accEntries.find(x=>x.id===id);
-  await logAudit('delete','sanatciHareket',id,(e?.desc||'')+' — '+fmt(e?.amount||0),e);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();renderSanatci();toast('Silindi');
 }
@@ -5688,160 +4910,7 @@ async function refreshDashboard(){
   // önce backend'den taze veriyi çek, SONRA render et (eski-veri titreşimini önler)
   await Promise.all([loadEvents(),loadAcc()]);
   renderDashboard();
-  refreshNotifications();
 }
-
-// ── BİLDİRİM MERKEZİ ──────────────────────────────────
-// Not: Gerçek e-posta/SMS/push bildirimi backend tarafında bir servis gerektirir
-// (bu depo sadece arayüz, backend ayrı bir serviste) — burada sekme açıkken
-// uygulama içi bildirim listesi + tarayıcı bildirimi (Notification API) var.
-function getNotifications(){
-  const out=[];
-  const bugun=new Date();bugun.setHours(0,0,0,0);
-  const bugunStr=bugun.toISOString().slice(0,10);
-  events.forEach(ev=>{
-    const t=tahsilatFor(ev);
-    const isim=(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')||'(konser)';
-    (t.geciken||[]).forEach(v=>{
-      out.push({id:'vade_'+ev.id+'_'+(v.name||'')+'_'+(v.date||''),sev:'high',ico:'⏰',
-        title:'Gecikmiş vade — '+isim,
-        detail:(v.name||'Taksit')+' · '+fmt(v.acik)+(v.date?' · '+trDate(v.date):''),
-        onClick:()=>restoreById(ev.id)});
-    });
-    (t.yaklasan||[]).forEach(v=>{
-      out.push({id:'vadey_'+ev.id+'_'+(v.name||'')+'_'+(v.date||''),sev:'med',ico:'⏳',
-        title:'Yaklaşan vade — '+isim,
-        detail:(v.name||'Taksit')+' · '+fmt(v.acik)+(v.date?' · '+trDate(v.date):''),
-        onClick:()=>restoreById(ev.id)});
-    });
-    if(ev.tarih){
-      const gf=gunFarki(ev.tarih);
-      if(gf===0||gf===1){
-        out.push({id:'etk_'+ev.id+'_'+gf,sev:gf===0?'high':'med',ico:'🎤',
-          title:(gf===0?'Bugün etkinlik: ':'Yarın etkinlik: ')+isim,
-          detail:trDate(ev.tarih),
-          onClick:()=>restoreById(ev.id)});
-      }
-    }
-  });
-  tumKaseler().forEach(k=>{
-    if(k.odendi)return;
-    if(!k.ev.tarih||k.ev.tarih>=bugunStr)return; // sadece geçmişte kalmış (yapılmış) işler
-    const isim=(k.ev.sehir||'')+(k.ev.mekan?' · '+k.ev.mekan:'')||'(konser)';
-    out.push({id:'kase_'+k.ev.id+'_'+k.idx,sev:'med',ico:'💳',
-      title:'Ödenmemiş kaşe — '+k.name,
-      detail:isim+' · '+fmt(k.amount),
-      onClick:()=>showTab('ekipodeme')});
-  });
-  const ayKey=buAyKey();
-  const bugunGun=bugun.getDate();
-  sabitList().forEach(e=>{
-    if(sabitOdendiMi(e,ayKey))return;
-    const gun=e.gunu||1;
-    if(bugunGun>gun){
-      out.push({id:'sabit_'+e.id+'_'+ayKey,sev:'high',ico:'📌',
-        title:'Gecikmiş sabit ödeme — '+e.desc,
-        detail:fmt(e.amount)+' · her ayın '+gun+'.',
-        onClick:()=>showTab('mgg')});
-    }else if(gun-bugunGun<=3){
-      out.push({id:'sabity_'+e.id+'_'+ayKey,sev:'med',ico:'📌',
-        title:'Yaklaşan sabit ödeme — '+e.desc,
-        detail:fmt(e.amount)+' · her ayın '+gun+'.',
-        onClick:()=>showTab('mgg')});
-    }
-  });
-  out.sort((a,b)=>(a.sev==='high'?0:1)-(b.sev==='high'?0:1));
-  return out;
-}
-let _lastNotifs=[];
-function renderNotifPanel(){
-  const notifs=getNotifications();
-  _lastNotifs=notifs;
-  const badge=document.getElementById('notifBadge');
-  if(badge){
-    const highCount=notifs.filter(n=>n.sev==='high').length;
-    if(notifs.length){
-      badge.style.display='flex';badge.style.alignItems='center';badge.style.justifyContent='center';
-      badge.textContent=notifs.length>9?'9+':notifs.length;
-      badge.style.background=highCount>0?'var(--red)':'var(--amber)';
-    }else badge.style.display='none';
-  }
-  const wrap=document.getElementById('notifList');
-  if(!wrap)return;
-  if(!notifs.length){wrap.innerHTML='<div class="anEmpty" style="padding:24px 12px">Her şey yolunda 🎉</div>';return;}
-  wrap.innerHTML=notifs.map((n,i)=>`
-    <div onclick="notifClick(${i})" style="display:flex;gap:10px;padding:11px 12px;border-radius:8px;cursor:pointer;align-items:flex-start"
-      onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
-      <div style="font-size:17px;flex-shrink:0;line-height:1.3">${n.ico}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(n.title)}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(n.detail)}</div>
-      </div>
-      <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;background:${n.sev==='high'?'var(--red)':'var(--amber)'}"></div>
-    </div>`).join('');
-}
-function notifClick(i){
-  const n=_lastNotifs[i];if(!n)return;
-  closeNotifPanel();
-  if(n.onClick)n.onClick();
-}
-function toggleNotifPanel(){
-  const p=document.getElementById('notifPanel');if(!p)return;
-  const open=p.style.display==='block';
-  if(!open){renderNotifPanel();p.style.display='block';}
-  else p.style.display='none';
-}
-function closeNotifPanel(){
-  const p=document.getElementById('notifPanel');if(p)p.style.display='none';
-}
-document.addEventListener('click',function(ev){
-  const p=document.getElementById('notifPanel');
-  const btn=document.getElementById('notifBellBtn');
-  if(!p||p.style.display!=='block')return;
-  if(p.contains(ev.target)||(btn&&btn.contains(ev.target)))return;
-  closeNotifPanel();
-});
-
-// ── Tarayıcı bildirimi (Notification API) — sadece sekme açıkken çalışır ──
-function notifSeenKey(){ return 'konser_notified_'+(_user?(_user.id||_user.email):'anon'); }
-function getSeenNotifIds(){
-  try{return new Set(JSON.parse(localStorage.getItem(notifSeenKey())||'[]'));}catch(e){return new Set();}
-}
-function saveSeenNotifIds(set){
-  try{
-    // sınırsız büyümesin: en fazla son 500 id tutulur
-    const arr=[...set].slice(-500);
-    localStorage.setItem(notifSeenKey(),JSON.stringify(arr));
-  }catch(e){}
-}
-async function checkBrowserNotifications(notifs){
-  if(!('Notification' in window))return;
-  if(Notification.permission==='default'){
-    try{await Notification.requestPermission();}catch(e){return;}
-  }
-  if(Notification.permission!=='granted')return;
-  const seen=getSeenNotifIds();
-  const kritik=notifs.filter(n=>n.sev==='high'&&!seen.has(n.id));
-  if(!kritik.length)return;
-  kritik.slice(0,5).forEach(n=>{
-    try{
-      const brw=new Notification(n.title,{body:n.detail,tag:n.id});
-      brw.onclick=()=>{window.focus();closeNotifPanel();if(n.onClick)n.onClick();};
-    }catch(e){}
-    seen.add(n.id);
-  });
-  saveSeenNotifIds(seen);
-}
-function refreshNotifications(){
-  renderNotifPanel();
-  checkBrowserNotifications(_lastNotifs);
-}
-// sekme açıkken periyodik kontrol (20 dk) — kapalı sekmeye/e-postaya push atamaz,
-// bu ancak backend'de bir servis eklenirse mümkün olur.
-setInterval(()=>{
-  if(!_token||!_user)return;
-  Promise.all([loadEvents(),loadAcc()]).then(refreshNotifications);
-},20*60*1000);
 // ── ETKİNLİK SİMÜLASYONU ──────────────────────────────
 function simHesapla(deger){
   const tip=document.getElementById('simTip').value;
@@ -6210,8 +5279,6 @@ function sdAcProje(id){
 }
 async function sdSil(id){
   if(!confirm('Bu kayıtlı simülasyonu silmek istiyor musun?'))return;
-  const e=accEntries.find(x=>x.id===id);
-  await logAudit('delete','simulasyon',id,e?.desc||'',e);
   try{await apiFetch('/api/acc/'+id,{method:'DELETE'});}catch(e){}
   await loadAcc();sdRenderKayitli();toast('Silindi');
 }
@@ -6302,7 +5369,7 @@ function renderDashboard(){
   // Şirket gelir/gider (acc): tahsil edilen gelir / ödenen gider, ve bekleyenler
   let sirketGelirAlinan=0, sirketGiderOdenen=0, sirketGelirBekleyen=0, sirketGiderBekleyen=0;
   accEntries.forEach(e=>{
-    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.type==='tur'||e.recurring||e.artistPay||e.docClient)return; // sadece normal gelir/gider
+    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.recurring||e.artistPay||e.docClient)return; // sadece normal gelir/gider
     const oran=Math.abs(e.kdv||0); const haric=(e.kdv||0)<0;
     const tutar=(oran>0&&haric)?(e.amount||0)*(1+oran/100):(e.amount||0); // hariç ise kasaya brüt girer
     if(e.yon==='gelir'){
@@ -6338,7 +5405,7 @@ function renderDashboard(){
   // Tahsil edilen şirket gelirinin KDV'si (kdv oranına göre içinden ayrıştır)
   let sirketKdv=0;
   accEntries.forEach(e=>{
-    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.type==='auditlog'||e.type==='tur'||e.recurring||e.artistPay||e.docClient)return;
+    if(e.type==='cfg'||e.type==='kdvodeme'||e.type==='finansman'||e.recurring||e.artistPay||e.docClient)return;
     if(e.yon==='gelir'&&e.status==='tamam'){
       const oran=Math.abs(e.kdv||0); const haric=(e.kdv||0)<0;
       if(oran>0){ sirketKdv+= haric ? (e.amount||0)*oran/100 : (e.amount||0)-(e.amount||0)/(1+oran/100); }
@@ -6372,12 +5439,6 @@ function renderDashboard(){
     <div class="stat"><div class="n">Bekleyen Alacak</div><div class="v">${fmt(bekleyen)}</div></div>
     ${finVar&&kalanBorc>0?`<div class="stat" style="border-color:var(--red);background:rgba(240,122,122,0.07)"><div class="n">💳 Kalan Borç (benim borcum)</div><div class="v neg">${fmt(kalanBorc)}</div></div>`:''}
     ${finVar&&kalanAlacak>0?`<div class="stat" style="border-color:var(--amber);background:rgba(245,177,61,0.07)"><div class="n">🤝 Kalan Alacak (verdiğim borç)</div><div class="v" style="color:var(--amber)">${fmt(kalanAlacak)}</div></div>`:''}`;
-
-  // ── YENİ DASHBOARD BİLEŞENLERİ (KPI, donut, top konser, son işlemler) ──
-  renderDashKpi({kasaTotal,tahsilEdilen,bekleyen,ay});
-  renderDashDonut({konserAlinan,sirketGelirAlinan});
-  renderDashTopKonser();
-  renderDashSonIslem();
 
   // özet kartları
   let buAyKar=0, acikAlacak=0;
@@ -6522,198 +5583,36 @@ function renderDashboard(){
     trendWrap.innerHTML='<div class="anEmpty">Tarihli konser yok.</div>';
   }else{
     const trAy=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
-    const maxRaw=Math.max(...aylar.map(m=>Math.max(byMonth[m].ciro,Math.max(0,byMonth[m].kar))),1);
-    const maxVal=maxRaw*1.12; // tepe noktası tavana yapışmasın
-    // koordinat sistemi
-    const W=820, H=260, padT=20, padB=44, padL=54, padR=16;
-    const gW=W-padL-padR, gH=H-padT-padB;
-    const n=aylar.length;
-    const xOf=i=>padL+(n===1?gW/2:gW*i/(n-1));
-    const yOf=v=>padT+gH-(gH*(v/maxVal));
-    // yumuşak (catmull-rom → bezier) çizgi üret
-    const line=(vals)=>{
-      const pts=vals.map((v,i)=>[xOf(i),yOf(v)]);
-      if(pts.length===1)return `M${pts[0][0]},${pts[0][1]}`;
-      let d=`M${pts[0][0]},${pts[0][1]}`;
-      for(let i=0;i<pts.length-1;i++){
-        const p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||p2;
-        const c1x=p1[0]+(p2[0]-p0[0])/6, c1y=p1[1]+(p2[1]-p0[1])/6;
-        const c2x=p2[0]-(p3[0]-p1[0])/6, c2y=p2[1]-(p3[1]-p1[1])/6;
-        d+=` C${c1x},${c1y} ${c2x},${c2y} ${p2[0]},${p2[1]}`;
-      }
-      return d;
-    };
-    const ciroVals=aylar.map(m=>byMonth[m].ciro);
-    const karVals=aylar.map(m=>Math.max(0,byMonth[m].kar));
-    const ciroPath=line(ciroVals);
-    const karPath=line(karVals);
-    const alanPath=ciroPath+` L${xOf(n-1)},${padT+gH} L${xOf(0)},${padT+gH} Z`;
-    let svg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;overflow:visible" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="ciroGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.28"/>
-          <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.02"/>
-        </linearGradient>
-      </defs>`;
-    // yatay ızgara + y ekseni etiketleri
+    const maxVal=Math.max(...aylar.map(m=>Math.max(byMonth[m].ciro,byMonth[m].kar)),1);
+    const W=Math.max(aylar.length*90,300), H=240, padB=40, padT=20, padL=10;
+    const grafikH=H-padB-padT;
+    const grupGen=W/aylar.length;
+    const barGen=Math.min(28,grupGen/3);
+    let svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;height:auto" xmlns="http://www.w3.org/2000/svg">`;
+    // yatay ızgara çizgileri
     for(let i=0;i<=4;i++){
-      const y=padT+gH*(i/4);
-      const val=maxVal*(1-i/4);
-      svg+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="var(--border)" stroke-width="1" stroke-dasharray="${i===4?'0':'4 5'}"/>`;
-      svg+=`<text x="${padL-10}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--muted)">${val>=1000?Math.round(val/1000)+'k':Math.round(val)}</text>`;
+      const y=padT+grafikH*(i/4);
+      svg+=`<line x1="${padL}" y1="${y}" x2="${W-padL}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
     }
-    // dolgu + çizgiler
-    svg+=`<path d="${alanPath}" fill="url(#ciroGrad)"/>`;
-    svg+=`<path d="${karPath}" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>`;
-    svg+=`<path d="${ciroPath}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
-    // noktalar + ay etiketleri + hover alanları
     aylar.forEach((m,i)=>{
+      const o=byMonth[m];
+      const cx=i*grupGen+grupGen/2;
+      const ciroH=grafikH*(o.ciro/maxVal);
+      const karH=grafikH*(Math.max(0,o.kar)/maxVal);
+      const cy=padT+grafikH-ciroH;
+      const ky=padT+grafikH-karH;
+      // ciro barı (sol)
+      svg+=`<rect x="${cx-barGen-2}" y="${cy}" width="${barGen}" height="${ciroH}" rx="4" fill="var(--accent)"><title>${trAy[+m.slice(5,7)-1]} ${m.slice(0,4)} — Ciro: ${fmt(o.ciro)}</title></rect>`;
+      // kâr barı (sağ)
+      svg+=`<rect x="${cx+2}" y="${ky}" width="${barGen}" height="${karH}" rx="4" fill="var(--green)"><title>${trAy[+m.slice(5,7)-1]} ${m.slice(0,4)} — Kâr: ${fmt(o.kar)}</title></rect>`;
+      // ay etiketi
       const [yy,mo]=m.split('-');
-      const cx=xOf(i), cyC=yOf(byMonth[m].ciro);
-      svg+=`<circle class="area-dot" cx="${cx}" cy="${cyC}" r="4" fill="var(--surface)" stroke="var(--accent)" stroke-width="2.5"
-        onmouseover="dashTrendTip(event,'${trAy[+mo-1]} ${yy}',${byMonth[m].ciro},${byMonth[m].kar})" onmouseout="dashTrendTipHide()"></circle>`;
-      svg+=`<text x="${cx}" y="${H-padB+20}" text-anchor="middle" font-size="12" fill="var(--muted)">${trAy[+mo-1]}</text>`;
-      svg+=`<rect x="${cx-gW/(2*Math.max(1,n-1))}" y="${padT}" width="${gW/Math.max(1,n-1)}" height="${gH}" fill="transparent"
-        onmouseover="dashTrendTip(event,'${trAy[+mo-1]} ${yy}',${byMonth[m].ciro},${byMonth[m].kar})" onmouseout="dashTrendTipHide()"></rect>`;
+      svg+=`<text x="${cx}" y="${H-padB+18}" text-anchor="middle" font-size="12" fill="var(--muted)">${trAy[+mo-1]}</text>`;
+      svg+=`<text x="${cx}" y="${H-padB+32}" text-anchor="middle" font-size="10" fill="var(--muted)">${yy}</text>`;
     });
-    svg+='</svg><div class="area-tip" id="dashTrendTip"></div>';
+    svg+='</svg>';
     trendWrap.innerHTML=svg;
   }
-}
-// area chart tooltip
-function dashTrendTip(ev,label,ciro,kar){
-  const wrap=document.getElementById('dashTrend');
-  const tip=document.getElementById('dashTrendTip');
-  if(!wrap||!tip)return;
-  const r=wrap.getBoundingClientRect();
-  tip.innerHTML=`<div class="t-lbl">${label}</div>Ciro: ${fmt(ciro)}<br>Kâr: ${fmt(kar)}`;
-  tip.style.left=(ev.clientX-r.left)+'px';
-  tip.style.top=(ev.clientY-r.top)+'px';
-  tip.style.opacity='1';
-}
-function dashTrendTipHide(){const t=document.getElementById('dashTrendTip');if(t)t.style.opacity='0';}
-
-// ── KPI ŞERİDİ (ikonlu kartlar + geçen aya göre değişim) ──
-function dashPctChip(bu,gecen){
-  if(gecen===0||gecen==null||!isFinite(gecen)){
-    if(bu>0)return '<span class="kpi-chip up">▲ yeni</span>';
-    return '<span class="kpi-chip flat">—</span>';
-  }
-  const pct=((bu-gecen)/Math.abs(gecen))*100;
-  if(Math.abs(pct)<0.05)return '<span class="kpi-chip flat">0%</span>';
-  const up=pct>=0;
-  return `<span class="kpi-chip ${up?'up':'down'}">${up?'▲':'▼'} ${up?'+':''}${pct.toFixed(1)}%</span>`;
-}
-function renderDashKpi({kasaTotal,tahsilEdilen,bekleyen,ay}){
-  const el=document.getElementById('dashKpi');if(!el)return;
-  // bu ay / geçen ay kâr ve ciro (yüzde değişim için)
-  const d=new Date(); const gecenAy=new Date(d.getFullYear(),d.getMonth()-1,1).toISOString().slice(0,7);
-  let buAyKar=0,gecenAyKar=0,buAyCiro=0,gecenAyCiro=0;
-  events.forEach(ev=>{
-    const c=computeFor(ev); const m=(ev.tarih||'').slice(0,7);
-    if(m===ay){buAyKar+=c.kar;buAyCiro+=c.ciroNet;}
-    else if(m===gecenAy){gecenAyKar+=c.kar;gecenAyCiro+=c.ciroNet;}
-  });
-  const ic={
-    kasa:'<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>',
-    kar:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
-    tahsil:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
-    bekle:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'
-  };
-  const card=(color,ico,lbl,val,chip,neg)=>`
-    <div class="kpi-card">
-      <div class="kpi-top">
-        <div class="kpi-ico" style="background:${color}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ico}</svg></div>
-        ${chip}
-      </div>
-      <div>
-        <div class="kpi-lbl">${lbl}</div>
-        <div class="kpi-val ${neg?'neg':''}">${val}</div>
-      </div>
-    </div>`;
-  el.innerHTML=
-    card('linear-gradient(135deg,#4f46e5,#4338ca)',ic.kasa,'Kasa Total',fmt(kasaTotal),dashPctChip(buAyCiro,gecenAyCiro),kasaTotal<0)+
-    card('linear-gradient(135deg,#16a34a,#15803d)',ic.kar,'Bu Ay Kâr',fmt(buAyKar),dashPctChip(buAyKar,gecenAyKar),buAyKar<0)+
-    card('linear-gradient(135deg,#ea580c,#c2410c)',ic.tahsil,'Tahsil Edilen',fmt(tahsilEdilen),'<span class="kpi-chip flat">toplam</span>',false)+
-    card('linear-gradient(135deg,#9333ea,#7e22ce)',ic.bekle,'Bekleyen Alacak',fmt(bekleyen),bekleyen>0.5?'<span class="kpi-chip down">açık</span>':'<span class="kpi-chip up">temiz</span>',false);
-}
-
-// ── GELİR DAĞILIMI (donut) ──
-function renderDashDonut({konserAlinan,sirketGelirAlinan}){
-  const el=document.getElementById('dashDonut');if(!el)return;
-  const dilimler=[
-    {ad:'Konser Geliri',val:Math.max(0,konserAlinan),renk:'#4f46e5'},
-    {ad:'Şirket Geliri',val:Math.max(0,sirketGelirAlinan),renk:'#16a34a'}
-  ].filter(d=>d.val>0);
-  const toplam=dilimler.reduce((a,b)=>a+b.val,0);
-  if(!toplam){el.innerHTML='<div class="anEmpty">Henüz tahsilat yok.</div>';return;}
-  const R=70, sw=26, C=2*Math.PI*R, cx=90, cy=90;
-  let offset=0;
-  let ring='';
-  dilimler.forEach(d=>{
-    const frac=d.val/toplam;
-    const len=C*frac;
-    ring+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${d.renk}" stroke-width="${sw}"
-      stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"
-      stroke-linecap="butt"><title>${d.ad}: ${fmt(d.val)}</title></circle>`;
-    offset+=len;
-  });
-  const legend=dilimler.map(d=>`
-    <div class="donut-leg-item">
-      <span class="donut-leg-dot" style="background:${d.renk}"></span>
-      <span class="donut-leg-name">${d.ad}</span>
-      <span class="donut-leg-val">%${Math.round(d.val/toplam*100)}</span>
-    </div>`).join('');
-  el.innerHTML=`<div class="donut-wrap">
-    <svg viewBox="0 0 180 180" style="width:180px;height:180px;flex-shrink:0">
-      ${ring}
-      <text x="90" y="84" text-anchor="middle" font-size="13" fill="var(--muted)">Toplam</text>
-      <text x="90" y="104" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)">${fmt(toplam)}</text>
-    </svg>
-    <div class="donut-legend">${legend}</div>
-  </div>`;
-}
-
-// ── EN KÂRLI KONSERLER (yatay bar) ──
-function renderDashTopKonser(){
-  const el=document.getElementById('dashTopKonser');if(!el)return;
-  const arr=events.map(ev=>({ev,kar:computeFor(ev).kar})).filter(x=>x.kar>0).sort((a,b)=>b.kar-a.kar).slice(0,5);
-  if(!arr.length){el.innerHTML='<div class="anEmpty">Kârlı konser yok.</div>';return;}
-  const max=Math.max(...arr.map(x=>x.kar),1);
-  const renkler=['#4f46e5','#16a34a','#ea580c','#9333ea','#0ea5e9'];
-  el.innerHTML=arr.map((x,i)=>{
-    const isim=(x.ev.sehir||'')+(x.ev.mekan?' · '+x.ev.mekan:'')||'(konser)';
-    return `<div class="perf-row">
-      <div class="perf-name" title="${esc(isim)}">${esc(isim)}</div>
-      <div class="perf-track"><div class="perf-fill" style="width:${Math.round(x.kar/max*100)}%;background:${renkler[i%renkler.length]}"></div></div>
-      <div class="perf-val">${fmt(x.kar)}</div>
-    </div>`;
-  }).join('');
-}
-
-// ── SON İŞLEMLER (tablo) ──
-function renderDashSonIslem(){
-  const el=document.getElementById('dashSonIslem');if(!el)return;
-  const arr=events.slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)).slice(0,6);
-  if(!arr.length){el.innerHTML='<div class="anEmpty">Henüz işlem yok.</div>';return;}
-  let h='<table class="dtable"><thead><tr><th>Konser</th><th>Tarih</th><th style="text-align:right">Ciro</th><th style="text-align:right">Durum</th></tr></thead><tbody>';
-  arr.forEach(ev=>{
-    const c=computeFor(ev), t=tahsilatFor(ev);
-    const isim=(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')||'(konser)';
-    let pill;
-    if(t.durum==='tamam')pill='<span class="pill ok">Tahsil edildi</span>';
-    else if(t.durum==='kismi')pill='<span class="pill wait">Kısmi %'+t.oran+'</span>';
-    else if(t.durum==='bekliyor')pill='<span class="pill late">Bekliyor</span>';
-    else pill='<span class="pill wait">—</span>';
-    h+=`<tr style="cursor:pointer" onclick='restoreById("${ev.id}")'>
-      <td style="font-weight:500">${esc(isim)}</td>
-      <td style="color:var(--muted)">${ev.tarih?trDate(ev.tarih):'—'}</td>
-      <td style="text-align:right;font-variant-numeric:tabular-nums">${fmt(c.ciroGross)}</td>
-      <td style="text-align:right">${pill}</td>
-    </tr>`;
-  });
-  h+='</tbody></table>';
-  el.innerHTML=h;
 }
 
 function bar(name,numLabel,ratio,neg){
@@ -6914,12 +5813,10 @@ async function topluOde(){
   });
   // backend'e kaydet (her event bir kez)
   for(const eid in etkilenen){await persist(etkilenen[eid]);}
-  await logAudit('update','kaseTopluOdeme','',checks.length+' kaşe ödendi işaretlendi',{tarih,not,etkilenenIsler:Object.keys(etkilenen)});
   await loadEvents();
   document.getElementById('topluTarih').value='';
   document.getElementById('topluNot').value='';
   renderEkipOdeme();
-  renderNotifPanel();
   toast(checks.length+' kaşe ödendi olarak işaretlendi');
 }
 
@@ -6936,10 +5833,8 @@ async function toggleKaseOdendi(eventId, kaseIdx){
   }
   // backend'e kaydet
   await persist(ev);
-  await logAudit('update','kase',ev.id,(ev.kase[kaseIdx].name||'')+' — '+fmt(ev.kase[kaseIdx].amount||0),{odendi:yeniDurum,isim:(ev.sehir||'')+(ev.mekan?' · '+ev.mekan:'')});
   await loadEvents();
   renderEkipOdeme();
-  renderNotifPanel();
   toast(yeniDurum?'Ödendi olarak işaretlendi':'Ödeme geri alındı');
 }
 
@@ -7046,7 +5941,7 @@ function raporPdfAktar(){
     if(!win){toast('Açılır pencere engellendi, izin ver');return;}
     win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
       <title>Rapor - ${esc(rapDonemAd())}</title>
-      <style>@page{size:A4;margin:16mm}*{box-sizing:border-box}body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;margin:0;padding:24px}@media print{body{padding:0}}</style>
+      <style>@page{size:A4 portrait;margin:16mm 15mm 15mm 15mm;@bottom-center{content:"Sayfa " counter(page) " / " counter(pages);font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:8.5pt;color:#666;}}*{box-sizing:border-box}body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;margin:0;padding:24px}table{page-break-inside:auto}tr{page-break-inside:avoid}@media print{body{padding:0}}</style>
       </head><body>${govde}
       <script>window.onload=function(){window.print();}<\/script></body></html>`);
     win.document.close();
@@ -7258,7 +6153,7 @@ function sanatciRaporPdf(){
   if(!win){toast('Açılır pencere engellendi, izin ver');return;}
   win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
     <title>${esc(r.sec)} - Performans Raporu</title>
-    <style>@page{size:A4;margin:16mm}*{box-sizing:border-box}body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;margin:0;padding:24px}@media print{body{padding:0}}</style>
+    <style>@page{size:A4 portrait;margin:16mm 15mm 15mm 15mm;@bottom-center{content:"Sayfa " counter(page) " / " counter(pages);font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:8.5pt;color:#666;}}*{box-sizing:border-box}body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;margin:0;padding:24px}table{page-break-inside:auto}tr{page-break-inside:avoid}@media print{body{padding:0}}</style>
     </head><body>${r.govde}
     <script>window.onload=function(){window.print();}<\/script></body></html>`);
   win.document.close();
@@ -7356,7 +6251,6 @@ function applyUserUI(){
   const ygrp=document.getElementById('navgrp-yonetim');if(ygrp)ygrp.style.display=isAdmin?'':'none';
   document.getElementById('tabUsers').style.display=isAdmin?'flex':'none';
   const ay=document.getElementById('tabAyarlar');if(ay)ay.style.display=isAdmin?'flex':'none';
-  const den=document.getElementById('tabDenetim');if(den)den.style.display=isAdmin?'flex':'none';
 }
 
 function openChangePass(){
@@ -7433,7 +6327,6 @@ async function addUser(){
     if(!res)return;
     const data=await res.json();
     if(!res.ok){toast(data.error||'Eklenemedi');return;}
-    await logAudit('create','user',data?.id||'',name+' ('+email+')',{role});
     resetUserForm();
     renderUsers();
     toast('Kullanıcı eklendi');
@@ -7446,7 +6339,6 @@ async function resetUserPass(id,name){
     if(!res)return;
     const data=await res.json();
     if(!res.ok){toast(data.error||'Sıfırlanamadı');return;}
-    await logAudit('update','user',id,name+' — şifre sıfırlandı');
     if(data.tempPassword){
       prompt(name+' için yeni geçici şifre (kopyalayıp kullanıcıya iletin):',data.tempPassword);
     }
@@ -7459,8 +6351,6 @@ async function toggleUserRole(id,curRole){
     const res=await apiFetch('/api/auth/users/'+id,{method:'PATCH',body:JSON.stringify({role:newRole})});
     if(!res)return;
     if(!res.ok){const d=await res.json();toast(d.error||'Güncellenemedi');return;}
-    const u=users.find(x=>x.id===id);
-    await logAudit('update','user',id,(u?.name||'')+' — rol '+curRole+' → '+newRole);
     renderUsers();toast('Rol güncellendi');
   }catch(e){toast('Bağlantı hatası');}
 }
@@ -7469,8 +6359,6 @@ async function toggleUserActive(id,cur){
     const res=await apiFetch('/api/auth/users/'+id,{method:'PATCH',body:JSON.stringify({active:!cur})});
     if(!res)return;
     if(!res.ok){const d=await res.json();toast(d.error||'Güncellenemedi');return;}
-    const u=users.find(x=>x.id===id);
-    await logAudit('update','user',id,(u?.name||'')+(cur?' — pasifleştirildi':' — aktifleştirildi'));
     renderUsers();toast('Güncellendi');
   }catch(e){toast('Bağlantı hatası');}
 }
