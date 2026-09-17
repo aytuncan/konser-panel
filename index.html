@@ -5181,7 +5181,8 @@ function sdReadSanatcilar(){
   }).filter(a=>a.name||a.kase);
 }
 
-function renderSimDetay(){
+// Detaylı simülasyon: tüm hesabı tek yerde üret (hem ekran hem export kullanır)
+function sdCompute(){
   // ── BİLETLEME ──
   const biletler=sdReadBiletler();
   let brutGelir=0, komToplam=0, komKdvToplam=0, biletKdvToplam=0, toplamAdet=0;
@@ -5195,7 +5196,6 @@ function renderSimDetay(){
   const netBiletGeliri=brutGelir-komToplam-komKdvToplam;
 
   // ── GİDERLER ──
-  // sanatçılar (çoklu) — her birinin kaşesi ve KDV durumu ayrı
   const sanatcilar=sdReadSanatcilar();
   let kaseNet=0, kaseKdv=0;
   sanatcilar.forEach(a=>{
@@ -5206,14 +5206,12 @@ function renderSimDetay(){
     kaseNet+=net; kaseKdv+=kdv;
   });
   const kaseToplam=kaseNet+kaseKdv;
-  // mekan
   const mekanTutar=+document.getElementById('sdMekan').value||0;
   const mekanKdvOran=(+document.getElementById('sdMekanKdv').value||0)/100;
   const mekanDahil=document.getElementById('sdMekanKdvDurum').value==='dahil';
   const mekanKdv=mekanDahil?(mekanTutar/(1+mekanKdvOran)*mekanKdvOran):(mekanTutar*mekanKdvOran);
   const mekanNet=mekanDahil?(mekanTutar-mekanKdv):mekanTutar;
   const mekanToplam=mekanNet+mekanKdv;
-  // diğer giderler (hep KDV hariç girilir, üstüne eklenir)
   const giderler=sdReadGiderler();
   let digerNet=0, digerKdv=0;
   giderler.forEach(g=>{digerNet+=g.tutar; digerKdv+=g.tutar*(g.kdv/100);});
@@ -5226,11 +5224,24 @@ function renderSimDetay(){
   const netNakitKar=netBiletGeliri-toplamGiderKdvDahil;
   const indirilecekKdv=giderKdvToplam+komKdvToplam;
   const odenecekKdv=biletKdvToplam-indirilecekKdv;
-  // amorti için gereken bilet
   const ortFiyat=toplamAdet>0?brutGelir/toplamAdet:0;
   const ortKom=brutGelir>0?komToplam/brutGelir:0;
   const amortiBilet=(ortFiyat>0)?Math.ceil(toplamGiderKdvDahil/(ortFiyat*(1-ortKom))):0;
   const doluluk=(+document.getElementById('sdKapasite').value||0);
+
+  return {biletler,brutGelir,komToplam,komKdvToplam,biletKdvToplam,toplamAdet,netBiletGeliri,
+          sanatcilar,kaseNet,kaseKdv,kaseToplam,mekanNet,mekanKdv,mekanToplam,
+          giderler,digerNet,digerKdv,digerToplam,toplamGiderKdvDahil,giderKdvToplam,
+          netNakitKar,indirilecekKdv,odenecekKdv,ortFiyat,amortiBilet,doluluk,
+          projeAd:document.getElementById('sdProjeAd').value||'',
+          projeTarih:document.getElementById('sdProjeTarih').value||''};
+}
+function renderSimDetay(){
+  const s=sdCompute();
+  const {biletler,brutGelir,komToplam,komKdvToplam,biletKdvToplam,toplamAdet,netBiletGeliri,
+    sanatcilar,kaseNet,kaseKdv,kaseToplam,mekanNet,mekanKdv,mekanToplam,
+    digerNet,digerKdv,digerToplam,toplamGiderKdvDahil,giderKdvToplam,
+    netNakitKar,indirilecekKdv,odenecekKdv,ortFiyat,amortiBilet,doluluk}=s;
 
   const wrap=document.getElementById('sdSonuc');
   wrap.innerHTML=`
@@ -5274,7 +5285,129 @@ function renderSimDetay(){
         <div class="stat"><div class="n">Mekan Kapasitesi</div><div class="v">${doluluk.toLocaleString('tr-TR')}${doluluk>0&&amortiBilet>0?(amortiBilet<=doluluk?' ✓':' ⚠'):''}</div></div>
       </div>
       ${doluluk>0&&amortiBilet>doluluk?'<div class="hint" style="margin-top:12px;color:var(--red)">⚠ Amorti için gereken bilet sayısı mekan kapasitesini aşıyor. Bu fiyatlarla kapasiteyi doldursan bile zarar edebilirsin.</div>':''}
+      <div class="actions" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+        <button class="btn ghost" onclick="sdExcelAktar()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg> Excel İndir</button>
+        <button class="btn ghost" onclick="sdPdfAktar()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> PDF İndir</button>
+      </div>
     </div>`;
+}
+
+// ── Detaylı Simülasyon: Excel çıktısı ──
+function sdExcelAktar(){
+  const s=sdCompute();
+  if(!s.biletler.length && !s.sanatcilar.length){toast('Önce bilet ve/veya gider bilgisi gir');return;}
+  try{
+    const R=Math.round;
+    const rows=[
+      ['DETAYLI SİMÜLASYON'],
+      ['Proje',s.projeAd||'—'],
+      ['Tarih',s.projeTarih||new Date().toLocaleDateString('tr-TR')],
+      [],
+      ['BİLET GELİRİ','Firma','Bilet tipi','Fiyat','Adet','Brüt (₺)'],
+    ];
+    s.biletler.forEach(b=>rows.push(['',b.firma,b.tip,R(b.fiyat),b.adet,R(b.fiyat*b.adet)]));
+    rows.push(['Brüt Bilet Satışı','','','','',R(s.brutGelir)]);
+    rows.push(['Komisyon (bilet firmalarına)','','','','',-R(s.komToplam)]);
+    rows.push(['Komisyon KDV (indirilecek)','','','','',-R(s.komKdvToplam)]);
+    rows.push(['NET BİLET GELİRİ','','','','',R(s.netBiletGeliri)]);
+    rows.push([]);
+    rows.push(['SANATÇI KAŞELERİ','İsim','KDV durumu','KDV %','Net (₺)','KDV (₺)']);
+    s.sanatcilar.forEach(a=>{
+      const r=(a.kdv||0)/100, dahil=a.durum==='dahil';
+      const kdv=dahil?(a.kase/(1+r)*r):(a.kase*r);
+      const net=dahil?(a.kase-kdv):a.kase;
+      rows.push(['',a.name,dahil?'KDV Dahil':'KDV Hariç',a.kdv,R(net),R(kdv)]);
+    });
+    rows.push([]);
+    rows.push(['GİDER ÖZETİ','Net (₺)','KDV (₺)','Toplam (₺)']);
+    rows.push(['Sanatçı Kaşe',R(s.kaseNet),R(s.kaseKdv),R(s.kaseToplam)]);
+    rows.push(['Mekan Kiralama',R(s.mekanNet),R(s.mekanKdv),R(s.mekanToplam)]);
+    rows.push(['Ulaşım/Konaklama/Rider',R(s.digerNet),R(s.digerKdv),R(s.digerToplam)]);
+    rows.push(['TOPLAM GİDER',R(s.kaseNet+s.mekanNet+s.digerNet),R(s.giderKdvToplam),R(s.toplamGiderKdvDahil)]);
+    rows.push([]);
+    // diğer giderlerin dökümü
+    if(s.giderler.length){
+      rows.push(['DİĞER GİDERLER (döküm)','Tutar (net)','KDV %']);
+      s.giderler.forEach(g=>rows.push(['  '+g.desc,R(g.tutar),g.kdv]));
+      rows.push([]);
+    }
+    rows.push(['SONUÇ','Tutar (₺)']);
+    rows.push(['Net Nakit Kâr',R(s.netNakitKar)]);
+    rows.push(['Hesaplanan Bilet KDV',R(s.biletKdvToplam)]);
+    rows.push(['İndirilecek KDV',R(s.indirilecekKdv)]);
+    rows.push([s.odenecekKdv>=0?'Ödenecek KDV':'Devreden/İade KDV',R(Math.abs(s.odenecekKdv))]);
+    rows.push(['Toplam Satılan Bilet',s.toplamAdet]);
+    rows.push(['Ortalama Bilet Fiyatı',R(s.ortFiyat)]);
+    rows.push(['Amorti İçin Gereken Bilet',s.amortiBilet]);
+    rows.push(['Mekan Kapasitesi',s.doluluk]);
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:26},{wch:18},{wch:14},{wch:12},{wch:10},{wch:14}];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'DETAYLI SİM');
+    XLSX.writeFile(wb,'detayli-simulasyon-'+(safeName(s.projeAd)||new Date().toISOString().slice(0,10))+'.xlsx');
+    toast('✓ Excel indirildi');
+  }catch(e){toast('Excel oluşturulamadı');}
+}
+
+// ── Detaylı Simülasyon: PDF çıktısı ──
+function sdPdfAktar(){
+  const s=sdCompute();
+  if(!s.biletler.length && !s.sanatcilar.length){toast('Önce bilet ve/veya gider bilgisi gir');return;}
+  try{
+    const firmaAd=document.getElementById('coName')?document.getElementById('coName').value:'';
+    const biletRows=s.biletler.map(b=>`<tr><td style="padding:5px;border-bottom:1px solid #eee">${esc(b.firma)}</td><td style="padding:5px;border-bottom:1px solid #eee">${esc(b.tip)}</td><td style="padding:5px;border-bottom:1px solid #eee;text-align:right">${fmt(b.fiyat)}</td><td style="padding:5px;border-bottom:1px solid #eee;text-align:right">${b.adet.toLocaleString('tr-TR')}</td><td style="padding:5px;border-bottom:1px solid #eee;text-align:right">${fmt(b.fiyat*b.adet)}</td></tr>`).join('');
+    const rowT2=(k,v,cls)=>`<tr><td style="padding:6px 8px;border:1px solid #ddd">${esc(k)}</td><td style="padding:6px 8px;border:1px solid #ddd;text-align:right${cls==='neg'?';color:#c0392b':(cls==='pos'?';color:#1a7a45':'')}">${v}</td></tr>`;
+    const kdvDurum=s.odenecekKdv>=0?'Ödenecek KDV':'Devreden/İade KDV';
+    const amortiUyari=s.doluluk>0&&s.amortiBilet>s.doluluk?'<div style="margin-top:10px;padding:8px 10px;border:1px solid #c0392b;color:#c0392b;font-size:11px;border-radius:4px">⚠ Amorti için gereken bilet sayısı mekan kapasitesini aşıyor. Bu fiyatlarla kapasiteyi doldursan bile zarar edebilirsin.</div>':'';
+    const govde=`
+      <div style="display:flex;justify-content:space-between;border-bottom:2px solid #1a1a1a;padding-bottom:12px;margin-bottom:16px">
+        <div><div style="font-size:18px;font-weight:800">${esc(firmaAd)||'KONSER PANEL'}</div><div style="font-size:12px;color:#555">Detaylı Simülasyon</div></div>
+        <div style="text-align:right;font-size:11px;color:#555"><div>${esc(s.projeAd)||''}</div><div>${s.projeTarih?trDate(s.projeTarih):new Date().toLocaleDateString('tr-TR')}</div></div>
+      </div>
+      ${s.biletler.length?`<div style="font-size:12px;font-weight:700;color:#555;margin-bottom:6px">BİLET GELİRİ</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:8px">
+        <thead><tr style="background:#f0f0f0"><th style="padding:5px;text-align:left">Firma</th><th style="padding:5px;text-align:left">Tip</th><th style="padding:5px;text-align:right">Fiyat</th><th style="padding:5px;text-align:right">Adet</th><th style="padding:5px;text-align:right">Brüt</th></tr></thead>
+        <tbody>${biletRows}</tbody>
+      </table>`:''}
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px">
+        ${rowT2('Brüt Bilet Satışı',fmt(s.brutGelir))}
+        ${rowT2('Komisyon',(s.komToplam?'−':'')+fmt(s.komToplam),'neg')}
+        ${rowT2('Komisyon KDV (indirilecek)',(s.komKdvToplam?'−':'')+fmt(s.komKdvToplam),'neg')}
+        ${rowT2('Net Bilet Geliri',fmt(s.netBiletGeliri),'pos')}
+      </table>
+      <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:6px">GİDER ÖZETİ</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:16px">
+        <thead><tr style="background:#f0f0f0"><th style="padding:5px;text-align:left">Kalem</th><th style="padding:5px;text-align:right">Net</th><th style="padding:5px;text-align:right">KDV</th><th style="padding:5px;text-align:right">Toplam</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:5px;border-bottom:1px solid #eee">Sanatçı Kaşe</td><td style="padding:5px;border-bottom:1px solid #eee;text-align:right">${fmt(s.kaseNet)}</td><td style="padding:5px;border-bottom:1px solid #eee;text-align:right">${fmt(s.kaseKdv)}</td><td style="padding:5px;border-bottom:1px solid #eee;text-align:right">${fmt(s.kaseToplam)}</td></tr>
+          <tr><td style="padding:5px;border-bottom:1px solid #eee">Mekan Kiralama</td><td style="padding:5px;border-bottom:1px solid #eee;text-align:right">${fmt(s.mekanNet)}</td><td style="padding:5px;border-bottom:1px solid #eee;text-align:right">${fmt(s.mekanKdv)}</td><td style="padding:5px;border-bottom:1px solid #eee;text-align:right">${fmt(s.mekanToplam)}</td></tr>
+          <tr><td style="padding:5px;border-bottom:1px solid #eee">Ulaşım/Konaklama/Rider</td><td style="padding:5px;border-bottom:1px solid #eee;text-align:right">${fmt(s.digerNet)}</td><td style="padding:5px;border-bottom:1px solid #eee;text-align:right">${fmt(s.digerKdv)}</td><td style="padding:5px;border-bottom:1px solid #eee;text-align:right">${fmt(s.digerToplam)}</td></tr>
+          <tr style="font-weight:700;background:#f6f6f6"><td style="padding:6px">TOPLAM GİDER</td><td style="padding:6px;text-align:right">${fmt(s.kaseNet+s.mekanNet+s.digerNet)}</td><td style="padding:6px;text-align:right">${fmt(s.giderKdvToplam)}</td><td style="padding:6px;text-align:right">${fmt(s.toplamGiderKdvDahil)}</td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:6px">SONUÇ</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        ${rowT2('Net Nakit Kâr',fmt(s.netNakitKar),s.netNakitKar>=0?'pos':'neg')}
+        ${rowT2('Hesaplanan Bilet KDV',fmt(s.biletKdvToplam))}
+        ${rowT2('İndirilecek KDV',fmt(s.indirilecekKdv))}
+        ${rowT2(kdvDurum,fmt(Math.abs(s.odenecekKdv)))}
+        ${rowT2('Toplam Satılan Bilet',s.toplamAdet.toLocaleString('tr-TR'))}
+        ${rowT2('Ortalama Bilet Fiyatı',fmt(s.ortFiyat))}
+        ${rowT2('Amorti İçin Gereken Bilet',s.amortiBilet.toLocaleString('tr-TR'))}
+        ${rowT2('Mekan Kapasitesi',s.doluluk.toLocaleString('tr-TR'))}
+      </table>
+      ${amortiUyari}
+      <div style="font-size:10px;color:#888;margin-top:14px">Bu bir simülasyondur. Bilet KDV'si %20 varsayımıyla hesaplanır.</div>`;
+    const win=window.open('','_blank');
+    if(!win){toast('Açılır pencere engellendi, izin ver');return;}
+    win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+      <title>Detaylı Simülasyon${s.projeAd?' - '+esc(s.projeAd):''}</title>
+      <style>@page{size:A4 portrait;margin:16mm 15mm 15mm 15mm;@bottom-center{content:"Sayfa " counter(page) " / " counter(pages);font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:8.5pt;color:#666;}}*{box-sizing:border-box}body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;margin:0;padding:24px}table{page-break-inside:auto}tr{page-break-inside:avoid}@media print{body{padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style>
+      </head><body>${govde}
+      <script>window.onload=function(){window.print();}<\/script></body></html>`);
+    win.document.close();
+    toast('Yazdırma penceresi açıldı — "PDF olarak kaydet" seç');
+  }catch(e){toast('PDF oluşturulamadı');}
 }
 
 // ── Detaylı simülasyon: durumu topla / yükle ──
