@@ -1427,7 +1427,7 @@ Sanatçı ve ekibi için konaklama sağlanacaktır."></textarea>
             <div><label>Firma adı *</label><input id="fName" placeholder="HOLLY STONE ORGANİZASYON" autocomplete="off"></div>
             <div>
               <label>Tür</label>
-              <select id="fType"><option>Mekan</option><option>Organizatör</option><option>Müşteri</option><option>Diğer</option></select>
+              <select id="fType"><option>Sanatçı</option><option>Mekan</option><option>Organizatör</option><option>Müşteri</option><option>Diğer</option></select>
             </div>
             <div><label>Yetkili kişi</label><input id="fAuth" placeholder="Ad Soyad" autocomplete="off"></div>
             <div><label>Telefon</label><input id="fPhone" placeholder="+90 ..." autocomplete="off"></div>
@@ -3040,8 +3040,17 @@ function refreshEvArtistPicker(){
   const sel=document.getElementById('evArtistPick');if(!sel)return;
   const cur=sel.value;
   sel.innerHTML='<option value="">— sanatçı yok / seç —</option>';
-  firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');sel.appendChild(o);});
+  doldurSanatciSecenekleri(sel);
   sel.value=cur;
+}
+// Ortak: bir <select>'e firmaları, Sanatçı türü üstte ★ ile ekle
+function doldurSanatciSecenekleri(sel){
+  const sanatcilar=firms.filter(f=>(f.type||'')==='Sanatçı').sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
+  const digerleri=firms.filter(f=>(f.type||'')!=='Sanatçı').sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
+  const ekle=(f,yildiz)=>{const o=document.createElement('option');o.value=f.id;o.textContent=(yildiz?'★ ':'')+f.name+(f.type?' ('+f.type+')':'');sel.appendChild(o);};
+  sanatcilar.forEach(f=>ekle(f,true));
+  if(sanatcilar.length&&digerleri.length){const ayrac=document.createElement('option');ayrac.disabled=true;ayrac.textContent='──────────';sel.appendChild(ayrac);}
+  digerleri.forEach(f=>ekle(f,false));
 }
 function fillClientFromFirm(){
   const id=document.getElementById('dFirmPick').value;if(!id)return;
@@ -4687,8 +4696,7 @@ function refreshSaPicker(){
   const sel=document.getElementById('saPick');if(!sel)return;
   const cur=sel.value;
   sel.innerHTML='<option value="">— sanatçı seç —</option>';
-  // sadece bir işe sanatçı olarak bağlanmış firmaları + tüm firmaları göster
-  firms.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name+(f.type?' ('+f.type+')':'');sel.appendChild(o);});
+  doldurSanatciSecenekleri(sel);
   sel.value=cur;
 }
 // sanatçı hareketleri acc içinde: artistPay:true, artistId, saTur('odeme'|'gider')
