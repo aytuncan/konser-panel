@@ -626,6 +626,11 @@ select option{background:var(--surface)}
             <label>Bilet adedi (kapı işi için)</label>
             <input id="simAdet" type="number" placeholder="500" oninput="renderSim()">
           </div>
+
+          <div class="actions" style="margin-top:20px">
+            <button class="btn ghost" onclick="simExcelAktar()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg> Excel İndir</button>
+            <button class="btn ghost" onclick="simPdfAktar()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> PDF İndir</button>
+          </div>
         </div>
 
         <div id="simSonuc"></div>
@@ -3317,8 +3322,8 @@ function docHTML(type){
   // teknik şartlar metinde {teknik} yoksa ve varsa, sona ekle
   const govdeHtml=esc(govde).replace(/\n/g,'<br>');
   return head+title+
-    `<div style="font-size:11px;margin-top:8px;line-height:1.45;text-align:justify">${govdeHtml}</div>`+
-    `<table style="width:100%;margin-top:26px;font-size:11.5px;page-break-inside:avoid"><tr>
+    `<div style="font-size:11.5px;margin-top:10px;line-height:1.7">${govdeHtml}</div>`+
+    `<table style="width:100%;margin-top:34px;font-size:11.5px"><tr>
       <td style="width:50%;text-align:center">
         <div style="border-top:1px solid #1a1a1a;margin:0 20px;padding-top:6px">MENAJER</div>
         <div style="margin-top:4px">${esc(d.co.coName)}<br>${esc(d.co.coAuth)}</div>
@@ -3515,42 +3520,16 @@ async function makePDF(type){
   const d=docData();
   if(!d.co.coName){toast('Önce kendi firma adını gir (Firma Bilgilerim sekmesi)');showTab('szfirmam');return;}
   const baslik=type==='teklif'?'Teklif':'Sözleşme';
-  // Belge referans no — hem başlıkta hem her sayfanın üst köşesinde görünür,
-  // böylece çok sayfalı çıktıda sayfaların aynı belgeye ait olduğu anlaşılır.
-  const belgeNo=(d.co.coPrefix||'TKF')+'-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000+1000));
-  const ustEtiket=baslik.toUpperCase()+(d.venue?' — '+esc(d.venue):'')+(d.date?' · '+trDate(d.date):'')+'  |  Belge No: '+belgeNo;
   const win=window.open('','_blank');
   if(!win){toast('Açılır pencere engellendi, izin ver');return;}
   win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
-    <title>${baslik} - ${esc(d.venue||'')} (${belgeNo})</title>
+    <title>${baslik} - ${esc(d.venue||'')}</title>
     <style>
-      /* Üst: belge kimliği (her sayfada) — Alt: Sayfa X / Y (sayfa sürekliliği) */
-      @page{
-        size:A4 portrait;
-        margin:18mm 15mm 16mm 15mm;
-        @top-center{ content:"${ustEtiket.replace(/"/g,'\\"')}"; font-family:'Segoe UI',Helvetica,Arial,sans-serif; font-size:8pt; color:#888; }
-        @bottom-center{ content:"Sayfa " counter(page) " / " counter(pages); font-family:'Segoe UI',Helvetica,Arial,sans-serif; font-size:8.5pt; color:#666; }
-        @bottom-right{ content:"${esc(d.co.coName||'').replace(/"/g,'\\"')}"; font-family:'Segoe UI',Helvetica,Arial,sans-serif; font-size:8pt; color:#aaa; }
-      }
+      @page{size:A4;margin:18mm}
       *{box-sizing:border-box}
-      html,body{margin:0;padding:0}
-      body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;line-height:1.42;font-size:11.5px}
-      /* A4 dikey yazı alanı: 210mm - 2×15mm = 180mm. İçerik bu genişliği aşmasın */
-      .sozlesme-sayfa{width:180mm;max-width:180mm;margin:0 auto;padding:0}
-      .sozlesme-sayfa table{width:100%;border-collapse:collapse;table-layout:fixed}
-      .sozlesme-sayfa td,.sozlesme-sayfa th{word-wrap:break-word;overflow-wrap:break-word}
-      .sozlesme-sayfa h1,.sozlesme-sayfa h2,.sozlesme-sayfa h3{page-break-after:avoid}
-      /* madde / imza bloğu ortadan bölünmesin */
-      .sozlesme-sayfa p,.sozlesme-sayfa li,.sozlesme-sayfa tr{page-break-inside:avoid}
-      /* @page üst/alt bilgisini desteklemeyen tarayıcılar için yedek üst şerit */
-      .pdf-fallback-head{display:none;font-size:8pt;color:#999;border-bottom:1px solid #eee;padding-bottom:4px;margin-bottom:10px}
-      @media print{
-        body{padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-        .sozlesme-sayfa{width:auto;max-width:100%}
-      }
-    </style></head><body>
-    <div class="pdf-fallback-head">${ustEtiket}</div>
-    <div class="sozlesme-sayfa">${docHTML(type)}</div>
+      body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;line-height:1.6;margin:0;padding:20px;font-size:13px}
+      @media print{body{padding:0}}
+    </style></head><body>${docHTML(type)}
     <script>window.onload=function(){window.print();}<\/script>
     </body></html>`);
   win.document.close();
@@ -4992,7 +4971,126 @@ function renderSim(){
   wrap.innerHTML=h;
 }
 
-// ── DETAYLI SİMÜLASYON (Excel birebir) ────────────────
+// Hızlı Simülasyon: senaryoları + ortak ayarları topla (export için ortak veri)
+function simVeri(){
+  const tip=document.getElementById('simTip').value;
+  const senaryolar=[
+    {ad:'Senaryo A',deger:+document.getElementById('simA').value||0},
+    {ad:'Senaryo B',deger:+document.getElementById('simB').value||0},
+    {ad:'Senaryo C',deger:+document.getElementById('simC').value||0},
+  ].filter(s=>s.deger>0);
+  if(!senaryolar.length)return null;
+  const sonuclar=senaryolar.map(s=>({...s,c:simHesapla(s.deger)}));
+  return {
+    tip,
+    tipAd: tip==='KAPI'?'Kapı (bilet satışı)':'Organizatör (sabit bedel)',
+    kdv:+document.getElementById('simKdv').value||0,
+    kase:+document.getElementById('simKase').value||0,
+    gider:+document.getElementById('simGider').value||0,
+    p1:+document.getElementById('simP1').value||0,
+    p2:+document.getElementById('simP2').value||0,
+    kom: tip==='KAPI'?(+document.getElementById('simKom').value||0):0,
+    adet: tip==='KAPI'?(+document.getElementById('simAdet').value||0):0,
+    sonuclar,
+    enIyi:Math.max(...sonuclar.map(s=>s.c.kar))
+  };
+}
+function simExcelAktar(){
+  const d=simVeri();
+  if(!d){toast('Önce en az bir senaryoya bedel/fiyat gir');return;}
+  try{
+    const R=Math.round;
+    const degerEtiket=d.tip==='KAPI'?'Bilet fiyatı':'Anlaşılan bedel';
+    const rows=[
+      ['HIZLI SİMÜLASYON'],
+      ['Tarih',new Date().toLocaleDateString('tr-TR')],
+      [],
+      ['ORTAK AYARLAR',''],
+      ['İş tipi',d.tipAd],
+      ['KDV oranı (%)',d.kdv],
+      ['Toplam kaşe (₺)',R(d.kase)],
+      ['Diğer giderler (₺)',R(d.gider)],
+      ['Sanatçı payı (%)',d.p1],
+      ['Menajer payı (%)',d.p2],
+    ];
+    if(d.tip==='KAPI'){rows.push(['Komisyon oranı (%)',d.kom],['Bilet adedi',d.adet]);}
+    rows.push([]);
+    // Karşılaştırma tablosu: kalemler satır, senaryolar sütun
+    const baslik=['Kalem',...d.sonuclar.map(s=>s.ad+(Math.abs(s.c.kar-d.enIyi)<0.5?' ✓':''))];
+    rows.push(baslik);
+    rows.push([degerEtiket,...d.sonuclar.map(s=>R(s.deger))]);
+    rows.push(['Ciro (KDV dahil)',...d.sonuclar.map(s=>R(s.c.ciroGross))]);
+    rows.push(['Ciro (KDV hariç)',...d.sonuclar.map(s=>R(s.c.ciroNet))]);
+    if(d.tip==='KAPI')rows.push(['Komisyon',...d.sonuclar.map(s=>-R(s.c.komisyon))]);
+    rows.push(['Toplam gider (kaşe+gider)',...d.sonuclar.map(s=>-R(s.c.toplamGider))]);
+    rows.push(['KÂR / ZARAR',...d.sonuclar.map(s=>R(s.c.kar))]);
+    rows.push(['Sanatçı payı (%'+d.p1+')',...d.sonuclar.map(s=>R(s.c.p1amt))]);
+    rows.push(['Menajer payı (%'+d.p2+')',...d.sonuclar.map(s=>R(s.c.p2amt))]);
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:28},...d.sonuclar.map(()=>({wch:16}))];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'SİMÜLASYON');
+    XLSX.writeFile(wb,'hizli-simulasyon-'+new Date().toISOString().slice(0,10)+'.xlsx');
+    toast('✓ Excel indirildi');
+  }catch(e){toast('Excel oluşturulamadı');}
+}
+function simPdfAktar(){
+  const d=simVeri();
+  if(!d){toast('Önce en az bir senaryoya bedel/fiyat gir');return;}
+  try{
+    const degerEtiket=d.tip==='KAPI'?'Bilet fiyatı':'Anlaşılan bedel';
+    const firmaAd=document.getElementById('coName')?document.getElementById('coName').value:'';
+    // ortak ayarlar tablosu
+    let ortak=`<tr><td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">İş tipi</td><td style="padding:6px 8px;border:1px solid #ddd">${esc(d.tipAd)}</td>
+      <td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">KDV oranı</td><td style="padding:6px 8px;border:1px solid #ddd">%${d.kdv}</td></tr>
+      <tr><td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Toplam kaşe</td><td style="padding:6px 8px;border:1px solid #ddd">${fmt(d.kase)}</td>
+      <td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Diğer giderler</td><td style="padding:6px 8px;border:1px solid #ddd">${fmt(d.gider)}</td></tr>
+      <tr><td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Sanatçı payı</td><td style="padding:6px 8px;border:1px solid #ddd">%${d.p1}</td>
+      <td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Menajer payı</td><td style="padding:6px 8px;border:1px solid #ddd">%${d.p2}</td></tr>`;
+    if(d.tip==='KAPI'){
+      ortak+=`<tr><td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Komisyon oranı</td><td style="padding:6px 8px;border:1px solid #ddd">%${d.kom}</td>
+        <td style="padding:6px 8px;background:#f6f6f6;border:1px solid #ddd">Bilet adedi</td><td style="padding:6px 8px;border:1px solid #ddd">${d.adet.toLocaleString('tr-TR')}</td></tr>`;
+    }
+    // karşılaştırma tablosu
+    const th=d.sonuclar.map(s=>{const iyi=Math.abs(s.c.kar-d.enIyi)<0.5;return `<th style="padding:7px;text-align:right${iyi?';background:#1a5c3a':''}">${esc(s.ad)}${iyi?' ✓':''}</th>`;}).join('');
+    const satirlar=[
+      [degerEtiket,d.sonuclar.map(s=>fmt(s.deger))],
+      ['Ciro (KDV dahil)',d.sonuclar.map(s=>fmt(s.c.ciroGross))],
+      ['Ciro (KDV hariç)',d.sonuclar.map(s=>fmt(s.c.ciroNet))],
+    ];
+    if(d.tip==='KAPI')satirlar.push(['Komisyon',d.sonuclar.map(s=>'−'+fmt(s.c.komisyon))]);
+    satirlar.push(['Toplam gider',d.sonuclar.map(s=>'−'+fmt(s.c.toplamGider))]);
+    let tbody=satirlar.map(([lbl,vals])=>`<tr><td style="padding:6px;border-bottom:1px solid #eee">${esc(lbl)}</td>${vals.map(v=>`<td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${v}</td>`).join('')}</tr>`).join('');
+    // kâr satırı (vurgulu)
+    tbody+=`<tr style="font-weight:700;background:#f6f6f6"><td style="padding:7px;border-top:2px solid #1a1a1a">KÂR / ZARAR</td>${d.sonuclar.map(s=>`<td style="padding:7px;border-top:2px solid #1a1a1a;text-align:right">${fmt(s.c.kar)}</td>`).join('')}</tr>`;
+    tbody+=`<tr><td style="padding:6px;border-bottom:1px solid #eee">Sanatçı payı (%${d.p1})</td>${d.sonuclar.map(s=>`<td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${fmt(s.c.p1amt)}</td>`).join('')}</tr>`;
+    tbody+=`<tr><td style="padding:6px;border-bottom:1px solid #eee">Menajer payı (%${d.p2})</td>${d.sonuclar.map(s=>`<td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${fmt(s.c.p2amt)}</td>`).join('')}</tr>`;
+
+    const govde=`
+      <div style="display:flex;justify-content:space-between;border-bottom:2px solid #1a1a1a;padding-bottom:12px;margin-bottom:18px">
+        <div><div style="font-size:18px;font-weight:800">${esc(firmaAd)||'KONSER PANEL'}</div><div style="font-size:12px;color:#555">Hızlı Simülasyon — Senaryo Karşılaştırması</div></div>
+        <div style="text-align:right;font-size:11px;color:#555"><div>Tarih: ${new Date().toLocaleDateString('tr-TR')}</div></div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:8px">ORTAK AYARLAR</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px">${ortak}</table>
+      <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:8px">SENARYO KARŞILAŞTIRMASI ${d.tip==='KAPI'?'(değer = bilet fiyatı)':'(değer = anlaşılan bedel)'}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#1a1a1a;color:#fff"><th style="padding:7px;text-align:left">Kalem</th>${th}</tr></thead>
+        <tbody>${tbody}</tbody>
+      </table>
+      <div style="font-size:10px;color:#888;margin-top:14px">✓ = en yüksek kâr. Bu bir simülasyondur, hiçbir yere kaydedilmez.</div>`;
+    const win=window.open('','_blank');
+    if(!win){toast('Açılır pencere engellendi, izin ver');return;}
+    win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+      <title>Hızlı Simülasyon</title>
+      <style>@page{size:A4 portrait;margin:16mm 15mm 15mm 15mm;@bottom-center{content:"Sayfa " counter(page) " / " counter(pages);font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:8.5pt;color:#666;}}*{box-sizing:border-box}body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;margin:0;padding:24px}table{page-break-inside:auto}tr{page-break-inside:avoid}@media print{body{padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style>
+      </head><body>${govde}
+      <script>window.onload=function(){window.print();}<\/script></body></html>`);
+    win.document.close();
+    toast('Yazdırma penceresi açıldı — "PDF olarak kaydet" seç');
+  }catch(e){toast('PDF oluşturulamadı');}
+}
+
 let sdFirmaSayac=0, sdBiletSayac=0, sdGiderSayac=0;
 function sdEsc(s){return (s||'').replace(/"/g,'&quot;');}
 
@@ -5941,7 +6039,7 @@ function raporPdfAktar(){
     if(!win){toast('Açılır pencere engellendi, izin ver');return;}
     win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
       <title>Rapor - ${esc(rapDonemAd())}</title>
-      <style>@page{size:A4 portrait;margin:16mm 15mm 15mm 15mm;@bottom-center{content:"Sayfa " counter(page) " / " counter(pages);font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:8.5pt;color:#666;}}*{box-sizing:border-box}body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;margin:0;padding:24px}table{page-break-inside:auto}tr{page-break-inside:avoid}@media print{body{padding:0}}</style>
+      <style>@page{size:A4;margin:16mm}*{box-sizing:border-box}body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;margin:0;padding:24px}@media print{body{padding:0}}</style>
       </head><body>${govde}
       <script>window.onload=function(){window.print();}<\/script></body></html>`);
     win.document.close();
@@ -6153,7 +6251,7 @@ function sanatciRaporPdf(){
   if(!win){toast('Açılır pencere engellendi, izin ver');return;}
   win.document.write(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
     <title>${esc(r.sec)} - Performans Raporu</title>
-    <style>@page{size:A4 portrait;margin:16mm 15mm 15mm 15mm;@bottom-center{content:"Sayfa " counter(page) " / " counter(pages);font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:8.5pt;color:#666;}}*{box-sizing:border-box}body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;margin:0;padding:24px}table{page-break-inside:auto}tr{page-break-inside:avoid}@media print{body{padding:0}}</style>
+    <style>@page{size:A4;margin:16mm}*{box-sizing:border-box}body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a;margin:0;padding:24px}@media print{body{padding:0}}</style>
     </head><body>${r.govde}
     <script>window.onload=function(){window.print();}<\/script></body></html>`);
   win.document.close();
