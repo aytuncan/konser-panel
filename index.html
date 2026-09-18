@@ -2761,11 +2761,12 @@ async function saveCompanyManual(){
 async function yedekAl(){
   toast('Yedek hazırlanıyor...');
   try{
-    await loadEvents();await loadFirms();await loadVenues();await loadAcc();
+    await loadEvents();await loadFirms();await loadVenues();await loadAcc();await loadAyar();
     const yedek={
-      surum:1,
+      surum:2,
       tarih:new Date().toISOString(),
-      events,firms,venues,accEntries
+      events,firms,venues,accEntries,
+      ayar:ayarStore   // ekip rehberi: kaşe/ekip/gider (kalıcı ayar tablosu)
     };
     const blob=new Blob([JSON.stringify(yedek,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
@@ -2799,13 +2800,19 @@ async function yedekYukle(){
     for(const f of (yedek.firms||[])){try{await apiFetch('/api/firms',{method:'POST',body:JSON.stringify(f)});}catch(e){}}
     for(const v of (yedek.venues||[])){try{await apiFetch('/api/venues',{method:'POST',body:JSON.stringify(v)});}catch(e){}}
     for(const a of (yedek.accEntries||[])){try{await apiFetch('/api/acc',{method:'POST',body:JSON.stringify(a)});}catch(e){}}
+    // ekip rehberi (kalıcı ayar): yedekte varsa geri yükle
+    if(yedek.ayar&&typeof yedek.ayar==='object'){
+      for(const k of Object.keys(yedek.ayar)){
+        if(Array.isArray(yedek.ayar[k])){try{await saveAyar(k,yedek.ayar[k]);}catch(e){}}
+      }
+    }
     toast('Yedek geri yüklendi');
     setTimeout(()=>location.reload(),1500);
   }catch(e){toast('Geri yükleme sırasında hata oldu');}
 }
 
 async function resetAllData(){
-  if(!confirm('DİKKAT: Tüm işler, firmalar, mekanlar, muhasebe kayıtları, ekip rehberi ve ayarlar KALICI olarak silinecek. Bu işlem GERİ ALINAMAZ. Devam etmek istiyor musun?'))return;
+  if(!confirm('DİKKAT: Tüm işler, firmalar, mekanlar ve muhasebe kayıtları KALICI olarak silinecek. Bu işlem GERİ ALINAMAZ.\n\n(Ekip Rehberi — kaşeler, ekipler, sabit giderler — KORUNUR, silinmez.)\n\nDevam etmek istiyor musun?'))return;
   const onay=prompt('Emin olmak için aşağıya büyük harfle SIFIRLA yaz:');
   if(onay!=='SIFIRLA'){toast('İptal edildi');return;}
   toast('Siliniyor, lütfen bekle...');
@@ -2822,12 +2829,11 @@ async function resetAllData(){
     // backend: acc (muhasebe + sabit ödeme + sanatçı + karşı taraf rehberi hepsi acc içinde)
     await loadAcc();
     for(const a of accEntries.slice()){try{await apiFetch('/api/acc/'+a.id,{method:'DELETE'});}catch(e){}}
-    // tarayıcı: ekip rehberi, firma bilgim, şablon
-    // ayar/rehber kayıtları artık backend'de (acc içinde cfg_*), yukarıda silindi
-    // tarayıcıda sadece oturum kalır, ona dokunmuyoruz
-    // belleği temizle
-    events=[];firms=[];venues=[];accEntries=[];kases=[];ekipler=[];giderler=[];
-    toast('Tüm veriler silindi. Sıfır program hazır.');
+    // NOT: Ekip rehberi (kaşe/ekip/gider) artık /api/ayar (app_settings) tablosunda,
+    // acc'ten ayrı. Buraya DOKUNMUYORUZ — sıfırlamadan sonra da kalıcı kalır.
+    // belleği temizle (ekip listeleri ayarStore'da durmaya devam eder)
+    events=[];firms=[];venues=[];accEntries=[];
+    toast('Sıfırlandı. Ekip rehberi korundu.');
     setTimeout(()=>location.reload(),1500);
   }catch(err){
     toast('Silme sırasında hata oldu, tekrar dene');
@@ -4402,6 +4408,45 @@ let editingGiderId=null;
 
 // cfg kaydını kaydet: cfg alanına göre bul (ID'ye güvenme, backend ID atayabilir).
 // Kaydettikten sonra loadAcc ile backend'den taze listeyi çekeriz — en garantili yol.
+// ── KALICI AYARLAR (/api/ayar) ──────────────────────────
+// Ekip rehberi (kaşe/ekip/gider) artık acc_entries'ten AYRI bir tabloda
+// (app_settings) saklanır. Böylece "Fabrika Ayarlarına Döndür" çalışsa bile
+// bu listeler KALICI kalır. Eski cfg kayıtları ilk açılışta buraya taşınır.
+let ayarStore={};       // {kases:[...],ekipler:[...],giderler:[...]}
+async function loadAyar(){
+  try{
+    const res=await apiFetch('/api/ayar');
+    if(res&&res.ok){ayarStore=await res.json()||{};}
+    else ayarStore={};
+  }catch(e){ayarStore={};}
+}
+async function saveAyar(key,liste){
+  ayarStore[key]=liste;
+  try{
+    await apiFetch('/api/ayar/'+encodeURIComponent(key),{method:'PUT',body:JSON.stringify({value:liste})});
+  }catch(e){}
+}
+function getAyar(key){
+  const v=ayarStore[key];
+  return Array.isArray(v)?v:[];
+}
+// Eski cfg (acc içindeki) kaşe/ekip/gider verilerini /api/ayar'a taşı.
+// Sadece ayar tarafı boşsa ve eski cfg doluysa çalışır (bir kez).
+async function migrateCfgToAyar(){
+  const keys=['kases','ekipler','giderler'];
+  let tasindi=false;
+  for(const k of keys){
+    const ayarVar=Array.isArray(ayarStore[k])&&ayarStore[k].length>0;
+    if(ayarVar)continue; // zaten ayar tarafında var, dokunma
+    const eski=accEntries.find(x=>x.type==='cfg'&&x.cfg===k);
+    if(eski&&Array.isArray(eski.liste)&&eski.liste.length){
+      await saveAyar(k,eski.liste);
+      tasindi=true;
+    }
+  }
+  return tasindi;
+}
+
 async function saveCfg(cfgName, liste){
   const ex=accEntries.find(x=>x.type==='cfg' && x.cfg===cfgName);
   const o={type:'cfg',cfg:cfgName,liste};
@@ -4417,20 +4462,21 @@ function getCfg(cfgName){
   return (o&&Array.isArray(o.liste))?o.liste:[];
 }
 async function loadKases(){
-  kases=getCfg('kases');
+  kases=getAyar('kases');
   kases.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
 }
-async function saveKasesLocal(){ await saveCfg('kases',kases); }
+async function saveKasesLocal(){ await saveAyar('kases',kases); }
 async function loadEkipler(){
-  ekipler=getCfg('ekipler');
+  ekipler=getAyar('ekipler');
   ekipler.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
 }
-async function saveEkiplerLocal(){ await saveCfg('ekipler',ekipler); }
+async function saveEkiplerLocal(){ await saveAyar('ekipler',ekipler); }
 async function loadGiderler(){
-  giderler=getCfg('giderler');
+  giderler=getAyar('giderler');
   giderler.sort((a,b)=>(a.name||'').localeCompare(b.name||'','tr'));
 }
-async function saveGiderlerLocal(){ await saveCfg('giderler',giderler); }
+async function saveGiderlerLocal(){ await saveAyar('giderler',giderler); }
+
 
 function gatherKase(){
   return {id:editingKaseId||('kas'+Date.now()),name:document.getElementById('kaseName').value,amount:+document.getElementById('kaseAmount').value||0};
@@ -6464,9 +6510,13 @@ async function initApp(){
     loadEvents(),
     loadFirms(),
     loadVenues(),
-    loadAcc()
+    loadAcc(),
+    loadAyar()
   ]);
-  // bunlar accEntries'ten okur, loadAcc'tan sonra olmalı
+  // eski cfg (acc içindeki) kaşe/ekip/gider verilerini kalıcı ayar tablosuna taşı
+  const tasindi=await migrateCfgToAyar();
+  if(tasindi)await loadAyar(); // taşındıysa güncel ayarları tekrar çek
+  // bunlar artık /api/ayar'dan okur (kalıcı — sıfırlamadan etkilenmez)
   await loadKases();
   await loadEkipler();
   await loadGiderler();
